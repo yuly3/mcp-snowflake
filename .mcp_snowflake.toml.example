@@ -1,0 +1,10 @@
+# MCP Snowflake configuration file example
+# Copy this file to .mcp_snowflake.toml and use it
+
+[snowflake]
+account = "your-account.region"
+user = "your-username"
+password = "your-password"
+warehouse = "your-warehouse"  # Optional
+role = "your-role"  # Optional
+authenticator = "SNOWFLAKE"  # "SNOWFLAKE" or "externalbrowser"

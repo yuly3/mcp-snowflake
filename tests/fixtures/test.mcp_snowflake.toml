@@ -1,0 +1,6 @@
+[snowflake]
+account = "dummy"
+password = "dummy"
+role = "dummy"
+user = "dummy"
+warehouse = "dummy"
