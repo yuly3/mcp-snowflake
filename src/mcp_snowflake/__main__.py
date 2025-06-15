@@ -19,7 +19,12 @@ from pydantic import ValidationError
 from pydantic_settings import SettingsConfigDict
 
 from .cli import Cli
-from .handler import ListSchemasArgs, handle_list_schemas
+from .handler import (
+    ListSchemasArgs,
+    ListTablesArgs,
+    handle_list_schemas,
+    handle_list_tables,
+)
 from .settings import Settings
 from .snowflake_client import SnowflakeClient
 
@@ -58,7 +63,25 @@ async def handle_list_tools() -> list[types.Tool]:
                 },
                 "required": ["database"],
             },
-        )
+        ),
+        types.Tool(
+            name="list_tables",
+            description="Retrieve a list of tables from a specified database and schema",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "database": {
+                        "type": "string",
+                        "description": "Database name to retrieve tables from",
+                    },
+                    "schema_name": {
+                        "type": "string",
+                        "description": "Schema name to retrieve tables from",
+                    },
+                },
+                "required": ["database", "schema_name"],
+            },
+        ),
     ]
 
 
@@ -87,6 +110,18 @@ async def handle_call_tool(
                 )
             ]
         return await handle_list_schemas(args, server_context.snowflake_client)
+
+    if name == "list_tables":
+        try:
+            args = ListTablesArgs.model_validate(arguments or {})
+        except ValidationError as e:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Error: Invalid arguments for list_tables: {e}",
+                )
+            ]
+        return await handle_list_tables(args, server_context.snowflake_client)
 
     return [types.TextContent(type="text", text=f"Unknown tool: {name}")]
 

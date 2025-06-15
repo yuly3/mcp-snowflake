@@ -102,3 +102,36 @@ class SnowflakeClient:
                 schemas.append(next(iter(row.values())))
 
         return sorted(schemas)
+
+    async def list_tables(self, database: str, schema: str) -> list[str]:
+        """Get list of tables in a database schema."""
+        query = f"SHOW TABLES IN SCHEMA {database}.{schema}"
+
+        # Run the synchronous query in a thread pool
+        loop = asyncio.get_event_loop()
+        try:
+            results = await loop.run_in_executor(
+                self.thread_pool_executor,
+                self._execute_query_sync,
+                query,
+                timedelta(seconds=10),
+            )
+        except TimeoutError:
+            raise
+        except Exception as e:
+            raise Exception(
+                f"Failed to retrieve tables from schema '{database}.{schema}': {e!s}"
+            ) from e
+
+        tables: list[str] = []
+        for row in results:
+            # The table name is typically in the 'name' field
+            if "name" in row:
+                tables.append(row["name"])
+            elif "table_name" in row:
+                tables.append(row["table_name"])
+            else:
+                # If we can't find a standard field, take the first value
+                tables.append(next(iter(row.values())))
+
+        return sorted(tables)
