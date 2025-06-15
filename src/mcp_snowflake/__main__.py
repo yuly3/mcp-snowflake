@@ -15,9 +15,11 @@ import mcp.server.stdio
 import mcp.types as types
 from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
+from pydantic import ValidationError
 from pydantic_settings import SettingsConfigDict
 
 from .cli import Cli
+from .handler import ListSchemasArgs, handle_list_schemas
 from .settings import Settings
 from .snowflake_client import SnowflakeClient
 
@@ -36,7 +38,6 @@ class SnowflakeServerContext:
         self.snowflake_client: SnowflakeClient | None = None
 
 
-# Server context
 server_context = SnowflakeServerContext()
 
 
@@ -76,33 +77,16 @@ async def handle_call_tool(
         ]
 
     if name == "list_schemas":
-        if not arguments or "database" not in arguments:
-            return [
-                types.TextContent(
-                    type="text",
-                    text="Error: Database name is not specified",
-                )
-            ]
-
-        database = arguments["database"]
         try:
-            schemas = await server_context.snowflake_client.list_schemas(database)
-        except Exception as e:
-            logger.exception(f"Error listing schemas: {e}")
+            args = ListSchemasArgs.model_validate(arguments or {})
+        except ValidationError as e:
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Error: Failed to retrieve schemas: {e!s}",
+                    text=f"Error: Invalid arguments for list_schemas: {e}",
                 )
             ]
-
-        schema_list = "\n".join([f"- {schema}" for schema in schemas])
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Schema list for database '{database}':\n{schema_list}",
-            )
-        ]
+        return await handle_list_schemas(args, server_context.snowflake_client)
 
     return [types.TextContent(type="text", text=f"Unknown tool: {name}")]
 
