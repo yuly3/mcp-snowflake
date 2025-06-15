@@ -12,13 +12,13 @@ class ListTablesArgs(BaseModel):
     schema_name: str
 
 
-class _EffectListTables(Protocol):
+class EffectListTables(Protocol):
     async def list_tables(self, database: str, schema: str) -> list[str]: ...
 
 
 async def handle_list_tables(
     args: ListTablesArgs,
-    effect_handler: _EffectListTables,
+    effect_handler: EffectListTables,
 ) -> list[types.TextContent]:
     """Handle list_tables tool call."""
     try:

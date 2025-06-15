@@ -8,6 +8,7 @@ It allows clients to execute SQL queries against Snowflake and retrieve results.
 
 import asyncio
 import logging
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -15,18 +16,12 @@ import mcp.server.stdio
 import mcp.types as types
 from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
-from pydantic import ValidationError
 from pydantic_settings import SettingsConfigDict
 
 from .cli import Cli
-from .handler import (
-    ListSchemasArgs,
-    ListTablesArgs,
-    handle_list_schemas,
-    handle_list_tables,
-)
 from .settings import Settings
 from .snowflake_client import SnowflakeClient
+from .tool import ListSchemasTool, ListTablesTool, Tool
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -41,6 +36,16 @@ class SnowflakeServerContext:
 
     def __init__(self) -> None:
         self.snowflake_client: SnowflakeClient | None = None
+        self.tools: Sequence[Tool] = []
+
+    def build_tools(self) -> None:
+        if not self.snowflake_client:
+            raise ValueError("Snowflake client is not initialized")
+
+        self.tools = [
+            ListSchemasTool(self.snowflake_client),
+            ListTablesTool(self.snowflake_client),
+        ]
 
 
 server_context = SnowflakeServerContext()
@@ -49,47 +54,14 @@ server_context = SnowflakeServerContext()
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     """List available tools."""
-    return [
-        types.Tool(
-            name="list_schemas",
-            description="Retrieve a list of schemas from a specified database",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "database": {
-                        "type": "string",
-                        "description": "Database name to retrieve schemas from",
-                    }
-                },
-                "required": ["database"],
-            },
-        ),
-        types.Tool(
-            name="list_tables",
-            description="Retrieve a list of tables from a specified database and schema",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "database": {
-                        "type": "string",
-                        "description": "Database name to retrieve tables from",
-                    },
-                    "schema_name": {
-                        "type": "string",
-                        "description": "Schema name to retrieve tables from",
-                    },
-                },
-                "required": ["database", "schema_name"],
-            },
-        ),
-    ]
+    return [tool.definition for tool in server_context.tools]
 
 
 @server.call_tool()
 async def handle_call_tool(
     name: str,
-    arguments: dict[str, Any] | None,
-) -> list[types.TextContent]:
+    arguments: Mapping[str, Any] | None,
+) -> Sequence[types.Content]:
     """Handle tool calls."""
     if not server_context.snowflake_client:
         return [
@@ -99,29 +71,9 @@ async def handle_call_tool(
             )
         ]
 
-    if name == "list_schemas":
-        try:
-            args = ListSchemasArgs.model_validate(arguments or {})
-        except ValidationError as e:
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Error: Invalid arguments for list_schemas: {e}",
-                )
-            ]
-        return await handle_list_schemas(args, server_context.snowflake_client)
-
-    if name == "list_tables":
-        try:
-            args = ListTablesArgs.model_validate(arguments or {})
-        except ValidationError as e:
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Error: Invalid arguments for list_tables: {e}",
-                )
-            ]
-        return await handle_list_tables(args, server_context.snowflake_client)
+    for tool in server_context.tools:
+        if tool.name == name:
+            return await tool.perform(arguments)
 
     return [types.TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -149,6 +101,7 @@ async def main() -> None:
 
         logger.info("Snowflake client initialized successfully")
 
+        server_context.build_tools()
         async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
             await server.run(
                 read_stream,

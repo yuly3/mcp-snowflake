@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from typing import Protocol
 
 import mcp.types as types
@@ -11,14 +12,14 @@ class ListSchemasArgs(BaseModel):
     database: str
 
 
-class _EffectListSchemas(Protocol):
+class EffectListSchemas(Protocol):
     async def list_schemas(self, database: str) -> list[str]: ...
 
 
 async def handle_list_schemas(
     args: ListSchemasArgs,
-    effect_handler: _EffectListSchemas,
-) -> list[types.TextContent]:
+    effect_handler: EffectListSchemas,
+) -> Sequence[types.TextContent]:
     """Handle list_schemas tool call."""
     try:
         schemas = await effect_handler.list_schemas(args.database)

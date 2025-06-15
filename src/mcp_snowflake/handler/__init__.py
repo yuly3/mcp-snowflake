@@ -1,7 +1,9 @@
-from .list_schemas import ListSchemasArgs, handle_list_schemas
-from .list_tables import ListTablesArgs, handle_list_tables
+from .list_schemas import EffectListSchemas, ListSchemasArgs, handle_list_schemas
+from .list_tables import EffectListTables, ListTablesArgs, handle_list_tables
 
 __all__ = [
+    "EffectListSchemas",
+    "EffectListTables",
     "ListSchemasArgs",
     "ListTablesArgs",
     "handle_list_schemas",
