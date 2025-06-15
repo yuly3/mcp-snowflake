@@ -17,8 +17,13 @@ logger = logging.getLogger(__name__)
 class SnowflakeClient:
     """Snowflake database client."""
 
-    def __init__(self, settings: SnowflakeSettings) -> None:
+    def __init__(
+        self,
+        thread_pool_executor: ThreadPoolExecutor,
+        settings: SnowflakeSettings,
+    ) -> None:
         """Initialize Snowflake client with environment variables."""
+        self.thread_pool_executor = thread_pool_executor
         self.settings = settings
 
         # Validate required environment variables
@@ -67,28 +72,28 @@ Optional:
 
         # Run the synchronous query in a thread pool
         loop = asyncio.get_event_loop()
-        with ThreadPoolExecutor() as executor:
-            try:
-                results = await loop.run_in_executor(
-                    executor, self._execute_query_sync, query
-                )
+        try:
+            results = await loop.run_in_executor(
+                self.thread_pool_executor,
+                self._execute_query_sync,
+                query,
+            )
 
-                # Extract schema names from results
-                schemas = []
-                for row in results:
-                    # The schema name is typically in the 'name' field
-                    if "name" in row:
-                        schemas.append(row["name"])
-                    elif "schema_name" in row:
-                        schemas.append(row["schema_name"])
-                    else:
-                        # If we can't find a standard field, take the first value
-                        schemas.append(next(iter(row.values())))
+            schemas: list[str] = []
+            for row in results:
+                # The schema name is typically in the 'name' field
+                if "name" in row:
+                    schemas.append(row["name"])
+                elif "schema_name" in row:
+                    schemas.append(row["schema_name"])
+                else:
+                    # If we can't find a standard field, take the first value
+                    schemas.append(next(iter(row.values())))
 
-                return sorted(schemas)
+            return sorted(schemas)
 
-            except Exception as e:
-                logger.exception(f"Schema list retrieval error: {e}")
-                raise Exception(
-                    f"Failed to retrieve schemas from database '{database}': {e!s}"
-                ) from e
+        except Exception as e:
+            logger.exception(f"Schema list retrieval error: {e}")
+            raise Exception(
+                f"Failed to retrieve schemas from database '{database}': {e!s}"
+            ) from e

@@ -8,6 +8,7 @@ It allows clients to execute SQL queries against Snowflake and retrieve results.
 
 import asyncio
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import mcp.server.stdio
@@ -117,26 +118,31 @@ async def main() -> None:
     )
     settings = Settings.build(settings_config)
 
-    try:
-        server_context.snowflake_client = SnowflakeClient(settings.snowflake)
-    except Exception as e:
-        logger.exception(f"Failed to initialize Snowflake client: {e}")
-        raise
-    logger.info("Snowflake client initialized successfully")
+    with ThreadPoolExecutor(thread_name_prefix="mcp-snowflake") as executor:
+        try:
+            server_context.snowflake_client = SnowflakeClient(
+                executor,
+                settings.snowflake,
+            )
+        except Exception as e:
+            logger.exception(f"Failed to initialize Snowflake client: {e}")
+            raise
 
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="mcp-snowflake",
-                server_version="0.1.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
+        logger.info("Snowflake client initialized successfully")
+
+        async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+            await server.run(
+                read_stream,
+                write_stream,
+                InitializationOptions(
+                    server_name="mcp-snowflake",
+                    server_version="0.1.0",
+                    capabilities=server.get_capabilities(
+                        notification_options=NotificationOptions(),
+                        experimental_capabilities={},
+                    ),
                 ),
-            ),
-        )
+            )
 
 
 asyncio.run(main())
