@@ -38,7 +38,7 @@ class SnowflakeClient:
         }
 
         return SnowflakeConnection(
-            connection_name="mcp-snowflake",
+            connection_name=None,
             connections_file_path=None,
             **conn_params,
         )
