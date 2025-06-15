@@ -21,7 +21,7 @@ from pydantic_settings import SettingsConfigDict
 from .cli import Cli
 from .settings import Settings
 from .snowflake_client import SnowflakeClient
-from .tool import ListSchemasTool, ListTablesTool, Tool
+from .tool import ListSchemasTool, ListTablesTool, ListViewsTool, Tool
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +45,7 @@ class SnowflakeServerContext:
         self.tools = [
             ListSchemasTool(self.snowflake_client),
             ListTablesTool(self.snowflake_client),
+            ListViewsTool(self.snowflake_client),
         ]
 
 
