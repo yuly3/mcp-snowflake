@@ -5,9 +5,10 @@ Snowflake client for MCP server.
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from typing import Any, cast
 
-from snowflake.connector import DictCursor, SnowflakeConnection
+from snowflake.connector import DictCursor, ProgrammingError, SnowflakeConnection
 
 from .settings import SnowflakeSettings
 
@@ -42,14 +43,31 @@ class SnowflakeClient:
             **conn_params,
         )
 
-    def _execute_query_sync(self, query: str) -> list[dict[str, Any]]:
+    def _execute_query_sync(
+        self,
+        query: str,
+        timeout: timedelta,
+    ) -> list[dict[str, Any]]:
         """Execute a query synchronously and return results."""
         with self._get_connection() as conn, conn.cursor(DictCursor) as cursor:
+            timeout_seconds = int(timeout.total_seconds())
             try:
-                _ = cursor.execute(query)
+                _ = cursor.execute("begin")
+                _ = cursor.execute(query, timeout=timeout_seconds)
                 return cast("list[dict[str, Any]]", cursor.fetchall())
-            except Exception as e:
-                logger.exception(f"Query execution error: {e}")
+            except ProgrammingError as e:
+                if e.errno == 604:
+                    # see: https://docs.snowflake.com/ja/developer-guide/python-connector/python-connector-example#using-cursor-to-fetch-values
+                    logger.exception(
+                        f"Query execution timed out after {timeout_seconds} seconds"
+                    )
+                    raise TimeoutError(
+                        f"Query execution timed out after {timeout_seconds} seconds"
+                    ) from e
+                logger.exception("Query execution error")
+                raise
+            except Exception:
+                logger.exception("Query execution error")
                 raise
 
     async def list_schemas(self, database: str) -> list[str]:
@@ -63,9 +81,11 @@ class SnowflakeClient:
                 self.thread_pool_executor,
                 self._execute_query_sync,
                 query,
+                timedelta(seconds=10),
             )
+        except TimeoutError:
+            raise
         except Exception as e:
-            logger.exception(f"Schema list retrieval error: {e}")
             raise Exception(
                 f"Failed to retrieve schemas from database '{database}': {e!s}"
             ) from e
