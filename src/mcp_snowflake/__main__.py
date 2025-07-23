@@ -21,7 +21,13 @@ from pydantic_settings import SettingsConfigDict
 from .cli import Cli
 from .settings import Settings
 from .snowflake_client import SnowflakeClient
-from .tool import ListSchemasTool, ListTablesTool, ListViewsTool, Tool
+from .tool import (
+    DescribeTableTool,
+    ListSchemasTool,
+    ListTablesTool,
+    ListViewsTool,
+    Tool,
+)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -43,6 +49,7 @@ class SnowflakeServerContext:
             raise ValueError("Snowflake client is not initialized")
 
         self.tools = [
+            DescribeTableTool(self.snowflake_client),
             ListSchemasTool(self.snowflake_client),
             ListTablesTool(self.snowflake_client),
             ListViewsTool(self.snowflake_client),

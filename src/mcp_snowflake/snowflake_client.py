@@ -168,3 +168,49 @@ class SnowflakeClient:
                 views.append(next(iter(row.values())))
 
         return sorted(views)
+
+    async def describe_table(
+        self, database: str, schema: str, table_name: str
+    ) -> dict[str, Any]:
+        """Get table structure information."""
+        query = f"DESCRIBE TABLE {database}.{schema}.{table_name}"
+
+        # Run the synchronous query in a thread pool
+        loop = asyncio.get_event_loop()
+        try:
+            results = await loop.run_in_executor(
+                self.thread_pool_executor,
+                self._execute_query_sync,
+                query,
+                timedelta(seconds=10),
+            )
+        except TimeoutError:
+            raise
+        except Exception as e:
+            raise Exception(
+                f"Failed to describe table '{database}.{schema}.{table_name}': {e!s}"
+            ) from e
+
+        # Transform results into structured format
+        columns = []
+        for i, row in enumerate(results, 1):
+            # Snowflake DESCRIBE TABLE returns columns like:
+            # name, type, kind, null?, default, primary key, unique key, check, expression, comment
+            columns.append(
+                {
+                    "name": row.get("name", ""),
+                    "data_type": row.get("type", ""),
+                    "nullable": row.get("null?", "Y") == "Y",
+                    "default_value": row.get("default"),
+                    "comment": row.get("comment"),
+                    "ordinal_position": i,
+                }
+            )
+
+        return {
+            "database": database,
+            "schema_name": schema,
+            "name": table_name,
+            "column_count": len(columns),
+            "columns": columns,
+        }

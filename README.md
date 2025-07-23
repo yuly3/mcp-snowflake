@@ -5,6 +5,9 @@ A Model Context Protocol (MCP) server that connects to Snowflake databases and e
 ## Features
 
 - **List Schemas**: Retrieve a list of schemas from a specified database
+- **List Tables**: Retrieve a list of tables from a specified database and schema
+- **List Views**: Retrieve a list of views from a specified database and schema
+- **Describe Table**: Retrieve detailed structure information for a specified table
 
 ## Installation
 
@@ -97,6 +100,97 @@ Retrieve a list of schemas from a specified database.
     "database": "MY_DATABASE"
   }
 }
+```
+
+#### list_tables
+Retrieve a list of tables from a specified database and schema.
+
+**Parameters:**
+- `database` (string, required): Database name to retrieve tables from
+- `schema_name` (string, required): Schema name to retrieve tables from
+
+**Example:**
+```json
+{
+  "name": "list_tables",
+  "arguments": {
+    "database": "MY_DATABASE",
+    "schema_name": "PUBLIC"
+  }
+}
+```
+
+#### list_views
+Retrieve a list of views from a specified database and schema.
+
+**Parameters:**
+- `database` (string, required): Database name to retrieve views from
+- `schema_name` (string, required): Schema name to retrieve views from
+
+**Example:**
+```json
+{
+  "name": "list_views",
+  "arguments": {
+    "database": "MY_DATABASE",
+    "schema_name": "PUBLIC"
+  }
+}
+```
+
+#### describe_table
+Retrieve detailed structure information (columns, data types, etc.) for a specified table.
+
+**Parameters:**
+- `database` (string, required): Database name containing the table
+- `schema_name` (string, required): Schema name containing the table
+- `table_name` (string, required): Name of the table to describe
+
+**Example:**
+```json
+{
+  "name": "describe_table",
+  "arguments": {
+    "database": "MY_DATABASE",
+    "schema_name": "PUBLIC",
+    "table_name": "CUSTOMERS"
+  }
+}
+```
+
+**Response Format:**
+The describe_table tool returns a hybrid format combining natural language explanation with structured JSON data for optimal LLM interpretation:
+
+```
+Table Schema: MY_DATABASE.PUBLIC.CUSTOMERS
+
+This table has 4 columns with the following structure:
+
+```json
+{
+  "table_info": {
+    "database": "MY_DATABASE",
+    "schema": "PUBLIC", 
+    "name": "CUSTOMERS",
+    "column_count": 4,
+    "columns": [
+      {
+        "name": "ID",
+        "data_type": "NUMBER(38,0)",
+        "nullable": false,
+        "default_value": null,
+        "comment": "Primary key",
+        "ordinal_position": 1
+      }
+    ]
+  }
+}
+```
+
+**Key characteristics:**
+- Primary key: ID
+- Required fields: ID, CREATED_AT
+- Optional fields: NAME, EMAIL
 ```
 
 ## Development
