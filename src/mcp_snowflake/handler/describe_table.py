@@ -87,7 +87,6 @@ async def handle_describe_table(
             )
         ]
 
-    # Convert dict data to TableInfo for consistent processing
     columns = [
         TableColumn(
             name=col["name"],
@@ -108,7 +107,6 @@ async def handle_describe_table(
         columns=columns,
     )
 
-    # Build JSON representation
     columns_dict: list[ColumnDict] = [
         {
             "name": col.name,
@@ -131,7 +129,6 @@ async def handle_describe_table(
         }
     }
 
-    # Identify key characteristics
     required_fields = [col.name for col in table_info.columns if not col.nullable]
     optional_fields = [col.name for col in table_info.columns if col.nullable]
 

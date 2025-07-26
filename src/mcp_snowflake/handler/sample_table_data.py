@@ -180,7 +180,6 @@ async def handle_sample_table_data(
         Response content with sample data or error message
     """
     try:
-        # SnowflakeClientから生データを取得
         raw_data = await effect_handler.sample_table_data(
             args.database,
             args.schema_name,
@@ -189,10 +188,8 @@ async def handle_sample_table_data(
             args.columns,
         )
 
-        # JSON処理とwarnings生成
         processed_data, warnings = process_sample_data(raw_data)
 
-        # レスポンス形式に整形
         response = _format_response(
             processed_data,
             warnings,

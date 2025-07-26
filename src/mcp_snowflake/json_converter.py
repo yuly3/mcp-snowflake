@@ -107,7 +107,6 @@ def is_json_serializable(value: Any) -> tuple[bool, str | None]:
     """
     try:
         unstructured = converter.unstructure(value)
-        # Check if the unstructured result is a JSON-compatible type
         if _is_json_compatible_type(unstructured):
             return True, None
         return False, str(type(value).__name__)
@@ -160,7 +159,6 @@ def convert_to_json_safe(value: Any) -> Any:
     """
     try:
         unstructured = converter.unstructure(value)
-        # Check if the unstructured result is JSON-compatible
         if _is_json_compatible_type(unstructured):
             return unstructured
         return f"<unsupported_type: {type(value).__name__}>"
