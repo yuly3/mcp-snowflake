@@ -170,7 +170,10 @@ class SnowflakeClient:
         return sorted(views)
 
     async def describe_table(
-        self, database: str, schema: str, table_name: str
+        self,
+        database: str,
+        schema: str,
+        table_name: str,
     ) -> dict[str, Any]:
         """Get table structure information."""
         query = f"DESCRIBE TABLE {database}.{schema}.{table_name}"
@@ -192,7 +195,7 @@ class SnowflakeClient:
             ) from e
 
         # Transform results into structured format
-        columns = []
+        columns: list[dict[str, Any]] = []
         for i, row in enumerate(results, 1):
             # Snowflake DESCRIBE TABLE returns columns like:
             # name, type, kind, null?, default, primary key, unique key, check, expression, comment
@@ -214,3 +217,59 @@ class SnowflakeClient:
             "column_count": len(columns),
             "columns": columns,
         }
+
+    async def sample_table_data(
+        self,
+        database: str,
+        schema: str,
+        table_name: str,
+        sample_size: int = 10,
+        columns: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Retrieve sample data from a Snowflake table using SAMPLE ROW clause.
+
+        Parameters
+        ----------
+        database : str
+            Database name
+        schema : str
+            Schema name
+        table_name : str
+            Table name
+        sample_size : int, optional
+            Number of sample rows to retrieve, by default 10
+        columns : list[str] | None, optional
+            List of column names to select (if None, selects all columns), by default None
+
+        Returns
+        -------
+        list[dict[str, Any]]
+            List of dictionaries representing sample rows
+        """
+        # Build column list
+        column_list = ", ".join(f'"{col}"' for col in columns) if columns else "*"
+
+        # Build query with SAMPLE ROW clause
+        query = f"""
+        SELECT {column_list}
+        FROM "{database}"."{schema}"."{table_name}"
+        SAMPLE ROW ({sample_size} ROWS)
+        """  # noqa: S608
+
+        logger.info(
+            "Executing sample_table_data query for %s.%s.%s with sample_size=%d",
+            database,
+            schema,
+            table_name,
+            sample_size,
+        )
+
+        # Execute with 60 second timeout
+        timeout = timedelta(seconds=60)
+        return await asyncio.get_running_loop().run_in_executor(
+            self.thread_pool_executor,
+            self._execute_query_sync,
+            query,
+            timeout,
+        )

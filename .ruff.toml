@@ -44,6 +44,7 @@ select = [
     "B904",
     "C4",
     "C90",
+    "D4",
     "DTZ0",
     "E4",
     "E7",
@@ -97,6 +98,8 @@ fixable = [
 ]
 ignore = [
     "A005",
+    "D400",
+    "D403",
     "N806",
     "RUF001",
     "RUF002",
@@ -113,6 +116,9 @@ flake8-implicit-str-concat.allow-multiline = false
 
 [lint.mccabe]
 max-complexity = 15
+
+[lint.pydocstyle]
+convention = "numpy"
 
 [format]
 # Like Black, use double quotes for strings.

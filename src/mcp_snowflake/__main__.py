@@ -26,6 +26,7 @@ from .tool import (
     ListSchemasTool,
     ListTablesTool,
     ListViewsTool,
+    SampleTableDataTool,
     Tool,
 )
 
@@ -53,6 +54,7 @@ class SnowflakeServerContext:
             ListSchemasTool(self.snowflake_client),
             ListTablesTool(self.snowflake_client),
             ListViewsTool(self.snowflake_client),
+            SampleTableDataTool(self.snowflake_client),
         ]
 
 
@@ -87,7 +89,7 @@ async def handle_call_tool(
 
 
 async def main() -> None:
-    """Main entry point for the MCP server."""
+    """Run the main entry point for the MCP server."""
 
     cli = Cli()
 

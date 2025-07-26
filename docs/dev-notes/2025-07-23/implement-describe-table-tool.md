@@ -168,7 +168,6 @@ This table has {column_count} columns with the following structure:
 - Primary key: {primary_key_columns}
 - Required fields: {required_fields}
 - Optional fields: {optional_fields}
-```
 
 このハイブリッド形式の利点：
 - **LLM理解性**: 自然言語での説明でコンテキスト提供
