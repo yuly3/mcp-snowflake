@@ -7,10 +7,9 @@ from pydantic import ValidationError
 
 from mcp_snowflake.handler.sample_table_data import (
     SampleTableDataArgs,
-    _check_json_serializable,
     _format_response,
-    _process_sample_data,
     handle_sample_table_data,
+    process_sample_data,
 )
 
 
@@ -103,46 +102,12 @@ class TestSampleTableDataArgs:
             )
 
 
-class TestCheckJsonSerializable:
-    """Test _check_json_serializable function."""
-
-    def test_serializable_basic_types(self) -> None:
-        """Test JSON serializable basic types."""
-        assert _check_json_serializable("string") == (True, None)
-        assert _check_json_serializable(123) == (True, None)
-        assert _check_json_serializable(123.45) == (True, None)
-        assert _check_json_serializable(True) == (True, None)
-        assert _check_json_serializable(None) == (True, None)
-        assert _check_json_serializable([1, 2, 3]) == (True, None)
-        assert _check_json_serializable({"key": "value"}) == (True, None)
-
-    def test_non_serializable_types(self) -> None:
-        """Test non-JSON serializable types."""
-        # Complex number
-        is_serializable, type_name = _check_json_serializable(1 + 2j)
-        assert is_serializable is False
-        assert type_name == "complex"
-
-        # Set
-        is_serializable, type_name = _check_json_serializable({1, 2, 3})
-        assert is_serializable is False
-        assert type_name == "set"
-
-        # Function
-        def test_func() -> None:
-            pass
-
-        is_serializable, type_name = _check_json_serializable(test_func)
-        assert is_serializable is False
-        assert type_name == "function"
-
-
 class TestProcessSampleData:
-    """Test _process_sample_data function."""
+    """Test process_sample_data function."""
 
     def test_empty_data(self) -> None:
         """Test processing empty data."""
-        processed_rows, warnings = _process_sample_data([])
+        processed_rows, warnings = process_sample_data([])
         assert processed_rows == []
         assert warnings == []
 
@@ -152,7 +117,7 @@ class TestProcessSampleData:
             {"col1": "value1", "col2": 123},
             {"col1": "value2", "col2": 456},
         ]
-        processed_rows, warnings = _process_sample_data(raw_data)
+        processed_rows, warnings = process_sample_data(raw_data)
 
         assert len(processed_rows) == 2
         assert processed_rows[0] == {"col1": "value1", "col2": 123}
@@ -161,17 +126,19 @@ class TestProcessSampleData:
 
     def test_non_serializable_data(self) -> None:
         """Test processing data with non-JSON serializable types."""
+        from threading import Lock
+
         raw_data = [
             {"col1": "value1", "col2": 1 + 2j},  # complex number
-            {"col1": "value2", "col2": {1, 2, 3}},  # set
+            {"col1": "value2", "col2": Lock()},  # lock object
         ]
-        processed_rows, warnings = _process_sample_data(raw_data)
+        processed_rows, warnings = process_sample_data(raw_data)
 
         assert len(processed_rows) == 2
         assert processed_rows[0]["col1"] == "value1"
         assert processed_rows[0]["col2"] == "<unsupported_type: complex>"
         assert processed_rows[1]["col1"] == "value2"
-        assert processed_rows[1]["col2"] == "<unsupported_type: set>"
+        assert processed_rows[1]["col2"] == "<unsupported_type: lock>"
 
         assert len(warnings) == 1
         assert "対応していない型の列 'col2' が含まれています" in warnings
@@ -182,7 +149,7 @@ class TestProcessSampleData:
             {"col1": "value1", "col2": 123, "col3": 1 + 2j},
             {"col1": "value2", "col2": 456, "col3": 3 + 4j},
         ]
-        processed_rows, warnings = _process_sample_data(raw_data)
+        processed_rows, warnings = process_sample_data(raw_data)
 
         assert len(processed_rows) == 2
         assert processed_rows[0]["col1"] == "value1"
