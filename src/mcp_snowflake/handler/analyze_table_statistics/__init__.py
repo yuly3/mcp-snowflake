@@ -1,0 +1,131 @@
+"""Table statistics analysis module."""
+
+import logging
+from typing import Any
+
+import mcp.types as types
+
+from ._column_analysis import validate_and_select_columns
+from ._response_builder import build_response
+from ._sql_generator import generate_statistics_sql
+from .models import AnalyzeTableStatisticsArgs, EffectAnalyzeTableStatistics
+
+logger = logging.getLogger(__name__)
+
+# Public API exports
+__all__ = [
+    "AnalyzeTableStatisticsArgs",
+    "EffectAnalyzeTableStatistics",
+    "handle_analyze_table_statistics",
+]
+
+
+async def _execute_statistics_query(
+    effect: EffectAnalyzeTableStatistics,
+    args: AnalyzeTableStatisticsArgs,
+    columns_to_analyze: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Execute the statistics query and return the result row.
+
+    Parameters
+    ----------
+    effect : EffectAnalyzeTableStatistics
+        Effect implementation for database operations.
+    args : AnalyzeTableStatisticsArgs
+        The request arguments.
+    columns_to_analyze : list[dict[str, Any]]
+        The columns to analyze.
+
+    Returns
+    -------
+    dict[str, Any]
+        The query result row.
+
+    Raises
+    ------
+    ValueError
+        If query execution fails or returns no data.
+    """
+    # Generate and execute statistics query
+    stats_sql = generate_statistics_sql(
+        args.database,
+        args.schema_name,
+        args.table_name,
+        columns_to_analyze,
+        args.top_k_limit,
+    )
+
+    query_result = await effect.execute_query(stats_sql)
+
+    if not query_result:
+        raise ValueError("No data returned from statistics query")
+
+    return query_result[0]
+
+
+async def handle_analyze_table_statistics(
+    args: AnalyzeTableStatisticsArgs,
+    effect: EffectAnalyzeTableStatistics,
+) -> list[types.Content]:
+    """Handle table statistics analysis request.
+
+    Parameters
+    ----------
+    args : AnalyzeTableStatisticsArgs
+        The request arguments.
+    effect : EffectAnalyzeTableStatistics
+        Effect implementation for database operations.
+
+    Returns
+    -------
+    list[types.Content]
+        The response content.
+    """
+    try:
+        # Get table structure
+        table_info = await effect.describe_table(
+            args.database, args.schema_name, args.table_name
+        )
+        all_columns = table_info["columns"]
+    except Exception as e:
+        logger.exception("Error getting table information")
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Error getting table information: {e!s}",
+            )
+        ]
+
+    # Validate and select columns
+    columns_to_analyze, validation_errors = validate_and_select_columns(
+        all_columns, args.columns
+    )
+    if validation_errors is not None:
+        return validation_errors
+
+    # At this point, columns_to_analyze must not be None
+    assert columns_to_analyze is not None
+
+    try:
+        # Execute statistics query
+        result_row = await _execute_statistics_query(effect, args, columns_to_analyze)
+    except Exception as e:
+        logger.exception("Error executing statistics query")
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Error executing statistics query: {e!s}",
+            )
+        ]
+
+    try:
+        # Build and return response
+        return build_response(args, result_row, columns_to_analyze)
+    except Exception as e:
+        logger.exception("Error building response")
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Error building response: {e!s}",
+            )
+        ]

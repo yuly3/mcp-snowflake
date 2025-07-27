@@ -1,3 +1,8 @@
+from .analyze_table_statistics import (
+    AnalyzeTableStatisticsArgs,
+    EffectAnalyzeTableStatistics,
+    handle_analyze_table_statistics,
+)
 from .describe_table import (
     DescribeTableArgs,
     EffectDescribeTable,
@@ -18,7 +23,9 @@ from .sample_table_data import (
 )
 
 __all__ = [
+    "AnalyzeTableStatisticsArgs",
     "DescribeTableArgs",
+    "EffectAnalyzeTableStatistics",
     "EffectDescribeTable",
     "EffectExecuteQuery",
     "EffectListSchemas",
@@ -30,6 +37,7 @@ __all__ = [
     "ListTablesArgs",
     "ListViewsArgs",
     "SampleTableDataArgs",
+    "handle_analyze_table_statistics",
     "handle_describe_table",
     "handle_execute_query",
     "handle_list_schemas",

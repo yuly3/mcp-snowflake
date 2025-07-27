@@ -22,6 +22,7 @@ from .cli import Cli
 from .settings import Settings
 from .snowflake_client import SnowflakeClient
 from .tool import (
+    AnalyzeTableStatisticsTool,
     DescribeTableTool,
     ExecuteQueryTool,
     ListSchemasTool,
@@ -51,6 +52,7 @@ class SnowflakeServerContext:
             raise ValueError("Snowflake client is not initialized")
 
         self.tools = [
+            AnalyzeTableStatisticsTool(self.snowflake_client),
             DescribeTableTool(self.snowflake_client),
             ExecuteQueryTool(self.snowflake_client),
             ListSchemasTool(self.snowflake_client),
