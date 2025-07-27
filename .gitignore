@@ -9,4 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
+# Hypothesis testing
+.hypothesis/
+
 .mcp_snowflake.toml
