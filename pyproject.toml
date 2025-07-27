@@ -33,6 +33,7 @@ requires = [
 
 [tool.pyright]
 exclude = [
+    "./.venv",
     "./stub/sqlparse/**/*",
 ]
 stubPath = "./stub"
