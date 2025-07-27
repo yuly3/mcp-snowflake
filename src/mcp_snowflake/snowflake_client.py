@@ -273,3 +273,45 @@ class SnowflakeClient:
             query,
             timeout,
         )
+
+    async def execute_query(
+        self,
+        query: str,
+        query_timeout: timedelta | None = None,
+    ) -> list[dict[str, Any]]:
+        """Execute a SQL query and return results.
+        
+        Parameters
+        ----------
+        query : str
+            SQL query to execute
+        query_timeout : timedelta | None, optional
+            Query timeout, by default 30 seconds
+            
+        Returns
+        -------
+        list[dict[str, Any]]
+            Query results
+            
+        Raises
+        ------
+        TimeoutError
+            If query execution times out
+        Exception
+            If query execution fails
+        """
+        if query_timeout is None:
+            query_timeout = timedelta(seconds=30)
+            
+        loop = asyncio.get_event_loop()
+        try:
+            return await loop.run_in_executor(
+                self.thread_pool_executor,
+                self._execute_query_sync,
+                query,
+                query_timeout,
+            )
+        except TimeoutError:
+            raise
+        except Exception as e:
+            raise Exception(f"Failed to execute query: {e!s}") from e

@@ -23,6 +23,7 @@ from .settings import Settings
 from .snowflake_client import SnowflakeClient
 from .tool import (
     DescribeTableTool,
+    ExecuteQueryTool,
     ListSchemasTool,
     ListTablesTool,
     ListViewsTool,
@@ -51,6 +52,7 @@ class SnowflakeServerContext:
 
         self.tools = [
             DescribeTableTool(self.snowflake_client),
+            ExecuteQueryTool(self.snowflake_client),
             ListSchemasTool(self.snowflake_client),
             ListTablesTool(self.snowflake_client),
             ListViewsTool(self.snowflake_client),

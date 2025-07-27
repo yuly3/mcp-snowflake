@@ -5,11 +5,11 @@ import mcp.types as types
 import pytest
 from pydantic import ValidationError
 
+from mcp_snowflake.handler.data_processing import process_multiple_rows_data
 from mcp_snowflake.handler.sample_table_data import (
     SampleTableDataArgs,
     _format_response,
     handle_sample_table_data,
-    process_sample_data,
 )
 
 
@@ -103,13 +103,13 @@ class TestSampleTableDataArgs:
 
 
 class TestProcessSampleData:
-    """Test process_sample_data function."""
+    """Test process_multiple_rows_data function."""
 
     def test_empty_data(self) -> None:
         """Test processing empty data."""
-        processed_rows, warnings = process_sample_data([])
-        assert processed_rows == []
-        assert warnings == []
+        result = process_multiple_rows_data([])
+        assert result["processed_rows"] == []
+        assert result["warnings"] == []
 
     def test_serializable_data(self) -> None:
         """Test processing JSON serializable data."""
@@ -117,12 +117,12 @@ class TestProcessSampleData:
             {"col1": "value1", "col2": 123},
             {"col1": "value2", "col2": 456},
         ]
-        processed_rows, warnings = process_sample_data(raw_data)
+        result = process_multiple_rows_data(raw_data)
 
-        assert len(processed_rows) == 2
-        assert processed_rows[0] == {"col1": "value1", "col2": 123}
-        assert processed_rows[1] == {"col1": "value2", "col2": 456}
-        assert warnings == []
+        assert len(result["processed_rows"]) == 2
+        assert result["processed_rows"][0] == {"col1": "value1", "col2": 123}
+        assert result["processed_rows"][1] == {"col1": "value2", "col2": 456}
+        assert result["warnings"] == []
 
     def test_non_serializable_data(self) -> None:
         """Test processing data with non-JSON serializable types."""
@@ -132,16 +132,16 @@ class TestProcessSampleData:
             {"col1": "value1", "col2": 1 + 2j},  # complex number
             {"col1": "value2", "col2": Lock()},  # lock object
         ]
-        processed_rows, warnings = process_sample_data(raw_data)
+        result = process_multiple_rows_data(raw_data)
 
-        assert len(processed_rows) == 2
-        assert processed_rows[0]["col1"] == "value1"
-        assert processed_rows[0]["col2"] == "<unsupported_type: complex>"
-        assert processed_rows[1]["col1"] == "value2"
-        assert processed_rows[1]["col2"] == "<unsupported_type: lock>"
+        assert len(result["processed_rows"]) == 2
+        assert result["processed_rows"][0]["col1"] == "value1"
+        assert result["processed_rows"][0]["col2"] == "<unsupported_type: complex>"
+        assert result["processed_rows"][1]["col1"] == "value2"
+        assert result["processed_rows"][1]["col2"] == "<unsupported_type: lock>"
 
-        assert len(warnings) == 1
-        assert "対応していない型の列 'col2' が含まれています" in warnings
+        assert len(result["warnings"]) == 1
+        assert "Column 'col2' contains unsupported data type" in result["warnings"]
 
     def test_mixed_data(self) -> None:
         """Test processing data with mixed serializable and non-serializable types."""
@@ -149,18 +149,18 @@ class TestProcessSampleData:
             {"col1": "value1", "col2": 123, "col3": 1 + 2j},
             {"col1": "value2", "col2": 456, "col3": 3 + 4j},
         ]
-        processed_rows, warnings = process_sample_data(raw_data)
+        result = process_multiple_rows_data(raw_data)
 
-        assert len(processed_rows) == 2
-        assert processed_rows[0]["col1"] == "value1"
-        assert processed_rows[0]["col2"] == 123
-        assert processed_rows[0]["col3"] == "<unsupported_type: complex>"
-        assert processed_rows[1]["col1"] == "value2"
-        assert processed_rows[1]["col2"] == 456
-        assert processed_rows[1]["col3"] == "<unsupported_type: complex>"
+        assert len(result["processed_rows"]) == 2
+        assert result["processed_rows"][0]["col1"] == "value1"
+        assert result["processed_rows"][0]["col2"] == 123
+        assert result["processed_rows"][0]["col3"] == "<unsupported_type: complex>"
+        assert result["processed_rows"][1]["col1"] == "value2"
+        assert result["processed_rows"][1]["col2"] == 456
+        assert result["processed_rows"][1]["col3"] == "<unsupported_type: complex>"
 
-        assert len(warnings) == 1
-        assert "対応していない型の列 'col3' が含まれています" in warnings
+        assert len(result["warnings"]) == 1
+        assert "Column 'col3' contains unsupported data type" in result["warnings"]
 
 
 class TestFormatResponse:
@@ -278,7 +278,7 @@ class TestHandleSampleTableData:
         response_data = json.loads(result[0].text)
         assert len(response_data["sample_data"]["warnings"]) == 1
         assert (
-            "対応していない型の列 'col2' が含まれています"
+            "Column 'col2' contains unsupported data type"
             in response_data["sample_data"]["warnings"]
         )
         assert (

@@ -5,74 +5,9 @@ from typing import Any, Protocol, TypedDict
 import mcp.types as types
 from pydantic import BaseModel
 
-from ..json_converter import _is_json_compatible_type, converter
+from .data_processing import process_multiple_rows_data
 
 logger = logging.getLogger(__name__)
-
-
-def process_row_data(
-    raw_row: dict[str, Any],
-) -> tuple[dict[str, Any], list[str]]:
-    """
-    Process a single row of data, converting values to JSON-safe format.
-
-    Parameters
-    ----------
-    raw_row : dict[str, Any]
-        Raw row data from Snowflake
-
-    Returns
-    -------
-    tuple[dict[str, Any], list[str]]
-        Tuple containing (processed_row, warnings_list)
-    """
-    processed_row: dict[str, Any] = {}
-    warnings: list[str] = []
-
-    for column, value in raw_row.items():
-        try:
-            processed_value = converter.unstructure(value)
-            # Check if the unstructured result is JSON-compatible
-            if _is_json_compatible_type(processed_value):
-                processed_row[column] = processed_value
-            else:
-                processed_row[column] = f"<unsupported_type: {type(value).__name__}>"
-                warnings.append(f"対応していない型の列 '{column}' が含まれています")
-        except Exception:
-            processed_row[column] = f"<unsupported_type: {type(value).__name__}>"
-            warnings.append(f"対応していない型の列 '{column}' が含まれています")
-
-    return processed_row, warnings
-
-
-def process_sample_data(
-    raw_rows: list[dict[str, Any]],
-) -> tuple[list[dict[str, Any]], list[str]]:
-    """
-    Process multiple rows of sample data using cattrs for type conversion.
-
-    Parameters
-    ----------
-    raw_rows : list[dict[str, Any]]
-        Raw sample data from Snowflake
-
-    Returns
-    -------
-    tuple[list[dict[str, Any]], list[str]]
-        Tuple containing (processed_rows, warnings_list)
-    """
-    if not raw_rows:
-        return [], []
-
-    processed_rows: list[dict[str, Any]] = []
-    warnings_set: set[str] = set()
-
-    for row in raw_rows:
-        processed_row, row_warnings = process_row_data(row)
-        processed_rows.append(processed_row)
-        warnings_set.update(row_warnings)
-
-    return processed_rows, list(warnings_set)
 
 
 class SampleDataDict(TypedDict):
@@ -188,11 +123,11 @@ async def handle_sample_table_data(
             args.columns,
         )
 
-        processed_data, warnings = process_sample_data(raw_data)
+        result = process_multiple_rows_data(raw_data)
 
         response = _format_response(
-            processed_data,
-            warnings,
+            result["processed_rows"],
+            result["warnings"],
             args.database,
             args.schema_name,
             args.table_name,
