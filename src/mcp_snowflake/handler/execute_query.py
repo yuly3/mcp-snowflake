@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+from datetime import timedelta
 from typing import Any, Protocol, TypedDict
 
 import mcp.types as types
@@ -120,32 +121,12 @@ async def handle_execute_query(
         ]
 
     try:
-        from datetime import timedelta
-
-        start_time = time.time()
+        start_time = time.perf_counter()
         raw_data = await effect_handler.execute_query(
             args.sql,
             timedelta(seconds=args.timeout_seconds),
         )
-        end_time = time.time()
-
-        execution_time_ms = int((end_time - start_time) * 1000)
-
-        result = process_multiple_rows_data(raw_data)
-
-        response = _format_query_response(
-            result["processed_rows"],
-            result["warnings"],
-            args.sql,
-            execution_time_ms,
-        )
-
-        return [
-            types.TextContent(
-                type="text",
-                text=json.dumps(response, indent=2, ensure_ascii=False),
-            )
-        ]
+        end_time = time.perf_counter()
 
     except Exception as e:
         logger.exception("Error executing query")
@@ -155,3 +136,21 @@ async def handle_execute_query(
                 text=f"Error: Failed to execute query: {e}",
             )
         ]
+
+    execution_time_ms = int((end_time - start_time) * 1000)
+
+    result = process_multiple_rows_data(raw_data)
+
+    response = _format_query_response(
+        result["processed_rows"],
+        result["warnings"],
+        args.sql,
+        execution_time_ms,
+    )
+
+    return [
+        types.TextContent(
+            type="text",
+            text=json.dumps(response, indent=2, ensure_ascii=False),
+        )
+    ]

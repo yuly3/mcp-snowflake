@@ -123,24 +123,6 @@ async def handle_sample_table_data(
             args.columns,
         )
 
-        result = process_multiple_rows_data(raw_data)
-
-        response = _format_response(
-            result["processed_rows"],
-            result["warnings"],
-            args.database,
-            args.schema_name,
-            args.table_name,
-            args.sample_size,
-        )
-
-        return [
-            types.TextContent(
-                type="text",
-                text=json.dumps(response, indent=2, ensure_ascii=False),
-            )
-        ]
-
     except Exception as e:
         logger.exception("Error handling sample_table_data")
         return [
@@ -149,3 +131,21 @@ async def handle_sample_table_data(
                 text=f"Error: Failed to sample table data: {e}",
             )
         ]
+
+    result = process_multiple_rows_data(raw_data)
+
+    response = _format_response(
+        result["processed_rows"],
+        result["warnings"],
+        args.database,
+        args.schema_name,
+        args.table_name,
+        args.sample_size,
+    )
+
+    return [
+        types.TextContent(
+            type="text",
+            text=json.dumps(response, indent=2, ensure_ascii=False),
+        )
+    ]
