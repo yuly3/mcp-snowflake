@@ -34,7 +34,7 @@ class DescribeTableTool(Tool):
     @property
     def definition(self) -> types.Tool:
         return types.Tool(
-            name="describe_table",
+            name=self.name,
             description="Retrieve the structure (columns, data types, etc.) of a specified table",
             inputSchema={
                 "type": "object",

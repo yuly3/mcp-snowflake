@@ -3,7 +3,7 @@ import logging
 from typing import Any, Protocol, TypedDict
 
 import mcp.types as types
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .data_processing import process_multiple_rows_data
 
@@ -33,8 +33,8 @@ class SampleTableDataArgs(BaseModel):
     database: str
     schema_name: str
     table_name: str
-    sample_size: int = 10
-    columns: list[str] | None = None
+    sample_size: int = Field(default=10, ge=1)
+    columns: list[str] = Field(default_factory=list)
 
 
 class EffectSampleTableData(Protocol):
@@ -44,7 +44,7 @@ class EffectSampleTableData(Protocol):
         schema: str,
         table_name: str,
         sample_size: int,
-        columns: list[str] | None,
+        columns: list[str],
     ) -> list[dict[str, Any]]: ...
 
 
@@ -79,7 +79,7 @@ def _format_response(
     SampleTableDataJsonResponse
         Formatted response structure
     """
-    response: SampleTableDataJsonResponse = {
+    return {
         "sample_data": {
             "database": database,
             "schema": schema,
@@ -91,8 +91,6 @@ def _format_response(
             "warnings": warnings,
         }
     }
-
-    return response
 
 
 async def handle_sample_table_data(

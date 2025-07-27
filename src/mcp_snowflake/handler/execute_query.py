@@ -1,13 +1,13 @@
 import json
 import logging
-import time
 from datetime import timedelta
 from typing import Any, Protocol, TypedDict
 
 import mcp.types as types
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..sql_analyzer import SQLWriteDetector
+from ..stopwatch import StopWatch
 from .data_processing import process_multiple_rows_data
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class ExecuteQueryJsonResponse(TypedDict):
 
 class ExecuteQueryArgs(BaseModel):
     sql: str
-    timeout_seconds: int = 30
+    timeout_seconds: int = Field(default=30, ge=1)
 
 
 class EffectExecuteQuery(Protocol):
@@ -68,7 +68,7 @@ def _format_query_response(
     ExecuteQueryJsonResponse
         Formatted response structure
     """
-    response: ExecuteQueryJsonResponse = {
+    return {
         "query_result": {
             "sql": sql,
             "execution_time_ms": execution_time_ms,
@@ -78,8 +78,6 @@ def _format_query_response(
             "warnings": warnings,
         }
     }
-
-    return response
 
 
 async def handle_execute_query(
@@ -120,14 +118,13 @@ async def handle_execute_query(
             )
         ]
 
+    stopwatch = StopWatch.start()
+
     try:
-        start_time = time.perf_counter()
         raw_data = await effect_handler.execute_query(
             args.sql,
             timedelta(seconds=args.timeout_seconds),
         )
-        end_time = time.perf_counter()
-
     except Exception as e:
         logger.exception("Error executing query")
         return [
@@ -137,7 +134,7 @@ async def handle_execute_query(
             )
         ]
 
-    execution_time_ms = int((end_time - start_time) * 1000)
+    execution_time_ms = int(stopwatch.elapsed_ms())
 
     result = process_multiple_rows_data(raw_data)
 

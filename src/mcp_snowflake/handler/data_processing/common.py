@@ -42,15 +42,12 @@ def process_row_data(raw_row: dict[str, Any]) -> RowProcessingResult:
     warnings: list[str] = []
 
     for column, value in raw_row.items():
-        try:
-            processed_value = converter.unstructure(value)
-            # Check if the unstructured result is JSON-compatible
-            if _is_json_compatible_type(processed_value):
-                processed_row[column] = processed_value
-            else:
-                processed_row[column] = f"<unsupported_type: {type(value).__name__}>"
-                warnings.append(f"Column '{column}' contains unsupported data type")
-        except Exception:
+        processed_value = converter.unstructure(value)
+
+        # Check if the unstructured result is JSON-compatible
+        if _is_json_compatible_type(processed_value):
+            processed_row[column] = processed_value
+        else:
             processed_row[column] = f"<unsupported_type: {type(value).__name__}>"
             warnings.append(f"Column '{column}' contains unsupported data type")
 

@@ -34,7 +34,7 @@ class ListSchemasTool(Tool):
     @property
     def definition(self) -> types.Tool:
         return types.Tool(
-            name="list_schemas",
+            name=self.name,
             description="Retrieve a list of schemas from a specified database",
             inputSchema={
                 "type": "object",

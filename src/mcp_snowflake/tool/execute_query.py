@@ -34,7 +34,7 @@ class ExecuteQueryTool(Tool):
     @property
     def definition(self) -> types.Tool:
         return types.Tool(
-            name="execute_query",
+            name=self.name,
             description="Execute a read-only SQL query and return the results. Only SELECT, SHOW, DESCRIBE, EXPLAIN and similar read operations are allowed.",
             inputSchema={
                 "type": "object",

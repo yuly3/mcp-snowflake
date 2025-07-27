@@ -54,13 +54,13 @@ class SQLAnalysisResult(TypedDict):
         Write操作を含むかどうか
     statements : list[StatementInfo]
         各ステートメントの情報
-    error : str | None, optional
+    error : str
         エラーメッセージ（エラー時のみ）
     """
 
     is_write: bool
     statements: list[StatementInfo]
-    error: NotRequired[str | None]
+    error: NotRequired[str]
 
 
 class SQLAnalysisError(Exception):
@@ -163,7 +163,7 @@ class SQLWriteDetector:
         # ステートメントタイプによる判定
         stmt_type = statement.get_type()
 
-        if stmt_type in (
+        if stmt_type in {
             "INSERT",
             "UPDATE",
             "DELETE",
@@ -172,7 +172,7 @@ class SQLWriteDetector:
             "ALTER",
             "TRUNCATE",
             "MERGE",
-        ):
+        }:
             return True
 
         # UNKNOWNの場合は最初のトークンで判定

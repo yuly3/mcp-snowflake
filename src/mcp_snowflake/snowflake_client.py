@@ -223,8 +223,8 @@ class SnowflakeClient:
         database: str,
         schema: str,
         table_name: str,
-        sample_size: int = 10,
-        columns: list[str] | None = None,
+        sample_size: int,
+        columns: list[str],
     ) -> list[dict[str, Any]]:
         """
         Retrieve sample data from a Snowflake table using SAMPLE ROW clause.
@@ -237,10 +237,10 @@ class SnowflakeClient:
             Schema name
         table_name : str
             Table name
-        sample_size : int, optional
-            Number of sample rows to retrieve, by default 10
-        columns : list[str] | None, optional
-            List of column names to select (if None, selects all columns), by default None
+        sample_size : int
+            Number of sample rows to retrieve
+        columns : list[str] | None
+            List of column names to select (if None, selects all columns)
 
         Returns
         -------
@@ -280,19 +280,19 @@ class SnowflakeClient:
         query_timeout: timedelta | None = None,
     ) -> list[dict[str, Any]]:
         """Execute a SQL query and return results.
-        
+
         Parameters
         ----------
         query : str
             SQL query to execute
         query_timeout : timedelta | None, optional
             Query timeout, by default 30 seconds
-            
+
         Returns
         -------
         list[dict[str, Any]]
             Query results
-            
+
         Raises
         ------
         TimeoutError
@@ -302,7 +302,7 @@ class SnowflakeClient:
         """
         if query_timeout is None:
             query_timeout = timedelta(seconds=30)
-            
+
         loop = asyncio.get_event_loop()
         try:
             return await loop.run_in_executor(

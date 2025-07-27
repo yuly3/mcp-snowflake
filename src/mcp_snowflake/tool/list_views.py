@@ -34,7 +34,7 @@ class ListViewsTool(Tool):
     @property
     def definition(self) -> types.Tool:
         return types.Tool(
-            name="list_views",
+            name=self.name,
             description="Retrieve a list of views from a specified database and schema",
             inputSchema={
                 "type": "object",

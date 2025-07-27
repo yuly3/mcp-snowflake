@@ -30,7 +30,7 @@ class MockEffectSampleTableData:
         schema: str,  # noqa: ARG002
         table_name: str,  # noqa: ARG002
         sample_size: int,  # noqa: ARG002
-        columns: list[str] | None,  # noqa: ARG002
+        columns: list[str],  # noqa: ARG002
     ) -> list[dict[str, Any]]:
         if self.should_raise:
             raise self.should_raise
@@ -51,7 +51,7 @@ class TestSampleTableDataArgs:
         assert args.schema_name == "test_schema"
         assert args.table_name == "test_table"
         assert args.sample_size == 10  # default
-        assert args.columns is None  # default
+        assert args.columns == []  # default
 
     def test_valid_args_with_optional_params(self) -> None:
         """Test valid arguments with optional parameters."""
@@ -172,10 +172,15 @@ class TestFormatResponse:
             {"col1": "value1", "col2": 123},
             {"col1": "value2", "col2": 456},
         ]
-        warnings = []
+        warnings: list[str] = []
 
         response = _format_response(
-            processed_rows, warnings, "test_db", "test_schema", "test_table", 10
+            processed_rows,
+            warnings,
+            "test_db",
+            "test_schema",
+            "test_table",
+            10,
         )
 
         assert response["sample_data"]["database"] == "test_db"
@@ -193,7 +198,12 @@ class TestFormatResponse:
         warnings = ["対応していない型の列 'col2' が含まれています"]
 
         response = _format_response(
-            processed_rows, warnings, "test_db", "test_schema", "test_table", 5
+            processed_rows,
+            warnings,
+            "test_db",
+            "test_schema",
+            "test_table",
+            5,
         )
 
         assert response["sample_data"]["database"] == "test_db"
@@ -207,11 +217,16 @@ class TestFormatResponse:
 
     def test_format_response_empty_data(self) -> None:
         """Test formatting response with empty data."""
-        processed_rows = []
-        warnings = []
+        processed_rows: list[dict[str, Any]] = []
+        warnings: list[str] = []
 
         response = _format_response(
-            processed_rows, warnings, "test_db", "test_schema", "test_table", 10
+            processed_rows,
+            warnings,
+            "test_db",
+            "test_schema",
+            "test_table",
+            10,
         )
 
         assert response["sample_data"]["database"] == "test_db"

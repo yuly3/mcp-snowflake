@@ -38,7 +38,7 @@ class SampleTableDataTool(Tool):
     @property
     def definition(self) -> types.Tool:
         return types.Tool(
-            name="sample_table_data",
+            name=self.name,
             description="Retrieve sample data from a specified table using SAMPLE ROW clause",
             inputSchema={
                 "type": "object",

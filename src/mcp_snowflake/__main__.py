@@ -102,14 +102,10 @@ async def main() -> None:
     settings = Settings.build(settings_config)
 
     with ThreadPoolExecutor(thread_name_prefix="mcp-snowflake") as executor:
-        try:
-            server_context.snowflake_client = SnowflakeClient(
-                executor,
-                settings.snowflake,
-            )
-        except Exception as e:
-            logger.exception(f"Failed to initialize Snowflake client: {e}")
-            raise
+        server_context.snowflake_client = SnowflakeClient(
+            executor,
+            settings.snowflake,
+        )
 
         logger.info("Snowflake client initialized successfully")
 
