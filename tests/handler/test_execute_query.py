@@ -1,8 +1,9 @@
 import json
 from datetime import timedelta
-from unittest.mock import AsyncMock
+from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from mcp_snowflake.handler.data_processing import process_multiple_rows_data
 from mcp_snowflake.handler.execute_query import (
@@ -12,6 +13,57 @@ from mcp_snowflake.handler.execute_query import (
 )
 
 
+class MockEffectHandler:
+    """Mock implementation of EffectExecuteQuery protocol."""
+
+    def __init__(
+        self,
+        query_result: list[dict[str, Any]] | None = None,
+        should_raise: Exception | None = None,
+    ) -> None:
+        self.query_result = query_result or []
+        self.should_raise = should_raise
+        self.called_with_sql: str | None = None
+        self.called_with_timeout: timedelta | None = None
+
+    async def execute_query(
+        self,
+        query: str,
+        query_timeout: timedelta,
+    ) -> list[dict[str, Any]]:
+        self.called_with_sql = query
+        self.called_with_timeout = query_timeout
+        if self.should_raise:
+            raise self.should_raise
+        return self.query_result
+
+
+class TestExecuteQueryArgs:
+    """Test ExecuteQueryArgs validation."""
+
+    def test_valid_args(self) -> None:
+        """Test valid arguments."""
+        args = ExecuteQueryArgs(sql="SELECT 1")
+        assert args.sql == "SELECT 1"
+        assert args.timeout_seconds == 30  # default value
+
+    def test_valid_args_with_timeout(self) -> None:
+        """Test valid arguments with custom timeout."""
+        args = ExecuteQueryArgs(sql="SELECT 1", timeout_seconds=60)
+        assert args.sql == "SELECT 1"
+        assert args.timeout_seconds == 60
+
+    def test_missing_sql(self) -> None:
+        """Test missing sql argument."""
+        with pytest.raises(ValidationError):
+            _ = ExecuteQueryArgs.model_validate({})
+
+    def test_empty_sql(self) -> None:
+        """Test empty sql string."""
+        args = ExecuteQueryArgs(sql="")
+        assert args.sql == ""
+
+
 class TestExecuteQueryHandler:
     """Test execute_query handler functionality."""
 
@@ -19,11 +71,11 @@ class TestExecuteQueryHandler:
     async def test_handle_execute_query_success(self) -> None:
         """Test successful query execution."""
         # Mock effect handler
-        effect_handler = AsyncMock()
-        effect_handler.execute_query.return_value = [
+        mock_data = [
             {"id": 1, "name": "Alice", "age": 30},
             {"id": 2, "name": "Bob", "age": 25},
         ]
+        effect_handler = MockEffectHandler(query_result=mock_data)
 
         # Test args
         args = ExecuteQueryArgs(sql="SELECT id, name, age FROM users LIMIT 2")
@@ -53,8 +105,8 @@ class TestExecuteQueryHandler:
     @pytest.mark.asyncio
     async def test_handle_execute_query_write_sql_blocked(self) -> None:
         """Test that write SQL is blocked."""
-        # Mock effect handler
-        effect_handler = AsyncMock()
+        # Mock effect handler (should not be called for write operations)
+        effect_handler = MockEffectHandler()
 
         # Test args with write SQL
         args = ExecuteQueryArgs(sql="INSERT INTO users (name) VALUES ('Charlie')")
@@ -69,14 +121,14 @@ class TestExecuteQueryHandler:
         assert "Write operations are not allowed" in content.text
 
         # Verify effect handler was not called
-        effect_handler.execute_query.assert_not_called()
+        assert effect_handler.called_with_sql is None
+        assert effect_handler.called_with_timeout is None
 
     @pytest.mark.asyncio
     async def test_handle_execute_query_empty_result(self) -> None:
         """Test query execution with empty result."""
-        # Mock effect handler
-        effect_handler = AsyncMock()
-        effect_handler.execute_query.return_value = []
+        # Mock effect handler with empty result
+        effect_handler = MockEffectHandler(query_result=[])
 
         # Test args
         args = ExecuteQueryArgs(sql="SELECT * FROM empty_table")
@@ -100,8 +152,7 @@ class TestExecuteQueryHandler:
     async def test_handle_execute_query_with_timeout(self) -> None:
         """Test query execution with custom timeout."""
         # Mock effect handler
-        effect_handler = AsyncMock()
-        effect_handler.execute_query.return_value = [{"result": "success"}]
+        effect_handler = MockEffectHandler(query_result=[{"result": "success"}])
 
         # Test args with custom timeout
         args = ExecuteQueryArgs(sql="SELECT 1", timeout_seconds=60)
@@ -113,19 +164,15 @@ class TestExecuteQueryHandler:
         assert len(result) == 1
 
         # Verify effect handler was called with correct timeout
-        effect_handler.execute_query.assert_called_once()
-        call_args = effect_handler.execute_query.call_args
-        assert call_args[0][0] == "SELECT 1"  # SQL
-        assert call_args[0][1] == timedelta(seconds=60)  # timeout
+        assert effect_handler.called_with_sql == "SELECT 1"
+        assert effect_handler.called_with_timeout == timedelta(seconds=60)
 
     @pytest.mark.asyncio
     async def test_handle_execute_query_execution_error(self) -> None:
         """Test error handling during query execution."""
         # Mock effect handler to raise exception
-        effect_handler = AsyncMock()
-        effect_handler.execute_query.side_effect = Exception(
-            "Database connection failed"
-        )
+        error_message = "Database connection failed"
+        effect_handler = MockEffectHandler(should_raise=Exception(error_message))
 
         # Test args
         args = ExecuteQueryArgs(sql="SELECT 1")
@@ -172,7 +219,10 @@ class TestExecuteQueryHandler:
         execution_time_ms = 150
 
         response = _format_query_response(
-            processed_rows, warnings, sql, execution_time_ms
+            processed_rows,
+            warnings,
+            sql,
+            execution_time_ms,
         )
 
         assert "query_result" in response
