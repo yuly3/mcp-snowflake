@@ -91,26 +91,6 @@ converter.register_unstructure_hook(Decimal, convert_decimal_to_float)
 converter.register_unstructure_hook(UUID, convert_uuid_to_str)
 
 
-def is_json_serializable(value: Any) -> tuple[bool, str | None]:
-    """
-    Check if a value can be converted to JSON using cattrs.
-
-    Parameters
-    ----------
-    value : Any
-        The value to check for JSON serializability
-
-    Returns
-    -------
-    tuple[bool, str | None]
-        Tuple containing (is_serializable, type_name_if_not_serializable)
-    """
-    unstructured = converter.unstructure(value)
-    if _is_json_compatible_type(unstructured):
-        return True, None
-    return False, str(type(value).__name__)
-
-
 def _is_json_compatible_type(value: Any) -> bool:
     """
     Check if a value is a JSON-compatible type.
@@ -153,6 +133,27 @@ def convert_to_json_safe(value: Any) -> Any:
     -------
     Any
         JSON-safe representation of the value
+
+    Examples
+    --------
+    >>> convert_to_json_safe("hello")
+    'hello'
+    >>> convert_to_json_safe(42)
+    42
+    >>> convert_to_json_safe([1, 2, 3])
+    [1, 2, 3]
+    >>> convert_to_json_safe({"key": "value"})
+    {'key': 'value'}
+    >>> from datetime import datetime
+    >>> dt = datetime(2025, 8, 10, 12, 30, 45)
+    >>> convert_to_json_safe(dt)
+    '2025-08-10T12:30:45'
+    >>> from decimal import Decimal
+    >>> convert_to_json_safe(Decimal("123.45"))
+    123.45
+    >>> import uuid
+    >>> convert_to_json_safe(uuid.UUID('12345678-1234-5678-1234-567812345678'))
+    '12345678-1234-5678-1234-567812345678'
     """
     unstructured = converter.unstructure(value)
     if _is_json_compatible_type(unstructured):

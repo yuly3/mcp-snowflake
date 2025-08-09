@@ -2,13 +2,13 @@
 
 from typing import TYPE_CHECKING, cast
 
-from src.mcp_snowflake.handler.analyze_table_statistics._result_parser import (
+from mcp_snowflake.handler.analyze_table_statistics._result_parser import (
     parse_statistics_result,
 )
-from src.mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
+from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
 
 if TYPE_CHECKING:
-    from src.mcp_snowflake.handler.analyze_table_statistics._types import (
+    from mcp_snowflake.handler.analyze_table_statistics._types import (
         BooleanStatsDict,
         DateStatsDict,
         NumericStatsDict,

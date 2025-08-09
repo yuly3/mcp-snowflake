@@ -53,7 +53,7 @@ class SnowflakeDataType:
     raw_type: str
 
     def __attrs_post_init__(self) -> None:
-        if not self.raw_type or not self.raw_type.strip():
+        if not self.raw_type.strip():
             raise ValueError("raw_type cannot be empty")
 
     @property
@@ -144,7 +144,8 @@ class StatisticsSupportDataType:
 
     @classmethod
     def from_snowflake_type(
-        cls, sf_type: SnowflakeDataType
+        cls,
+        sf_type: SnowflakeDataType,
     ) -> "StatisticsSupportDataType":
         """Convert SnowflakeDataType to StatisticsSupportDataType."""
         if sf_type.is_numeric():

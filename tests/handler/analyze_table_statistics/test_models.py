@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.mcp_snowflake.handler.analyze_table_statistics.models import (
+from mcp_snowflake.handler.analyze_table_statistics.models import (
     AnalyzeTableStatisticsArgs,
 )
 

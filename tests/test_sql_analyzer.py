@@ -1,4 +1,4 @@
-"""SQL Write検知器のテスト."""
+"""Tests for SQL Write Detector."""
 
 import pytest
 
@@ -6,13 +6,13 @@ from mcp_snowflake.sql_analyzer import SQLAnalysisError, SQLWriteDetector
 
 
 class TestSQLWriteDetector:
-    """SQLWriteDetectorクラスのテスト"""
+    """Tests for SQLWriteDetector class"""
 
     def test_write_sql_detection(self) -> None:
-        """Write SQLの検出テスト"""
+        """Test for Write SQL detection"""
         detector = SQLWriteDetector()
 
-        # Write操作
+        # Write operations
         write_sqls = [
             "INSERT INTO table1 VALUES (1, 'test')",
             "UPDATE table1 SET col1 = 'new'",
@@ -30,10 +30,10 @@ class TestSQLWriteDetector:
             assert detector.is_write_sql(sql), f"Should detect as write SQL: {sql}"
 
     def test_read_sql_detection(self) -> None:
-        """Read SQLの検出テスト"""
+        """Test for Read SQL detection"""
         detector = SQLWriteDetector()
 
-        # Read操作
+        # Read operations
         read_sqls = [
             "SELECT * FROM table1",
             "SELECT col1, col2 FROM table1 WHERE id = 1",
@@ -48,10 +48,10 @@ class TestSQLWriteDetector:
             assert not detector.is_write_sql(sql), f"Should detect as read SQL: {sql}"
 
     def test_snowflake_specific_syntax(self) -> None:
-        """Snowflake専用構文のテスト"""
+        """Test for Snowflake-specific syntax"""
         detector = SQLWriteDetector()
 
-        # Snowflake Write操作
+        # Snowflake Write operations
         snowflake_write_sqls = [
             "COPY INTO mytable FROM @mystage/myfile.csv",
             "CREATE STAGE mystage URL='s3://mybucket/mypath'",
@@ -61,7 +61,7 @@ class TestSQLWriteDetector:
         for sql in snowflake_write_sqls:
             assert detector.is_write_sql(sql), f"Should detect as write SQL: {sql}"
 
-        # Snowflake Read操作
+        # Snowflake Read operations
         snowflake_read_sqls = [
             "SELECT * FROM table1, LATERAL FLATTEN(input => table1.json_column)",
             "SELECT json_column:key::string FROM table1",
@@ -74,7 +74,7 @@ class TestSQLWriteDetector:
             assert not detector.is_write_sql(sql), f"Should detect as read SQL: {sql}"
 
     def test_empty_sql(self) -> None:
-        """空のSQLのテスト"""
+        """Test for empty SQL"""
         detector = SQLWriteDetector()
 
         with pytest.raises(SQLAnalysisError, match="Empty SQL statement"):
@@ -84,22 +84,22 @@ class TestSQLWriteDetector:
             _ = detector.is_write_sql("   ")
 
     def test_multiple_statements(self) -> None:
-        """複数のステートメントのテスト"""
+        """Test for multiple statements"""
         detector = SQLWriteDetector()
 
-        # 複数のRead操作
+        # Multiple Read operations
         read_sql = "SELECT * FROM table1; SELECT count(*) FROM table2;"
         assert not detector.is_write_sql(read_sql)
 
-        # Read操作とWrite操作の混合
+        # Mix of Read and Write operations
         mixed_sql = "SELECT * FROM table1; INSERT INTO table2 VALUES (1, 'test');"
         assert detector.is_write_sql(mixed_sql)
 
     def test_analyze_sql(self) -> None:
-        """analyze_sqlメソッドのテスト"""
+        """Test for analyze_sql method"""
         detector = SQLWriteDetector()
 
-        # Write SQLの解析
+        # Write SQL analysis
         result = detector.analyze_sql("INSERT INTO table1 VALUES (1, 'test')")
         assert result["is_write"] is True
         assert len(result["statements"]) == 1
@@ -108,7 +108,7 @@ class TestSQLWriteDetector:
         assert result["statements"][0]["is_write"] is True
         assert "error" not in result
 
-        # Read SQLの解析
+        # Read SQL analysis
         result = detector.analyze_sql("SELECT * FROM table1")
         assert result["is_write"] is False
         assert len(result["statements"]) == 1
@@ -117,8 +117,8 @@ class TestSQLWriteDetector:
         assert result["statements"][0]["is_write"] is False
         assert "error" not in result
 
-        # エラーケース
+        # Error case
         result = detector.analyze_sql("")
-        assert result["is_write"] is True  # エラー時は安全のためTrue
+        assert result["is_write"] is True  # Return True for safety when error occurs
         assert "error" in result
         assert result["error"] is not None

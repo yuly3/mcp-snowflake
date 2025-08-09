@@ -168,7 +168,7 @@ The describe_table tool returns a structured JSON format:
 {
   "table_info": {
     "database": "MY_DATABASE",
-    "schema": "PUBLIC", 
+    "schema": "PUBLIC",
     "name": "CUSTOMERS",
     "column_count": 4,
     "columns": [
@@ -256,7 +256,7 @@ Analyze table statistics using Snowflake's high-performance approximation functi
   "name": "analyze_table_statistics",
   "arguments": {
     "database": "MY_DATABASE",
-    "schema_name": "PUBLIC", 
+    "schema_name": "PUBLIC",
     "table_name": "SALES_DATA",
     "columns": ["amount", "region", "order_date"],
     "top_k_limit": 5
@@ -276,20 +276,20 @@ Returns comprehensive statistics tailored to each column type:
 ### Development Environment Setup
 
 ```bash
-# Create and activate virtual environment
-uv venv
-source .venv/bin/activate  # Linux/Mac
-# or .venv\Scripts\activate  # Windows
-
-# Install development dependencies
-uv sync --dev
+uv sync --all-groups --all-packages
 ```
 
 ### Code Formatting
 
 ```bash
-uv run ruff format
-uv run ruff check --fix
+uv run ruff format .
+uv run ruff check --fix .
+```
+
+### Code Testing
+
+```bash
+uv run pytest --doctest-modules .
 ```
 
 ## Troubleshooting

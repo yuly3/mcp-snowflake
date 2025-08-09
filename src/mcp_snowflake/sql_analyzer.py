@@ -1,21 +1,21 @@
-"""SQL解析機能モジュール.
+"""SQL analysis functionality module.
 
-SQLクエリを解析してWrite操作を検出する機能を提供します。
-Snowflake専用構文にも対応しています。
+Provides functionality to analyze SQL queries and detect Write operations.
+Also supports Snowflake-specific syntax.
 
 Classes
 -------
 SQLWriteDetector
-    SQL Write操作検知器
+    SQL Write operation detector
 SQLAnalysisError
-    SQL解析エラー
+    SQL analysis error
 
 TypedDict Classes
 -----------------
 StatementInfo
-    SQLステートメントの情報
+    SQL statement information
 SQLAnalysisResult
-    SQL解析結果
+    SQL analysis result
 """
 
 from typing import ClassVar, NotRequired, TypedDict
@@ -25,18 +25,18 @@ import sqlparse.sql
 
 
 class StatementInfo(TypedDict):
-    """SQLステートメントの情報.
+    """SQL statement information.
 
     Attributes
     ----------
     index : int
-        ステートメントのインデックス
+        Statement index
     type : str
-        ステートメントのタイプ（SELECT, INSERT等）
+        Statement type (SELECT, INSERT, etc.)
     first_token : str | None
-        最初のトークンの値
+        First token value
     is_write : bool
-        Write操作かどうか
+        Whether it's a write operation
     """
 
     index: int
@@ -46,16 +46,16 @@ class StatementInfo(TypedDict):
 
 
 class SQLAnalysisResult(TypedDict):
-    """SQL解析結果.
+    """SQL analysis result.
 
     Attributes
     ----------
     is_write : bool
-        Write操作を含むかどうか
+        Whether it contains write operations
     statements : list[StatementInfo]
-        各ステートメントの情報
+        Information for each statement
     error : str
-        エラーメッセージ（エラー時のみ）
+        Error message (only when error occurs)
     """
 
     is_write: bool
@@ -64,75 +64,75 @@ class SQLAnalysisResult(TypedDict):
 
 
 class SQLAnalysisError(Exception):
-    """SQL解析エラー."""
+    """SQL analysis error."""
 
 
 class SQLWriteDetector:
-    """SQL Write操作検知器.
+    """SQL Write operation detector.
 
-    SQLクエリを解析してWrite操作を検出するクラス。
-    Snowflake専用構文にも対応しています。
+    Class that analyzes SQL queries to detect Write operations.
+    Also supports Snowflake-specific syntax.
 
     Attributes
     ----------
     WRITE_KEYWORDS : ClassVar[set[str]]
-        Write操作と判定するキーワード
+        Keywords to be determined as Write operations
     READ_KEYWORDS : ClassVar[set[str]]
-        Read操作と判定するキーワード
+        Keywords to be determined as Read operations
     """
 
-    # Write操作と判定するキーワード
+    # Keywords to be determined as Write operations
     WRITE_KEYWORDS: ClassVar[set[str]] = {
-        # DML Write操作
+        # DML Write operations
         "INSERT",
         "UPDATE",
         "DELETE",
         "MERGE",
         "TRUNCATE",
-        # DDL操作
+        # DDL operations
         "CREATE",
         "DROP",
         "ALTER",
-        # Snowflake専用のWrite操作
-        "COPY",  # COPY INTOは通常Write操作
-        # その他のWrite操作
+        # Snowflake-specific Write operations
+        "COPY",  # COPY INTO is usually a Write operation
+        # Other Write operations
         "GRANT",
-        "REVOKE",  # 権限操作
+        "REVOKE",  # Permission operations
     }
 
-    # Read操作と判定するキーワード
+    # Keywords to be determined as Read operations
     READ_KEYWORDS: ClassVar[set[str]] = {
         "SELECT",
-        "WITH",  # クエリ操作
+        "WITH",  # Query operations
         "SHOW",
         "DESCRIBE",
-        "DESC",  # メタデータ操作
-        "EXPLAIN",  # 実行計画
+        "DESC",  # Metadata operations
+        "EXPLAIN",  # Execution plan
     }
 
     def is_write_sql(self, sql: str) -> bool:
-        """SQLがWrite操作かどうかを判定する.
+        """Determine whether SQL is a Write operation.
 
         Parameters
         ----------
         sql : str
-            判定対象のSQL文
+            SQL statement to be determined
 
         Returns
         -------
         bool
-            Write操作の場合True、Read操作の場合False
+            True if it's a Write operation, False if it's a Read operation
 
         Raises
         ------
         SQLAnalysisError
-            SQL解析に失敗した場合
+            When SQL analysis fails
         """
         if not sql or not sql.strip():
             raise SQLAnalysisError("Empty SQL statement")
 
         try:
-            # SQLを解析
+            # Parse SQL
             parsed_statements = sqlparse.parse(sql)
         except Exception as e:
             raise SQLAnalysisError(f"SQL parsing error: {e!s}") from e
@@ -140,7 +140,7 @@ class SQLWriteDetector:
         if not parsed_statements:
             raise SQLAnalysisError("Failed to parse SQL")
 
-        # 複数のステートメントがある場合、1つでもWrite操作があればWriteと判定
+        # If there are multiple statements, determine as Write if at least one is a Write operation
         for statement in parsed_statements:
             if self._is_write_statement(statement):
                 return True
@@ -148,19 +148,19 @@ class SQLWriteDetector:
         return False
 
     def _is_write_statement(self, statement: sqlparse.sql.Statement) -> bool:
-        """個別のステートメントがWrite操作かどうかを判定する.
+        """Determine whether an individual statement is a Write operation.
 
         Parameters
         ----------
         statement : sqlparse.sql.Statement
-            解析されたSQLステートメント
+            Parsed SQL statement
 
         Returns
         -------
         bool
-            Write操作の場合True
+            True if it's a Write operation
         """
-        # ステートメントタイプによる判定
+        # Determination by statement type
         stmt_type = statement.get_type()
 
         if stmt_type in {
@@ -175,35 +175,35 @@ class SQLWriteDetector:
         }:
             return True
 
-        # UNKNOWNの場合は最初のトークンで判定
+        # For UNKNOWN type, determine by the first token
         if stmt_type == "UNKNOWN":
             first_token = statement.token_first()
             if first_token:
                 first_keyword = first_token.value.upper()
 
-                # Write操作キーワードの確認
+                # Check Write operation keywords
                 if first_keyword in self.WRITE_KEYWORDS:
                     return True
 
-                # Read操作キーワードの確認
-                # 不明なキーワードは安全のためWriteと判定
+                # Check Read operation keywords
+                # Unknown keywords are considered Write for safety
                 return first_keyword not in self.READ_KEYWORDS
 
-        # SELECTは明確にRead操作、その他の不明なタイプは安全のためWriteと判定
+        # SELECT is clearly a Read operation, other unknown types are considered Write for safety
         return stmt_type not in ("SELECT",)
 
     def analyze_sql(self, sql: str) -> SQLAnalysisResult:
-        """SQLの詳細な解析結果を返す.
+        """Return detailed analysis result of SQL.
 
         Parameters
         ----------
         sql : str
-            解析対象のSQL文
+            SQL statement to be analyzed
 
         Returns
         -------
         SQLAnalysisResult
-            解析結果の詳細情報
+            Detailed information of the analysis result
         """
         result: SQLAnalysisResult = {
             "is_write": False,
@@ -213,7 +213,7 @@ class SQLWriteDetector:
         try:
             result["is_write"] = self.is_write_sql(sql)
 
-            # 各ステートメントの詳細情報
+            # Detailed information for each statement
             parsed_statements = sqlparse.parse(sql)
             for i, statement in enumerate(parsed_statements):
                 first_token = statement.token_first()
@@ -227,6 +227,6 @@ class SQLWriteDetector:
 
         except SQLAnalysisError as e:
             result["error"] = str(e)
-            result["is_write"] = True  # エラーの場合は安全のためWriteと判定
+            result["is_write"] = True  # Consider as Write for safety in case of error
 
         return result

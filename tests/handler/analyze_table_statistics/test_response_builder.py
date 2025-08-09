@@ -1,18 +1,14 @@
 """Tests for response building functionality."""
 
 import json
-from typing import TYPE_CHECKING, cast
 
-from src.mcp_snowflake.handler.analyze_table_statistics._response_builder import (
+from mcp_snowflake.handler.analyze_table_statistics._response_builder import (
     build_response,
 )
-from src.mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
-from src.mcp_snowflake.handler.analyze_table_statistics.models import (
+from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
+from mcp_snowflake.handler.analyze_table_statistics.models import (
     AnalyzeTableStatisticsArgs,
 )
-
-if TYPE_CHECKING:
-    import mcp.types as types
 
 
 def _create_column_infos(columns_dict: list[dict[str, str]]) -> list[ColumnInfo]:
@@ -127,10 +123,7 @@ class TestBuildResponse:
             ]
         )
 
-        response = cast(
-            "list[types.TextContent]",
-            build_response(args, result_row, columns_to_analyze),
-        )
+        response = build_response(args, result_row, columns_to_analyze)
 
         # Check summary text
         summary_text = response[0].text
@@ -177,10 +170,7 @@ class TestBuildResponse:
             ]
         )
 
-        response = cast(
-            "list[types.TextContent]",
-            build_response(args, result_row, columns_to_analyze),
-        )
+        response = build_response(args, result_row, columns_to_analyze)
 
         # Check summary reflects custom database/schema/table
         summary_text = response[0].text
@@ -222,10 +212,7 @@ class TestBuildResponse:
             ]
         )
 
-        response = cast(
-            "list[types.TextContent]",
-            build_response(args, result_row, columns_to_analyze),
-        )
+        response = build_response(args, result_row, columns_to_analyze)
 
         # Check that large numbers are formatted with commas
         summary_text = response[0].text
@@ -261,7 +248,7 @@ class TestBuildResponse:
         response = build_response(args, result_row, columns_to_analyze)
 
         # Check JSON is properly formatted (indented)
-        text_content = cast("types.TextContent", response[1])
+        text_content = response[1]
         json_text = text_content.text
 
         # Should be indented (contains newlines and spaces)

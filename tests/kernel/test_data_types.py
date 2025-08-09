@@ -22,12 +22,12 @@ class TestSnowflakeDataType:
     def test_init_with_empty_raw_type_raises_error(self) -> None:
         """Test initialization with empty raw type raises ValueError."""
         with pytest.raises(ValueError, match="raw_type cannot be empty"):
-            SnowflakeDataType("")
+            _ = SnowflakeDataType("")
 
     def test_init_with_whitespace_only_raw_type_raises_error(self) -> None:
         """Test initialization with whitespace-only raw type raises ValueError."""
         with pytest.raises(ValueError, match="raw_type cannot be empty"):
-            SnowflakeDataType("   ")
+            _ = SnowflakeDataType("   ")
 
     @pytest.mark.parametrize(
         ("raw_type", "expected"),
@@ -214,7 +214,9 @@ class TestStatisticsSupportDataType:
         ],
     )
     def test_from_snowflake_type_success(
-        self, snowflake_raw_type: str, expected_stats_type: str
+        self,
+        snowflake_raw_type: str,
+        expected_stats_type: str,
     ) -> None:
         """Test successful conversion from SnowflakeDataType."""
         sf_type = SnowflakeDataType(snowflake_raw_type)
@@ -231,7 +233,8 @@ class TestStatisticsSupportDataType:
         ],
     )
     def test_from_snowflake_type_unsupported_raises_error(
-        self, unsupported_raw_type: str
+        self,
+        unsupported_raw_type: str,
     ) -> None:
         """Test conversion from unsupported SnowflakeDataType raises ValueError."""
         sf_type = SnowflakeDataType(unsupported_raw_type)

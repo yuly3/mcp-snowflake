@@ -27,3 +27,12 @@ This repository implements a Snowflake MCP server.
   ```sh
   uv run pytest {path}
   ```
+- Run doctest:
+  ```sh
+  uv run pytest --doctest-modules {path}
+  ```
+- Run ruff:
+  ```sh
+  uv run ruff check --fix --unsafe-fixes {path}
+  uv run ruff format {path}
+  ```

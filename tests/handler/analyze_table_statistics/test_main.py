@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
-from src.mcp_snowflake.handler.analyze_table_statistics import (
+from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
     handle_analyze_table_statistics,
 )
@@ -344,7 +344,7 @@ class TestHandleAnalyzeTableStatistics:
         ]
 
         # Track what query was executed
-        executed_queries = []
+        executed_queries: list[str] = []
 
         class MockEffectWithQueryTracking:
             async def describe_table(

@@ -46,7 +46,7 @@ class TestColumnInfo:
     @pytest.mark.parametrize(
         ("col_dict", "expected_name", "expected_sf_type", "expected_stats_type"),
         [
-            # 数値型
+            # Numeric types
             (
                 {"name": "price", "data_type": "NUMBER(10,2)"},
                 "price",
@@ -55,7 +55,7 @@ class TestColumnInfo:
             ),
             ({"name": "count", "data_type": "INTEGER"}, "count", "INT", "numeric"),
             ({"name": "ratio", "data_type": "FLOAT"}, "ratio", "FLOAT", "numeric"),
-            # 文字列型
+            # String types
             (
                 {"name": "name", "data_type": "VARCHAR(255)"},
                 "name",
@@ -69,7 +69,7 @@ class TestColumnInfo:
                 "TEXT",
                 "string",
             ),
-            # 日付型
+            # Date types
             (
                 {"name": "created_at", "data_type": "TIMESTAMP_NTZ"},
                 "created_at",
@@ -80,10 +80,10 @@ class TestColumnInfo:
             (
                 {"name": "event_time", "data_type": "DATETIME"},
                 "event_time",
-                "TIMESTAMP_NTZ",  # DATETIMEはTIMESTAMP_NTZのエイリアス
+                "TIMESTAMP_NTZ",  # DATETIME is an alias for TIMESTAMP_NTZ
                 "date",
             ),
-            # 論理型
+            # Boolean type
             (
                 {"name": "is_active", "data_type": "BOOLEAN"},
                 "is_active",
@@ -110,7 +110,7 @@ class TestColumnInfo:
     @pytest.mark.parametrize(
         "invalid_dict",
         [
-            # サポートされていない型
+            # Unsupported types
             {"name": "metadata", "data_type": "VARIANT"},
             {"name": "location", "data_type": "GEOGRAPHY"},
             {"name": "binary_data", "data_type": "BINARY"},
@@ -168,16 +168,16 @@ class TestColumnInfo:
 
     def test_integration_with_kernel_types(self) -> None:
         """Test integration with kernel module types."""
-        # SnowflakeDataTypeの機能が正しく統合されているか確認
+        # Verify that SnowflakeDataType functionality is correctly integrated
         col_info = ColumnInfo.from_dict({"name": "price", "data_type": "NUMERIC(10,2)"})
 
-        # SnowflakeDataTypeのメソッドが使用可能か確認
+        # Verify that SnowflakeDataType methods are available
         assert col_info.snowflake_type.is_numeric()
         assert not col_info.snowflake_type.is_string()
         assert not col_info.snowflake_type.is_date()
         assert col_info.snowflake_type.is_supported_for_statistics()
 
-        # StatisticsSupportDataTypeの機能が正しく統合されているか確認
+        # Verify that StatisticsSupportDataType functionality is correctly integrated
         assert col_info.statistics_type.type_name == "numeric"
 
 
