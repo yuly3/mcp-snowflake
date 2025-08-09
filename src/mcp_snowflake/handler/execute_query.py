@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 class QueryResultDict(TypedDict):
     """TypedDict for query result in JSON response."""
 
-    sql: str
     execution_time_ms: int
     row_count: int
     columns: list[str]
@@ -46,7 +45,6 @@ class EffectExecuteQuery(Protocol):
 def _format_query_response(
     processed_rows: list[dict[str, Any]],
     warnings: list[str],
-    sql: str,
     execution_time_ms: int,
 ) -> ExecuteQueryJsonResponse:
     """
@@ -58,8 +56,6 @@ def _format_query_response(
         Processed query result rows
     warnings : list[str]
         List of warning messages
-    sql : str
-        Executed SQL query
     execution_time_ms : int
         Query execution time in milliseconds
 
@@ -70,7 +66,6 @@ def _format_query_response(
     """
     return {
         "query_result": {
-            "sql": sql,
             "execution_time_ms": execution_time_ms,
             "row_count": len(processed_rows),
             "columns": list(processed_rows[0].keys()) if processed_rows else [],
@@ -141,7 +136,6 @@ async def handle_execute_query(
     response = _format_query_response(
         result["processed_rows"],
         result["warnings"],
-        args.sql,
         execution_time_ms,
     )
 

@@ -1,6 +1,6 @@
 import json
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 from pydantic import ValidationError
@@ -67,6 +67,15 @@ class TestExecuteQueryArgs:
 class TestExecuteQueryHandler:
     """Test execute_query handler functionality."""
 
+    # Expected keys in execute_query response
+    EXPECTED_RESPONSE_KEYS: ClassVar[set[str]] = {
+        "execution_time_ms",
+        "row_count",
+        "columns",
+        "rows",
+        "warnings",
+    }
+
     @pytest.mark.asyncio
     async def test_handle_execute_query_success(self) -> None:
         """Test successful query execution."""
@@ -93,7 +102,7 @@ class TestExecuteQueryHandler:
         assert "query_result" in response_data
 
         query_result = response_data["query_result"]
-        assert query_result["sql"] == "SELECT id, name, age FROM users LIMIT 2"
+        assert set(query_result.keys()) == self.EXPECTED_RESPONSE_KEYS
         assert query_result["row_count"] == 2
         assert query_result["columns"] == ["id", "name", "age"]
         assert len(query_result["rows"]) == 2
@@ -144,6 +153,7 @@ class TestExecuteQueryHandler:
         # Parse JSON response
         response_data = json.loads(content.text)
         query_result = response_data["query_result"]
+        assert set(query_result.keys()) == self.EXPECTED_RESPONSE_KEYS
         assert query_result["row_count"] == 0
         assert query_result["columns"] == []
         assert query_result["rows"] == []
@@ -215,19 +225,17 @@ class TestExecuteQueryHandler:
             {"col1": "value3", "col2": "value4"},
         ]
         warnings = ["Warning message"]
-        sql = "SELECT col1, col2 FROM test_table"
         execution_time_ms = 150
 
         response = _format_query_response(
             processed_rows,
             warnings,
-            sql,
             execution_time_ms,
         )
 
         assert "query_result" in response
         query_result = response["query_result"]
-        assert query_result["sql"] == sql
+        assert set(query_result.keys()) == self.EXPECTED_RESPONSE_KEYS
         assert query_result["execution_time_ms"] == execution_time_ms
         assert query_result["row_count"] == 2
         assert query_result["columns"] == ["col1", "col2"]
