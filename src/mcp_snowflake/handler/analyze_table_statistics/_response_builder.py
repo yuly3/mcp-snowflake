@@ -18,7 +18,7 @@ def build_response(
     args: AnalyzeTableStatisticsArgs,
     result_row: Mapping[str, Any],
     columns_to_analyze: Sequence[ColumnInfo],
-) -> list[types.TextContent]:
+) -> list[types.Content]:
     """Build the final response content.
 
     Parameters
@@ -32,7 +32,7 @@ def build_response(
 
     Returns
     -------
-    list[types.TextContent]
+    list[types.Content]
         The formatted response content.
     """
     # Parse results into structured format

@@ -5,7 +5,7 @@ from typing import Any, Protocol, TypedDict
 import mcp.types as types
 from pydantic import BaseModel, Field
 
-from .data_processing import process_multiple_rows_data
+from ..kernel import DataProcessingResult
 
 logger = logging.getLogger(__name__)
 
@@ -130,11 +130,11 @@ async def handle_sample_table_data(
             )
         ]
 
-    result = process_multiple_rows_data(raw_data)
+    result = DataProcessingResult.from_raw_rows(raw_data)
 
     response = _format_response(
-        result["processed_rows"],
-        result["warnings"],
+        result.processed_rows,
+        result.warnings,
         args.database,
         args.schema_name,
         args.table_name,

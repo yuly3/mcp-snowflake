@@ -91,7 +91,7 @@ converter.register_unstructure_hook(Decimal, convert_decimal_to_float)
 converter.register_unstructure_hook(UUID, convert_uuid_to_str)
 
 
-def _is_json_compatible_type(value: Any) -> bool:
+def is_json_compatible_type(value: Any) -> bool:
     """
     Check if a value is a JSON-compatible type.
 
@@ -112,10 +112,10 @@ def _is_json_compatible_type(value: Any) -> bool:
     if isinstance(value, bool | int | float | str):
         return True
     if isinstance(value, list):
-        return all(_is_json_compatible_type(item) for item in value)
+        return all(is_json_compatible_type(item) for item in value)
     if isinstance(value, dict):
         return all(isinstance(key, str) for key in value) and all(
-            _is_json_compatible_type(val) for val in value.values()
+            is_json_compatible_type(val) for val in value.values()
         )
     return False
 
@@ -156,6 +156,6 @@ def convert_to_json_safe(value: Any) -> Any:
     '12345678-1234-5678-1234-567812345678'
     """
     unstructured = converter.unstructure(value)
-    if _is_json_compatible_type(unstructured):
+    if is_json_compatible_type(unstructured):
         return unstructured
     return f"<unsupported_type: {type(value).__name__}>"

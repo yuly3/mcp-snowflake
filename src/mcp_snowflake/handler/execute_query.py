@@ -6,9 +6,9 @@ from typing import Any, Protocol, TypedDict
 import mcp.types as types
 from pydantic import BaseModel, Field
 
+from ..kernel import DataProcessingResult
 from ..sql_analyzer import SQLWriteDetector
 from ..stopwatch import StopWatch
-from .data_processing import process_multiple_rows_data
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class EffectExecuteQuery(Protocol):
     async def execute_query(
         self,
         query: str,
-        query_timeout: Any,  # timedelta
+        query_timeout: timedelta | None = None,
     ) -> list[dict[str, Any]]: ...
 
 
@@ -131,11 +131,11 @@ async def handle_execute_query(
 
     execution_time_ms = int(stopwatch.elapsed_ms())
 
-    result = process_multiple_rows_data(raw_data)
+    result = DataProcessingResult.from_raw_rows(raw_data)
 
     response = _format_query_response(
-        result["processed_rows"],
-        result["warnings"],
+        result.processed_rows,
+        result.warnings,
         execution_time_ms,
     )
 

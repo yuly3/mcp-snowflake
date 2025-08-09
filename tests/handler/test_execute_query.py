@@ -5,12 +5,12 @@ from typing import Any, ClassVar
 import pytest
 from pydantic import ValidationError
 
-from mcp_snowflake.handler.data_processing import process_multiple_rows_data
 from mcp_snowflake.handler.execute_query import (
     ExecuteQueryArgs,
     _format_query_response,
     handle_execute_query,
 )
+from mcp_snowflake.kernel import DataProcessingResult
 
 
 class MockEffectHandler:
@@ -29,7 +29,7 @@ class MockEffectHandler:
     async def execute_query(
         self,
         query: str,
-        query_timeout: timedelta,
+        query_timeout: timedelta | None = None,
     ) -> list[dict[str, Any]]:
         self.called_with_sql = query
         self.called_with_timeout = query_timeout
@@ -204,19 +204,19 @@ class TestExecuteQueryHandler:
             {"id": 2, "name": "Bob", "score": 87.0},
         ]
 
-        result = process_multiple_rows_data(raw_data)
+        result = DataProcessingResult.from_raw_rows(raw_data)
 
-        assert len(result["processed_rows"]) == 2
-        assert result["processed_rows"][0] == {"id": 1, "name": "Alice", "score": 95.5}
-        assert result["processed_rows"][1] == {"id": 2, "name": "Bob", "score": 87.0}
-        assert result["warnings"] == []
+        assert len(result.processed_rows) == 2
+        assert result.processed_rows[0] == {"id": 1, "name": "Alice", "score": 95.5}
+        assert result.processed_rows[1] == {"id": 2, "name": "Bob", "score": 87.0}
+        assert result.warnings == []
 
     def test_process_multiple_rows_data_empty(self) -> None:
         """Test processing of empty query result."""
-        result = process_multiple_rows_data([])
+        result = DataProcessingResult.from_raw_rows([])
 
-        assert result["processed_rows"] == []
-        assert result["warnings"] == []
+        assert result.processed_rows == []
+        assert result.warnings == []
 
     def test_format_query_response(self) -> None:
         """Test query response formatting."""

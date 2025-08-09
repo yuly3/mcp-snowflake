@@ -1,6 +1,7 @@
 """Tests for response building functionality."""
 
 import json
+from typing import TYPE_CHECKING, cast
 
 from mcp_snowflake.handler.analyze_table_statistics._response_builder import (
     build_response,
@@ -9,6 +10,9 @@ from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
 from mcp_snowflake.handler.analyze_table_statistics.models import (
     AnalyzeTableStatisticsArgs,
 )
+
+if TYPE_CHECKING:
+    from mcp import types
 
 
 def _create_column_infos(columns_dict: list[dict[str, str]]) -> list[ColumnInfo]:
@@ -126,14 +130,14 @@ class TestBuildResponse:
         response = build_response(args, result_row, columns_to_analyze)
 
         # Check summary text
-        summary_text = response[0].text
+        summary_text = cast("types.TextContent", response[0]).text
         assert "1,000 total rows" in summary_text
         assert "Numeric: 1 columns" in summary_text
         assert "String: 1 columns" in summary_text
         assert "Date: 1 columns" in summary_text
 
         # Parse and check JSON response
-        text_content = response[1]
+        text_content = cast("types.TextContent", response[1])
         json_response = json.loads(text_content.text)
 
         table_stats = json_response["table_statistics"]
@@ -173,11 +177,11 @@ class TestBuildResponse:
         response = build_response(args, result_row, columns_to_analyze)
 
         # Check summary reflects custom database/schema/table
-        summary_text = response[0].text
+        summary_text = cast("types.TextContent", response[0]).text
         assert "custom_db.custom_schema.custom_table" in summary_text
 
         # Parse JSON and check structure
-        text_content = response[1]
+        text_content = cast("types.TextContent", response[1])
         json_response = json.loads(text_content.text)
 
         table_info = json_response["table_statistics"]["table_info"]
@@ -215,7 +219,7 @@ class TestBuildResponse:
         response = build_response(args, result_row, columns_to_analyze)
 
         # Check that large numbers are formatted with commas
-        summary_text = response[0].text
+        summary_text = cast("types.TextContent", response[0]).text
         assert "1,234,567 total rows" in summary_text
 
     def test_build_response_json_formatting(self) -> None:
@@ -248,7 +252,7 @@ class TestBuildResponse:
         response = build_response(args, result_row, columns_to_analyze)
 
         # Check JSON is properly formatted (indented)
-        text_content = response[1]
+        text_content = cast("types.TextContent", response[1])
         json_text = text_content.text
 
         # Should be indented (contains newlines and spaces)
