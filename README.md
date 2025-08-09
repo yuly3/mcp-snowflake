@@ -162,7 +162,7 @@ Retrieve detailed structure information (columns, data types, etc.) for a specif
 ```
 
 **Response Format:**
-The describe_table tool returns a structured JSON format with key characteristics:
+The describe_table tool returns a structured JSON format:
 
 ```json
 {
@@ -183,11 +183,6 @@ The describe_table tool returns a structured JSON format with key characteristic
     ]
   }
 }
-
-**Key characteristics:**
-- Primary key: ID
-- Required fields: ID, CREATED_AT
-- Optional fields: NAME, EMAIL
 ```
 
 #### execute_query
