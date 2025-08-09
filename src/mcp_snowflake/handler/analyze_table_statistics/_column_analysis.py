@@ -1,5 +1,6 @@
 """Column analysis utilities for table statistics."""
 
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 import mcp.types as types
@@ -7,12 +8,12 @@ import mcp.types as types
 from ._types import ColumnInfo
 
 
-def create_column_info_list(columns: list[dict[str, Any]]) -> list[ColumnInfo]:
+def create_column_info_list(columns: Iterable[Mapping[str, Any]]) -> list[ColumnInfo]:
     """Convert dict-based column information to ColumnInfo objects.
 
     Parameters
     ----------
-    columns : list[dict[str, Any]]
+    columns : Iterable[Mapping[str, Any]]
         List of column dictionaries with 'name' and 'data_type' keys.
 
     Returns
@@ -49,7 +50,7 @@ def create_column_info_list(columns: list[dict[str, Any]]) -> list[ColumnInfo]:
 
 def validate_and_select_columns(
     all_columns: list[dict[str, Any]],
-    requested_columns: list[str],
+    requested_columns: Sequence[str],
 ) -> list[ColumnInfo] | types.TextContent:
     """Validate and select columns for analysis.
 
@@ -57,7 +58,7 @@ def validate_and_select_columns(
     ----------
     all_columns : list[dict[str, Any]]
         All available columns from the table.
-    requested_columns : list[str]
+    requested_columns : Sequence[str]
         Columns requested for analysis. Empty list means all columns.
 
     Returns
@@ -71,7 +72,7 @@ def validate_and_select_columns(
             col for col in all_columns if col["name"] in requested_columns
         ]
         if len(columns_to_analyze) != len(requested_columns):
-            found_columns = {col["name"] for col in columns_to_analyze}
+            found_columns: set[str] = {col["name"] for col in columns_to_analyze}
             missing_columns = set(requested_columns) - found_columns
             return types.TextContent(
                 type="text",

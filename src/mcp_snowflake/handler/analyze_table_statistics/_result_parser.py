@@ -2,13 +2,17 @@
 
 import json
 import logging
+from collections.abc import Iterable, Mapping
 from typing import Any
+
+from expression import option
 
 from ._types import (
     BooleanStatsDict,
     ColumnInfo,
     DateStatsDict,
     NumericStatsDict,
+    StatsDict,
     StringStatsDict,
 )
 
@@ -16,26 +20,24 @@ logger = logging.getLogger(__name__)
 
 
 def parse_statistics_result(
-    result_row: dict[str, Any],
-    columns_info: list[ColumnInfo],
-) -> dict[str, NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict]:
+    result_row: Mapping[str, Any],
+    columns_info: Iterable[ColumnInfo],
+) -> dict[str, StatsDict]:
     """Parse the statistics query result into structured column statistics.
 
     Parameters
     ----------
-    result_row : dict[str, Any]
+    result_row : Mapping[str, Any]
         Raw query result row containing all statistics.
-    columns_info : list[ColumnInfo]
+    columns_info : Iterable[ColumnInfo]
         Column information including name and data_type.
 
     Returns
     -------
-    dict[str, NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict]
+    dict[str, StatsDict]
         Parsed column statistics keyed by column name.
     """
-    column_statistics: dict[
-        str, NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict
-    ] = {}
+    column_statistics: dict[str, StatsDict] = {}
 
     for col_info in columns_info:
         col_name = col_info.name
@@ -51,24 +53,18 @@ def parse_statistics_result(
                     count=result_row[f"{prefix}_COUNT"],
                     null_count=result_row[f"{prefix}_NULL_COUNT"],
                     distinct_count_approx=result_row[f"{prefix}_DISTINCT"],
-                    min=float(result_row[f"{prefix}_MIN"])
-                    if result_row[f"{prefix}_MIN"] is not None
-                    else 0.0,
-                    max=float(result_row[f"{prefix}_MAX"])
-                    if result_row[f"{prefix}_MAX"] is not None
-                    else 0.0,
-                    avg=float(result_row[f"{prefix}_AVG"])
-                    if result_row[f"{prefix}_AVG"] is not None
-                    else 0.0,
-                    percentile_25=float(result_row[f"{prefix}_Q1"])
-                    if result_row[f"{prefix}_Q1"] is not None
-                    else 0.0,
-                    percentile_50=float(result_row[f"{prefix}_MEDIAN"])
-                    if result_row[f"{prefix}_MEDIAN"] is not None
-                    else 0.0,
-                    percentile_75=float(result_row[f"{prefix}_Q3"])
-                    if result_row[f"{prefix}_Q3"] is not None
-                    else 0.0,
+                    min=float(option.unwrap_or(result_row[f"{prefix}_MIN"], 0.0)),
+                    max=float(option.unwrap_or(result_row[f"{prefix}_MAX"], 0.0)),
+                    avg=float(option.unwrap_or(result_row[f"{prefix}_AVG"], 0.0)),
+                    percentile_25=float(
+                        option.unwrap_or(result_row[f"{prefix}_Q1"], 0.0)
+                    ),
+                    percentile_50=float(
+                        option.unwrap_or(result_row[f"{prefix}_MEDIAN"], 0.0)
+                    ),
+                    percentile_75=float(
+                        option.unwrap_or(result_row[f"{prefix}_Q3"], 0.0)
+                    ),
                 )
             case "string":
                 # Parse APPROX_TOP_K result from JSON string
@@ -101,8 +97,8 @@ def parse_statistics_result(
                     count=result_row[f"{prefix}_COUNT"],
                     null_count=result_row[f"{prefix}_NULL_COUNT"],
                     distinct_count_approx=result_row[f"{prefix}_DISTINCT"],
-                    min_date=str(min_date) if min_date is not None else "",
-                    max_date=str(max_date) if max_date is not None else "",
+                    min_date=str(option.unwrap_or(min_date, "")),
+                    max_date=str(option.unwrap_or(max_date, "")),
                     date_range_days=result_row[f"{prefix}_RANGE_DAYS"] or 0,
                 )
             case "boolean":
@@ -113,22 +109,24 @@ def parse_statistics_result(
                     null_count=result_row[f"{prefix}_NULL_COUNT"],
                     true_count=result_row[f"{prefix}_TRUE_COUNT"],
                     false_count=result_row[f"{prefix}_FALSE_COUNT"],
-                    true_percentage=float(result_row[f"{prefix}_TRUE_PERCENTAGE"])
-                    if result_row[f"{prefix}_TRUE_PERCENTAGE"] is not None
-                    else 0.0,
-                    false_percentage=float(result_row[f"{prefix}_FALSE_PERCENTAGE"])
-                    if result_row[f"{prefix}_FALSE_PERCENTAGE"] is not None
-                    else 0.0,
+                    true_percentage=float(
+                        option.unwrap_or(result_row[f"{prefix}_TRUE_PERCENTAGE"], 0.0)
+                    ),
+                    false_percentage=float(
+                        option.unwrap_or(result_row[f"{prefix}_FALSE_PERCENTAGE"], 0.0)
+                    ),
                     true_percentage_with_nulls=float(
-                        result_row[f"{prefix}_TRUE_PERCENTAGE_WITH_NULLS"]
-                    )
-                    if result_row[f"{prefix}_TRUE_PERCENTAGE_WITH_NULLS"] is not None
-                    else 0.0,
+                        option.unwrap_or(
+                            result_row[f"{prefix}_TRUE_PERCENTAGE_WITH_NULLS"],
+                            0.0,
+                        )
+                    ),
                     false_percentage_with_nulls=float(
-                        result_row[f"{prefix}_FALSE_PERCENTAGE_WITH_NULLS"]
-                    )
-                    if result_row[f"{prefix}_FALSE_PERCENTAGE_WITH_NULLS"] is not None
-                    else 0.0,
+                        option.unwrap_or(
+                            result_row[f"{prefix}_FALSE_PERCENTAGE_WITH_NULLS"],
+                            0.0,
+                        )
+                    ),
                 )
 
         column_statistics[col_name] = stats

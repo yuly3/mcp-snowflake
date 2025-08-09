@@ -1,6 +1,7 @@
 """Table statistics analysis module."""
 
 import logging
+from collections.abc import Iterable
 from typing import Any
 
 import mcp.types as types
@@ -24,7 +25,7 @@ __all__ = [
 async def _execute_statistics_query(
     effect: EffectAnalyzeTableStatistics,
     args: AnalyzeTableStatisticsArgs,
-    columns_to_analyze: list[ColumnInfo],
+    columns_to_analyze: Iterable[ColumnInfo],
 ) -> dict[str, Any]:
     """Execute the statistics query and return the result row.
 
@@ -34,7 +35,7 @@ async def _execute_statistics_query(
         Effect implementation for database operations.
     args : AnalyzeTableStatisticsArgs
         The request arguments.
-    columns_to_analyze : list[ColumnInfo]
+    columns_to_analyze : Iterable[ColumnInfo]
         The columns to analyze.
 
     Returns

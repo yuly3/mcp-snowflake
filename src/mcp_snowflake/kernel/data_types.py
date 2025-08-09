@@ -1,6 +1,6 @@
 """Data types for Snowflake domain layer."""
 
-from typing import Literal
+from typing import Literal, cast
 
 import attrs
 
@@ -93,7 +93,7 @@ class SnowflakeDataType:
         if normalized not in NormalizedSnowflakeDataType.__args__:
             raise ValueError(f"Unsupported Snowflake data type: {self.raw_type}")
 
-        return normalized  # type: ignore[return-value]
+        return cast("NormalizedSnowflakeDataType", normalized)
 
     def is_numeric(self) -> bool:
         """Check if the data type is numeric"""

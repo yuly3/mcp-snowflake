@@ -1,0 +1,14 @@
+[project]
+dependencies = [
+]
+description = "functional programming in Python"
+name = "expression"
+readme = "README.md"
+requires-python = ">=3.13"
+version = "0.1.0"
+
+[build-system]
+build-backend = "uv_build"
+requires = [
+    "uv_build>=0.8.8,<0.9.0",
+]

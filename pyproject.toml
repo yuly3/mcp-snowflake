@@ -73,3 +73,8 @@ ignore = [
     ".pytest_cache",
     ".ruff_cache",
 ]
+
+[tool.uv.workspace]
+members = [
+    "packages/expression",
+]

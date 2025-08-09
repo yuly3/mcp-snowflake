@@ -150,4 +150,5 @@ docstring-code-line-length = "dynamic"
 
 [lint.isort]
 known-first-party = [
+    "expression",
 ]

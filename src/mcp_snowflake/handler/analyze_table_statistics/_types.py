@@ -1,5 +1,6 @@
 """Internal type definitions for table statistics analysis."""
 
+from collections.abc import Mapping
 from typing import Any, TypedDict
 
 import attrs
@@ -16,12 +17,12 @@ class ColumnInfo:
     statistics_type: StatisticsSupportDataType
 
     @classmethod
-    def from_dict(cls, col_dict: dict[str, Any]) -> "ColumnInfo":
+    def from_dict(cls, col_dict: Mapping[str, Any]) -> "ColumnInfo":
         """Convert dictionary column info to ColumnInfo.
 
         Parameters
         ----------
-        col_dict : dict[str, Any]
+        col_dict : Mapping[str, Any]
             Dictionary containing column information with 'name' and 'data_type' keys.
 
         Returns
@@ -113,6 +114,9 @@ class BooleanStatsDict(TypedDict):
     false_percentage_with_nulls: float  # NULL含む版
 
 
+StatsDict = NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict
+
+
 class TableInfoDict(TypedDict):
     """TypedDict for table information."""
 
@@ -127,9 +131,7 @@ class TableStatisticsDict(TypedDict):
     """TypedDict for the complete table statistics response."""
 
     table_info: TableInfoDict
-    column_statistics: dict[
-        str, NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict
-    ]
+    column_statistics: dict[str, StatsDict]
 
 
 class AnalyzeTableStatisticsJsonResponse(TypedDict):

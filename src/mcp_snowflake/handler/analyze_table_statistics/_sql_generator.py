@@ -1,5 +1,7 @@
 """SQL generation utilities for table statistics analysis."""
 
+from collections.abc import Iterable
+
 from ._types import ColumnInfo
 
 
@@ -7,7 +9,7 @@ def generate_statistics_sql(
     database: str,
     schema: str,
     table_name: str,
-    columns_info: list[ColumnInfo],
+    columns_info: Iterable[ColumnInfo],
     top_k_limit: int,
 ) -> str:
     """Generate SQL query for analyzing table statistics.
@@ -20,7 +22,7 @@ def generate_statistics_sql(
         Schema name.
     table_name : str
         Table name.
-    columns_info : list[ColumnInfo]
+    columns_info : Iterable[ColumnInfo]
         Column information with type-safe data types.
     top_k_limit : int
         Limit for APPROX_TOP_K function.

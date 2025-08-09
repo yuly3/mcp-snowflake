@@ -1,6 +1,7 @@
 """Response building utilities for table statistics analysis."""
 
 import json
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 import mcp.types as types
@@ -15,8 +16,8 @@ if TYPE_CHECKING:
 
 def build_response(
     args: AnalyzeTableStatisticsArgs,
-    result_row: dict[str, Any],
-    columns_to_analyze: list[ColumnInfo],
+    result_row: Mapping[str, Any],
+    columns_to_analyze: Sequence[ColumnInfo],
 ) -> list[types.Content]:
     """Build the final response content.
 
@@ -24,9 +25,9 @@ def build_response(
     ----------
     args : AnalyzeTableStatisticsArgs
         The original request arguments.
-    result_row : dict[str, Any]
+    result_row : Mapping[str, Any]
         The query result row containing statistics.
-    columns_to_analyze : list[ColumnInfo]
+    columns_to_analyze : Sequence[ColumnInfo]
         The columns that were analyzed.
 
     Returns
