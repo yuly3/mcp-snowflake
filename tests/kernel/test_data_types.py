@@ -32,12 +32,12 @@ class TestSnowflakeDataType:
     @pytest.mark.parametrize(
         ("raw_type", "expected"),
         [
-            # 基本型の正規化
+            # Basic type normalization
             ("VARCHAR(255)", "VARCHAR"),
             ("NUMBER(10,2)", "NUMBER"),
             ("CHAR(10)", "CHAR"),
             ("FLOAT", "FLOAT"),
-            # エイリアス変換
+            # Alias conversion
             ("NUMERIC", "DECIMAL"),
             ("INTEGER", "INT"),
             ("DOUBLE PRECISION", "DOUBLE"),
@@ -46,21 +46,21 @@ class TestSnowflakeDataType:
             ("CHARACTER", "CHAR"),
             ("DATETIME", "TIMESTAMP_NTZ"),
             ("VARBINARY", "BINARY"),
-            # 大文字小文字の処理
+            # Case handling
             ("varchar(255)", "VARCHAR"),
             ("Number(10,2)", "NUMBER"),
-            # タイムスタンプ型（サフィックス保持）
+            # Timestamp types (suffix preservation)
             ("TIMESTAMP_NTZ", "TIMESTAMP_NTZ"),
             ("TIMESTAMP_LTZ", "TIMESTAMP_LTZ"),
             ("TIMESTAMP_TZ", "TIMESTAMP_TZ"),
-            # 半構造化データ型
+            # Semi-structured data types
             ("VARIANT", "VARIANT"),
             ("OBJECT", "OBJECT"),
             ("ARRAY", "ARRAY"),
-            # 地理空間データ型
+            # Geospatial data types
             ("GEOGRAPHY", "GEOGRAPHY"),
             ("GEOMETRY", "GEOMETRY"),
-            # ベクトルデータ型
+            # Vector data types
             ("VECTOR", "VECTOR"),
         ],
     )
@@ -78,7 +78,7 @@ class TestSnowflakeDataType:
     @pytest.mark.parametrize(
         ("raw_type", "expected"),
         [
-            # 数値型
+            # Numeric types
             ("NUMBER(10,2)", True),
             ("INTEGER", True),
             ("FLOAT", True),
@@ -89,7 +89,7 @@ class TestSnowflakeDataType:
             ("BYTEINT", True),
             ("DOUBLE", True),
             ("REAL", True),
-            # 非数値型
+            # Non-numeric types
             ("VARCHAR(255)", False),
             ("DATE", False),
             ("BOOLEAN", False),
@@ -103,16 +103,16 @@ class TestSnowflakeDataType:
     @pytest.mark.parametrize(
         ("raw_type", "expected"),
         [
-            # 文字列型
+            # String types
             ("VARCHAR(255)", True),
             ("CHAR(10)", True),
             ("STRING", True),
             ("TEXT", True),
-            # 非文字列型
+            # Non-string types
             ("NUMBER(10,2)", False),
             ("DATE", False),
             ("BOOLEAN", False),
-            ("BINARY", False),  # バイナリ型は文字列型ではない
+            ("BINARY", False),  # Binary type is not a string type
         ],
     )
     def test_is_string(self, raw_type: str, expected: bool) -> None:  # noqa: FBT001
@@ -123,15 +123,15 @@ class TestSnowflakeDataType:
     @pytest.mark.parametrize(
         ("raw_type", "expected"),
         [
-            # 日付時刻型
+            # Date/time types
             ("DATE", True),
             ("TIME", True),
             ("TIMESTAMP", True),
             ("TIMESTAMP_NTZ", True),
             ("TIMESTAMP_LTZ", True),
             ("TIMESTAMP_TZ", True),
-            ("DATETIME", True),  # エイリアス
-            # 非日付時刻型
+            ("DATETIME", True),  # Alias
+            # Non-date/time types
             ("VARCHAR(255)", False),
             ("NUMBER(10,2)", False),
             ("BOOLEAN", False),
@@ -145,9 +145,9 @@ class TestSnowflakeDataType:
     @pytest.mark.parametrize(
         ("raw_type", "expected"),
         [
-            # 論理型
+            # Boolean type
             ("BOOLEAN", True),
-            # 非論理型
+            # Non-boolean types
             ("VARCHAR(255)", False),
             ("NUMBER(10,2)", False),
             ("DATE", False),
@@ -164,13 +164,13 @@ class TestSnowflakeDataType:
     @pytest.mark.parametrize(
         ("raw_type", "expected"),
         [
-            # サポートされる型
+            # Supported types
             ("NUMBER(10,2)", True),
             ("VARCHAR(255)", True),
             ("DATE", True),
             ("TIMESTAMP_NTZ", True),
             ("BOOLEAN", True),
-            # サポートされない型
+            # Unsupported types
             ("VARIANT", False),
             ("GEOGRAPHY", False),
             ("BINARY", False),
@@ -193,23 +193,23 @@ class TestStatisticsSupportDataType:
     @pytest.mark.parametrize(
         ("snowflake_raw_type", "expected_stats_type"),
         [
-            # 数値型 → numeric
+            # Numeric type → numeric
             ("NUMBER(10,2)", "numeric"),
             ("INTEGER", "numeric"),
             ("FLOAT", "numeric"),
             ("DECIMAL", "numeric"),
-            # 文字列型 → string
+            # String type → string
             ("VARCHAR(255)", "string"),
             ("CHAR(10)", "string"),
             ("STRING", "string"),
             ("TEXT", "string"),
-            # 日付時刻型 → date
+            # Date/time type → date
             ("DATE", "date"),
             ("TIMESTAMP_NTZ", "date"),
             ("TIMESTAMP_LTZ", "date"),
             ("TIME", "date"),
             ("DATETIME", "date"),
-            # 論理型 → boolean
+            # Boolean type → boolean
             ("BOOLEAN", "boolean"),
         ],
     )
@@ -247,7 +247,7 @@ class TestNormalizedSnowflakeDataTypeLiteral:
     def test_literal_contains_all_expected_types(self) -> None:
         """Test that NormalizedSnowflakeDataType Literal contains all expected types."""
         expected_types = {
-            # 数値データ型
+            # Numeric data types
             "NUMBER",
             "DECIMAL",
             "INT",
@@ -258,31 +258,31 @@ class TestNormalizedSnowflakeDataTypeLiteral:
             "FLOAT",
             "DOUBLE",
             "REAL",
-            # 文字列およびバイナリデータ型
+            # String and binary data types
             "VARCHAR",
             "CHAR",
             "STRING",
             "TEXT",
             "BINARY",
-            # 論理データ型
+            # Boolean data type
             "BOOLEAN",
-            # 日付と時刻のデータ型
+            # Date and time data types
             "DATE",
             "TIME",
             "TIMESTAMP",
             "TIMESTAMP_LTZ",
             "TIMESTAMP_NTZ",
             "TIMESTAMP_TZ",
-            # 半構造化データ型
+            # Semi-structured data types
             "VARIANT",
             "OBJECT",
             "ARRAY",
-            # 地理空間データ型
+            # Geospatial data types
             "GEOGRAPHY",
             "GEOMETRY",
-            # ベクトルデータ型
+            # Vector data types
             "VECTOR",
-            # 構造化データ型（Iceberg用）
+            # Structured data types (for Iceberg)
             "MAP",
         }
 

@@ -4,9 +4,9 @@ from typing import Literal
 
 import attrs
 
-# Snowflake公式データ型に基づく正規化型定義
+# Normalized Snowflake data type definitions based on official Snowflake data types
 NormalizedSnowflakeDataType = Literal[
-    # 数値データ型
+    # Numeric data types
     "NUMBER",
     "DECIMAL",
     "INT",
@@ -17,31 +17,31 @@ NormalizedSnowflakeDataType = Literal[
     "FLOAT",
     "DOUBLE",
     "REAL",
-    # 文字列およびバイナリデータ型
+    # String and binary data types
     "VARCHAR",
     "CHAR",
     "STRING",
     "TEXT",
     "BINARY",
-    # 論理データ型
+    # Boolean data type
     "BOOLEAN",
-    # 日付と時刻のデータ型
+    # Date and time data types
     "DATE",
     "TIME",
     "TIMESTAMP",
     "TIMESTAMP_LTZ",
     "TIMESTAMP_NTZ",
     "TIMESTAMP_TZ",
-    # 半構造化データ型
+    # Semi-structured data types
     "VARIANT",
     "OBJECT",
     "ARRAY",
-    # 地理空間データ型
+    # Geospatial data types
     "GEOGRAPHY",
     "GEOMETRY",
-    # ベクトルデータ型
+    # Vector data types
     "VECTOR",
-    # 構造化データ型（Iceberg用）
+    # Structured data types (for Iceberg)
     "MAP",
 ]
 
@@ -59,22 +59,22 @@ class SnowflakeDataType:
     @property
     def normalized_type(self) -> NormalizedSnowflakeDataType:
         """
-        Snowflake生データ型を正規化された型名に変換
+        Convert raw Snowflake data type to normalized type name
 
         Examples
         --------
         - "VARCHAR(255)" -> "VARCHAR"
         - "NUMBER(10,2)" -> "NUMBER"
-        - "TIMESTAMP_NTZ" -> "TIMESTAMP_NTZ"  # サフィックスは保持
+        - "TIMESTAMP_NTZ" -> "TIMESTAMP_NTZ"  # Suffix is preserved
         - "DECIMAL" -> "DECIMAL"
         """
         upper_type = self.raw_type.upper().strip()
 
-        # 括弧とその内容を削除 (例: VARCHAR(255) -> VARCHAR)
+        # Remove parentheses and their contents (e.g., VARCHAR(255) -> VARCHAR)
         if "(" in upper_type:
             upper_type = upper_type.split("(")[0]
 
-        # エイリアス正規化
+        # Alias normalization
         alias_mapping = {
             "NUMERIC": "DECIMAL",
             "INTEGER": "INT",
@@ -82,21 +82,21 @@ class SnowflakeDataType:
             "FLOAT4": "FLOAT",
             "FLOAT8": "FLOAT",
             "CHARACTER": "CHAR",
-            "DATETIME": "TIMESTAMP_NTZ",  # DATETIMEはTIMESTAMP_NTZのエイリアス
+            "DATETIME": "TIMESTAMP_NTZ",  # DATETIME is an alias for TIMESTAMP_NTZ
             "VARBINARY": "BINARY",
         }
 
-        # エイリアス変換
+        # Apply alias conversion
         normalized = alias_mapping.get(upper_type, upper_type)
 
-        # 型安全性チェック: Literalに含まれない場合は例外
+        # Type safety check: raise exception if not in Literal
         if normalized not in NormalizedSnowflakeDataType.__args__:
             raise ValueError(f"Unsupported Snowflake data type: {self.raw_type}")
 
         return normalized  # type: ignore[return-value]
 
     def is_numeric(self) -> bool:
-        """数値型かどうかを判定"""
+        """Check if the data type is numeric"""
         return self.normalized_type in {
             "NUMBER",
             "DECIMAL",
@@ -111,11 +111,11 @@ class SnowflakeDataType:
         }
 
     def is_string(self) -> bool:
-        """文字列型かどうかを判定"""
+        """Check if the data type is string"""
         return self.normalized_type in {"VARCHAR", "CHAR", "STRING", "TEXT"}
 
     def is_date(self) -> bool:
-        """日付時刻型かどうかを判定"""
+        """Check if the data type is date/time"""
         return self.normalized_type in {
             "DATE",
             "TIME",
@@ -126,11 +126,11 @@ class SnowflakeDataType:
         }
 
     def is_boolean(self) -> bool:
-        """論理型かどうかを判定"""
+        """Check if the data type is boolean"""
         return self.normalized_type == "BOOLEAN"
 
     def is_supported_for_statistics(self) -> bool:
-        """統計分析でサポートされる型かどうかを判定"""
+        """Check if the data type is supported for statistical analysis"""
         return (
             self.is_numeric() or self.is_string() or self.is_date() or self.is_boolean()
         )
