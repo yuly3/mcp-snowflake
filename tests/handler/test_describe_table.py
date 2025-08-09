@@ -122,13 +122,20 @@ class TestHandleDescribeTable:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert result[0].type == "text"
-        assert "Table Schema: test_db.test_schema.test_table" in result[0].text
-        assert "This table has 2 columns" in result[0].text
-        assert '"name": "ID"' in result[0].text
-        assert '"name": "NAME"' in result[0].text
-        assert "Primary key: ID" in result[0].text
-        assert "Required fields: ID" in result[0].text
-        assert "Optional fields: NAME" in result[0].text
+
+        response_text = result[0].text
+
+        # Should contain JSON structure
+        assert '"database": "test_db"' in response_text
+        assert '"schema": "test_schema"' in response_text
+        assert '"name": "test_table"' in response_text
+        assert '"name": "ID"' in response_text
+        assert '"name": "NAME"' in response_text
+
+        # Should contain key characteristics
+        assert "Primary key: ID" in response_text
+        assert "Required fields: ID" in response_text
+        assert "Optional fields: NAME" in response_text
 
     @pytest.mark.asyncio
     async def test_empty_table(self) -> None:
@@ -155,10 +162,17 @@ class TestHandleDescribeTable:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert result[0].type == "text"
-        assert "Table Schema: empty_db.empty_schema.empty_table" in result[0].text
-        assert "This table has 0 columns" in result[0].text
-        assert "Required fields: None" in result[0].text
-        assert "Optional fields: None" in result[0].text
+
+        response_text = result[0].text
+
+        # Should contain JSON structure
+        assert '"database": "empty_db"' in response_text
+        assert '"schema": "empty_schema"' in response_text
+        assert '"name": "empty_table"' in response_text
+
+        # Should contain key characteristics
+        assert "Required fields: None" in response_text
+        assert "Optional fields: None" in response_text
 
     @pytest.mark.asyncio
     async def test_effect_handler_exception(self) -> None:

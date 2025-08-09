@@ -146,13 +146,7 @@ async def handle_describe_table(
     # Format the hybrid response
     json_str = json.dumps(table_json, indent=2)
 
-    response_text = f"""Table Schema: {table_info.database}.{table_info.schema_name}.{table_info.name}
-
-This table has {table_info.column_count} columns with the following structure:
-
-```json
-{json_str}
-```
+    response_text = f"""{json_str}
 
 **Key characteristics:**
 - Primary key: {primary_key}
