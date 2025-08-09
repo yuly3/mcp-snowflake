@@ -2,6 +2,59 @@
 
 from typing import Any, TypedDict
 
+import attrs
+
+from mcp_snowflake.kernel import SnowflakeDataType, StatisticsSupportDataType
+
+
+@attrs.define(frozen=True)
+class ColumnInfo:
+    """Column information for statistics analysis."""
+
+    name: str
+    snowflake_type: SnowflakeDataType
+    statistics_type: StatisticsSupportDataType
+
+    @classmethod
+    def from_dict(cls, col_dict: dict[str, Any]) -> "ColumnInfo":
+        """Convert dictionary column info to ColumnInfo.
+
+        Parameters
+        ----------
+        col_dict : dict[str, Any]
+            Dictionary containing column information with 'name' and 'data_type' keys.
+
+        Returns
+        -------
+        ColumnInfo
+            Column information object with type-safe data types.
+
+        Raises
+        ------
+        KeyError
+            If required keys ('name' or 'data_type') are missing.
+        ValueError
+            If the data type is not supported for statistics or is invalid.
+        """
+        sf_type = SnowflakeDataType(col_dict["data_type"])
+        stats_type = StatisticsSupportDataType.from_snowflake_type(sf_type)
+        return cls(
+            name=col_dict["name"],
+            snowflake_type=sf_type,
+            statistics_type=stats_type,
+        )
+
+    @property
+    def column_type(self) -> str:
+        """Backward compatibility property.
+
+        Returns
+        -------
+        str
+            The column type as string: "numeric", "string", or "date".
+        """
+        return self.statistics_type.type_name
+
 
 class NumericStatsDict(TypedDict):
     """TypedDict for numeric column statistics."""

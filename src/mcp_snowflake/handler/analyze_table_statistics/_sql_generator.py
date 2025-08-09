@@ -1,15 +1,13 @@
 """SQL generation utilities for table statistics analysis."""
 
-from typing import Any
-
-from ._column_analysis import classify_column_type
+from ._types import ColumnInfo
 
 
 def generate_statistics_sql(
     database: str,
     schema: str,
     table_name: str,
-    columns_info: list[dict[str, Any]],
+    columns_info: list[ColumnInfo],
     top_k_limit: int,
 ) -> str:
     """Generate SQL query for analyzing table statistics.
@@ -22,8 +20,8 @@ def generate_statistics_sql(
         Schema name.
     table_name : str
         Table name.
-    columns_info : list[dict[str, Any]]
-        Column information including name and data_type.
+    columns_info : list[ColumnInfo]
+        Column information with type-safe data types.
     top_k_limit : int
         Limit for APPROX_TOP_K function.
 
@@ -37,9 +35,8 @@ def generate_statistics_sql(
     sql_parts = ["SELECT", "  COUNT(*) as total_rows,"]
 
     for col_info in columns_info:
-        col_name = col_info["name"]
-        data_type = col_info["data_type"]
-        col_type = classify_column_type(data_type)
+        col_name = col_info.name
+        col_type = col_info.statistics_type.type_name
 
         # Use escaped column names to handle special characters
         escaped_col = f'"{col_name}"'
@@ -82,9 +79,6 @@ def generate_statistics_sql(
                         f"  APPROX_COUNT_DISTINCT({escaped_col}) as {prefix}_distinct,",
                     ]
                 )
-            case _:
-                # This should not happen if classify_column_type works correctly
-                raise ValueError(f"Unknown column type: {col_type}")
 
     # Remove trailing comma from the last item
     if sql_parts[-1].endswith(","):

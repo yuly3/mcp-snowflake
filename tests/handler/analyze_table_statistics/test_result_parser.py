@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, cast
 from src.mcp_snowflake.handler.analyze_table_statistics._result_parser import (
     parse_statistics_result,
 )
+from src.mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
 
 if TYPE_CHECKING:
     from src.mcp_snowflake.handler.analyze_table_statistics._types import (
@@ -14,14 +15,21 @@ if TYPE_CHECKING:
     )
 
 
+def _create_column_infos(columns_dict: list[dict[str, str]]) -> list[ColumnInfo]:
+    """To convert dict columns to ColumnInfo objects."""
+    return [ColumnInfo.from_dict(col) for col in columns_dict]
+
+
 class TestParseStatisticsResult:
     """Test parse_statistics_result function."""
 
     def test_parse_numeric_column(self) -> None:
         """Test parsing numeric column statistics."""
-        columns_info = [
-            {"name": "price", "data_type": "NUMBER(10,2)"},
-        ]
+        columns_info = _create_column_infos(
+            [
+                {"name": "price", "data_type": "NUMBER(10,2)"},
+            ]
+        )
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -54,9 +62,11 @@ class TestParseStatisticsResult:
 
     def test_parse_string_column(self) -> None:
         """Test parsing string column statistics."""
-        columns_info = [
-            {"name": "status", "data_type": "VARCHAR(10)"},
-        ]
+        columns_info = _create_column_infos(
+            [
+                {"name": "status", "data_type": "VARCHAR(10)"},
+            ]
+        )
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -87,9 +97,11 @@ class TestParseStatisticsResult:
 
     def test_parse_date_column(self) -> None:
         """Test parsing date column statistics."""
-        columns_info = [
-            {"name": "created_date", "data_type": "DATE"},
-        ]
+        columns_info = _create_column_infos(
+            [
+                {"name": "created_date", "data_type": "DATE"},
+            ]
+        )
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -116,11 +128,13 @@ class TestParseStatisticsResult:
 
     def test_parse_mixed_columns(self) -> None:
         """Test parsing mixed column types."""
-        columns_info = [
-            {"name": "price", "data_type": "NUMBER(10,2)"},
-            {"name": "status", "data_type": "VARCHAR(1)"},
-            {"name": "created_date", "data_type": "DATE"},
-        ]
+        columns_info = _create_column_infos(
+            [
+                {"name": "price", "data_type": "NUMBER(10,2)"},
+                {"name": "status", "data_type": "VARCHAR(1)"},
+                {"name": "created_date", "data_type": "DATE"},
+            ]
+        )
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -171,9 +185,11 @@ class TestParseStatisticsResult:
 
     def test_parse_with_null_values(self) -> None:
         """Test parsing with null values in the result."""
-        columns_info = [
-            {"name": "price", "data_type": "NUMBER(10,2)"},
-        ]
+        columns_info = _create_column_infos(
+            [
+                {"name": "price", "data_type": "NUMBER(10,2)"},
+            ]
+        )
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -200,9 +216,11 @@ class TestParseStatisticsResult:
 
     def test_parse_invalid_json_top_values(self) -> None:
         """Test parsing with invalid JSON in top_values."""
-        columns_info = [
-            {"name": "status", "data_type": "VARCHAR(10)"},
-        ]
+        columns_info = _create_column_infos(
+            [
+                {"name": "status", "data_type": "VARCHAR(10)"},
+            ]
+        )
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -221,9 +239,11 @@ class TestParseStatisticsResult:
 
     def test_parse_empty_top_values(self) -> None:
         """Test parsing with empty top_values."""
-        columns_info = [
-            {"name": "status", "data_type": "VARCHAR(10)"},
-        ]
+        columns_info = _create_column_infos(
+            [
+                {"name": "status", "data_type": "VARCHAR(10)"},
+            ]
+        )
 
         result_row = {
             "TOTAL_ROWS": 1000,

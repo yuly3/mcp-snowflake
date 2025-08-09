@@ -4,15 +4,14 @@ import json
 import logging
 from typing import Any
 
-from ._column_analysis import classify_column_type
-from ._types import DateStatsDict, NumericStatsDict, StringStatsDict
+from ._types import ColumnInfo, DateStatsDict, NumericStatsDict, StringStatsDict
 
 logger = logging.getLogger(__name__)
 
 
 def parse_statistics_result(
     result_row: dict[str, Any],
-    columns_info: list[dict[str, Any]],
+    columns_info: list[ColumnInfo],
 ) -> dict[str, NumericStatsDict | StringStatsDict | DateStatsDict]:
     """Parse the statistics query result into structured column statistics.
 
@@ -20,7 +19,7 @@ def parse_statistics_result(
     ----------
     result_row : dict[str, Any]
         Raw query result row containing all statistics.
-    columns_info : list[dict[str, Any]]
+    columns_info : list[ColumnInfo]
         Column information including name and data_type.
 
     Returns
@@ -33,9 +32,9 @@ def parse_statistics_result(
     ] = {}
 
     for col_info in columns_info:
-        col_name = col_info["name"]
-        data_type = col_info["data_type"]
-        col_type = classify_column_type(data_type)
+        col_name = col_info.name
+        data_type = col_info.snowflake_type.raw_type
+        col_type = col_info.statistics_type.type_name
         prefix = f"{col_type}_{col_name}".upper()  # Convert to uppercase for Snowflake
 
         match col_type:
@@ -100,9 +99,6 @@ def parse_statistics_result(
                     max_date=str(max_date) if max_date is not None else "",
                     date_range_days=result_row[f"{prefix}_RANGE_DAYS"] or 0,
                 )
-            case _:
-                # This should not happen if classify_column_type works correctly
-                raise ValueError(f"Unknown column type: {col_type}")
 
         column_statistics[col_name] = stats
 

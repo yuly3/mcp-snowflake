@@ -8,6 +8,7 @@ import mcp.types as types
 from ._column_analysis import validate_and_select_columns
 from ._response_builder import build_response
 from ._sql_generator import generate_statistics_sql
+from ._types import ColumnInfo
 from .models import AnalyzeTableStatisticsArgs, EffectAnalyzeTableStatistics
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ __all__ = [
 async def _execute_statistics_query(
     effect: EffectAnalyzeTableStatistics,
     args: AnalyzeTableStatisticsArgs,
-    columns_to_analyze: list[dict[str, Any]],
+    columns_to_analyze: list[ColumnInfo],
 ) -> dict[str, Any]:
     """Execute the statistics query and return the result row.
 
@@ -33,7 +34,7 @@ async def _execute_statistics_query(
         Effect implementation for database operations.
     args : AnalyzeTableStatisticsArgs
         The request arguments.
-    columns_to_analyze : list[dict[str, Any]]
+    columns_to_analyze : list[ColumnInfo]
         The columns to analyze.
 
     Returns
@@ -97,14 +98,12 @@ async def handle_analyze_table_statistics(
         ]
 
     # Validate and select columns
-    columns_to_analyze, validation_errors = validate_and_select_columns(
-        all_columns, args.columns
+    columns_to_analyze = validate_and_select_columns(
+        all_columns,
+        args.columns,
     )
-    if validation_errors is not None:
-        return validation_errors
-
-    # At this point, columns_to_analyze must not be None
-    assert columns_to_analyze is not None
+    if isinstance(columns_to_analyze, types.TextContent):
+        return [columns_to_analyze]
 
     try:
         # Execute statistics query

@@ -6,12 +6,18 @@ from typing import TYPE_CHECKING, cast
 from src.mcp_snowflake.handler.analyze_table_statistics._response_builder import (
     build_response,
 )
+from src.mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
 from src.mcp_snowflake.handler.analyze_table_statistics.models import (
     AnalyzeTableStatisticsArgs,
 )
 
 if TYPE_CHECKING:
     import mcp.types as types
+
+
+def _create_column_infos(columns_dict: list[dict[str, str]]) -> list[ColumnInfo]:
+    """Convert dict columns to ColumnInfo objects."""
+    return [ColumnInfo.from_dict(col) for col in columns_dict]
 
 
 class TestBuildResponse:
@@ -38,9 +44,11 @@ class TestBuildResponse:
             "NUMERIC_ID_DISTINCT": 100,
         }
 
-        columns_to_analyze = [
-            {"name": "id", "data_type": "NUMBER(10,0)"},
-        ]
+        columns_to_analyze = _create_column_infos(
+            [
+                {"name": "id", "data_type": "NUMBER(10,0)"},
+            ]
+        )
 
         response = build_response(args, result_row, columns_to_analyze)
 
@@ -111,11 +119,13 @@ class TestBuildResponse:
             "DATE_CREATED_DISTINCT": 365,
         }
 
-        columns_to_analyze = [
-            {"name": "price", "data_type": "NUMBER(10,2)"},
-            {"name": "status", "data_type": "VARCHAR(10)"},
-            {"name": "created", "data_type": "DATE"},
-        ]
+        columns_to_analyze = _create_column_infos(
+            [
+                {"name": "price", "data_type": "NUMBER(10,2)"},
+                {"name": "status", "data_type": "VARCHAR(10)"},
+                {"name": "created", "data_type": "DATE"},
+            ]
+        )
 
         response = cast(
             "list[types.TextContent]",
@@ -161,9 +171,11 @@ class TestBuildResponse:
             "STRING_SPECIFIC_COLUMN_TOP_VALUES": '[["A", 10], ["B", 10], ["C", 10], ["D", 10], ["E", 10]]',
         }
 
-        columns_to_analyze = [
-            {"name": "specific_column", "data_type": "VARCHAR(10)"},
-        ]
+        columns_to_analyze = _create_column_infos(
+            [
+                {"name": "specific_column", "data_type": "VARCHAR(10)"},
+            ]
+        )
 
         response = cast(
             "list[types.TextContent]",
@@ -204,9 +216,11 @@ class TestBuildResponse:
             "NUMERIC_ID_DISTINCT": 1234567,
         }
 
-        columns_to_analyze = [
-            {"name": "id", "data_type": "NUMBER(10,0)"},
-        ]
+        columns_to_analyze = _create_column_infos(
+            [
+                {"name": "id", "data_type": "NUMBER(10,0)"},
+            ]
+        )
 
         response = cast(
             "list[types.TextContent]",
@@ -238,9 +252,11 @@ class TestBuildResponse:
             "NUMERIC_ID_DISTINCT": 100,
         }
 
-        columns_to_analyze = [
-            {"name": "id", "data_type": "NUMBER(10,0)"},
-        ]
+        columns_to_analyze = _create_column_infos(
+            [
+                {"name": "id", "data_type": "NUMBER(10,0)"},
+            ]
+        )
 
         response = build_response(args, result_row, columns_to_analyze)
 

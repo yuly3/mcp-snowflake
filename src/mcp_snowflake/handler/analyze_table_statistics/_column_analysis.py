@@ -4,53 +4,53 @@ from typing import Any
 
 import mcp.types as types
 
+from ._types import ColumnInfo
 
-def classify_column_type(data_type: str) -> str:
-    """Classify column data type into numeric, string, or date.
+
+def create_column_info_list(columns: list[dict[str, Any]]) -> list[ColumnInfo]:
+    """Convert dict-based column information to ColumnInfo objects.
 
     Parameters
     ----------
-    data_type : str
-        The Snowflake data type to classify.
+    columns : list[dict[str, Any]]
+        List of column dictionaries with 'name' and 'data_type' keys.
 
     Returns
     -------
-    str
-        The classified type: "numeric", "string", or "date".
+    list[ColumnInfo]
+        List of ColumnInfo objects.
 
     Raises
     ------
     ValueError
-        If the data type is not supported.
+        If any column has unsupported data type or missing required keys.
     """
-    data_type_upper = data_type.upper()
+    column_infos: list[ColumnInfo] = []
+    unsupported_columns: list[str] = []
 
-    # Check numeric types
-    if any(
-        numeric_type in data_type_upper
-        for numeric_type in ["NUMBER", "INT", "FLOAT", "DOUBLE", "DECIMAL"]
-    ):
-        return "numeric"
+    for col in columns:
+        try:
+            column_info = ColumnInfo.from_dict(col)
+        except ValueError:
+            # Extract column name and type for error message
+            col_name = col.get("name", "unknown")
+            col_type = col.get("data_type", "unknown")
+            unsupported_columns.append(f"{col_name} ({col_type})")
+        else:
+            column_infos.append(column_info)
 
-    # Check date types
-    if any(date_type in data_type_upper for date_type in ["DATE", "TIMESTAMP", "TIME"]):
-        return "date"
+    if unsupported_columns:
+        raise ValueError(
+            f"Unsupported column types found: {', '.join(unsupported_columns)}"
+        )
 
-    # Check string types
-    if any(
-        string_type in data_type_upper
-        for string_type in ["VARCHAR", "CHAR", "TEXT", "STRING"]
-    ):
-        return "string"
-
-    # If none of the supported types match, raise an exception
-    raise ValueError(f"Unsupported column data type: {data_type}")
+    return column_infos
 
 
 def validate_and_select_columns(
     all_columns: list[dict[str, Any]],
     requested_columns: list[str],
-) -> tuple[list[dict[str, Any]] | None, list[types.Content] | None]:
+) -> list[ColumnInfo] | types.TextContent:
     """Validate and select columns for analysis.
 
     Parameters
@@ -62,8 +62,8 @@ def validate_and_select_columns(
 
     Returns
     -------
-    tuple[list[dict[str, Any]] | None, list[types.Content] | None]
-        A tuple of (columns, error_content). One will be None and the other will have data.
+    list[ColumnInfo] | types.TextContent
+        List of ColumnInfo objects or an error message.
     """
     # Filter columns if specified
     if requested_columns:
@@ -73,46 +73,28 @@ def validate_and_select_columns(
         if len(columns_to_analyze) != len(requested_columns):
             found_columns = {col["name"] for col in columns_to_analyze}
             missing_columns = set(requested_columns) - found_columns
-            return (
-                None,
-                [
-                    types.TextContent(
-                        type="text",
-                        text=f"Error: Columns not found in table: {', '.join(missing_columns)}",
-                    )
-                ],
+            return types.TextContent(
+                type="text",
+                text=f"Error: Columns not found in table: {', '.join(missing_columns)}",
             )
     else:
         columns_to_analyze = all_columns
 
     if not columns_to_analyze:
-        return (
-            None,
-            [
-                types.TextContent(
-                    type="text",
-                    text="Error: No columns to analyze",
-                )
-            ],
+        return types.TextContent(
+            type="text",
+            text="Error: No columns to analyze",
         )
 
-    # Check for unsupported column types
-    unsupported_columns: list[str] = []
-    for col in columns_to_analyze:
-        try:
-            _ = classify_column_type(col["data_type"])
-        except ValueError:
-            unsupported_columns.append(f"{col['name']} ({col['data_type']})")
-
-    if unsupported_columns:
-        return (
-            None,
-            [
-                types.TextContent(
-                    type="text",
-                    text=f"Error: Unsupported column types found: {', '.join(unsupported_columns)}",
-                )
-            ],
+    # Convert dict columns to ColumnInfo objects and filter unsupported types
+    try:
+        column_info_objects = create_column_info_list(columns_to_analyze)
+    except ValueError as e:
+        # Extract column information from the error
+        error_msg = str(e)
+        return types.TextContent(
+            type="text",
+            text=f"Error: {error_msg}",
         )
-
-    return (columns_to_analyze, None)
+    else:
+        return column_info_objects

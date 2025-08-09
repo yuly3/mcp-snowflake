@@ -1,6 +1,7 @@
 [project]
 dependencies = [
     "anyio>=4.0.0",
+    "attrs>=25.3.0",
     "cattrs>=23.0.0",
     "mcp>=1.0.0",
     "pydantic-settings>=2.9.1",

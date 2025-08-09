@@ -1,8 +1,9 @@
 """Tests for SQL generation functionality."""
 
-from src.mcp_snowflake.handler.analyze_table_statistics._sql_generator import (
+from mcp_snowflake.handler.analyze_table_statistics._sql_generator import (
     generate_statistics_sql,
 )
+from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
 
 
 class TestGenerateStatisticsSQL:
@@ -11,7 +12,7 @@ class TestGenerateStatisticsSQL:
     def test_numeric_column_sql(self) -> None:
         """Test SQL generation for numeric columns."""
         columns_info = [
-            {"name": "price", "data_type": "NUMBER(10,2)"},
+            ColumnInfo.from_dict({"name": "price", "data_type": "NUMBER(10,2)"}),
         ]
 
         sql = generate_statistics_sql(
@@ -39,7 +40,7 @@ class TestGenerateStatisticsSQL:
     def test_string_column_sql(self) -> None:
         """Test SQL generation for string columns."""
         columns_info = [
-            {"name": "status", "data_type": "VARCHAR(10)"},
+            ColumnInfo.from_dict({"name": "status", "data_type": "VARCHAR(10)"}),
         ]
 
         sql = generate_statistics_sql(
@@ -60,7 +61,7 @@ class TestGenerateStatisticsSQL:
     def test_date_column_sql(self) -> None:
         """Test SQL generation for date columns."""
         columns_info = [
-            {"name": "created_date", "data_type": "DATE"},
+            ColumnInfo.from_dict({"name": "created_date", "data_type": "DATE"}),
         ]
 
         sql = generate_statistics_sql(
@@ -86,9 +87,9 @@ class TestGenerateStatisticsSQL:
     def test_mixed_column_types(self) -> None:
         """Test SQL generation with mixed column types."""
         columns_info = [
-            {"name": "price", "data_type": "NUMBER(10,2)"},
-            {"name": "status", "data_type": "VARCHAR(10)"},
-            {"name": "created_date", "data_type": "DATE"},
+            ColumnInfo.from_dict({"name": "price", "data_type": "NUMBER(10,2)"}),
+            ColumnInfo.from_dict({"name": "status", "data_type": "VARCHAR(10)"}),
+            ColumnInfo.from_dict({"name": "created_date", "data_type": "DATE"}),
         ]
 
         sql = generate_statistics_sql(
@@ -114,8 +115,12 @@ class TestGenerateStatisticsSQL:
     def test_column_name_escaping(self) -> None:
         """Test that column names are properly escaped."""
         columns_info = [
-            {"name": "special-column", "data_type": "NUMBER(10,2)"},
-            {"name": "ORDER", "data_type": "VARCHAR(10)"},  # Reserved keyword
+            ColumnInfo.from_dict(
+                {"name": "special-column", "data_type": "NUMBER(10,2)"}
+            ),
+            ColumnInfo.from_dict(
+                {"name": "ORDER", "data_type": "VARCHAR(10)"}
+            ),  # Reserved keyword
         ]
 
         sql = generate_statistics_sql(
@@ -133,7 +138,7 @@ class TestGenerateStatisticsSQL:
     def test_top_k_limit_parameter(self) -> None:
         """Test that top_k_limit parameter is correctly used."""
         columns_info = [
-            {"name": "category", "data_type": "VARCHAR(50)"},
+            ColumnInfo.from_dict({"name": "category", "data_type": "VARCHAR(50)"}),
         ]
 
         sql = generate_statistics_sql(
@@ -149,7 +154,7 @@ class TestGenerateStatisticsSQL:
     def test_database_schema_table_escaping(self) -> None:
         """Test that database, schema, and table names are properly escaped."""
         columns_info = [
-            {"name": "id", "data_type": "NUMBER(10,0)"},
+            ColumnInfo.from_dict({"name": "id", "data_type": "NUMBER(10,0)"}),
         ]
 
         sql = generate_statistics_sql(

@@ -87,7 +87,8 @@ class TestHandleAnalyzeTableStatistics:
         ]
 
         mock_effect = MockEffectHandler(
-            table_data=table_data, query_result=query_result
+            table_data=table_data,
+            query_result=query_result,
         )
 
         args = AnalyzeTableStatisticsArgs(
