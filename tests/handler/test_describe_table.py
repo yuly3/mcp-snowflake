@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import mcp.types as types
@@ -126,16 +127,25 @@ class TestHandleDescribeTable:
         response_text = result[0].text
 
         # Should contain JSON structure
-        assert '"database": "test_db"' in response_text
-        assert '"schema": "test_schema"' in response_text
-        assert '"name": "test_table"' in response_text
-        assert '"name": "ID"' in response_text
-        assert '"name": "NAME"' in response_text
+        json_data = json.loads(response_text)
+        table_info = json_data["table_info"]
 
-        # Should contain key characteristics
-        assert "Primary key: ID" in response_text
-        assert "Required fields: ID" in response_text
-        assert "Optional fields: NAME" in response_text
+        assert table_info["database"] == "test_db"
+        assert table_info["schema"] == "test_schema"
+        assert table_info["name"] == "test_table"
+        assert table_info["column_count"] == 2
+        assert len(table_info["columns"]) == 2
+
+        # Verify specific columns
+        id_column = next(col for col in table_info["columns"] if col["name"] == "ID")
+        assert id_column["data_type"] == "NUMBER(38,0)"
+        assert id_column["nullable"] is False
+
+        name_column = next(
+            col for col in table_info["columns"] if col["name"] == "NAME"
+        )
+        assert name_column["data_type"] == "VARCHAR(100)"
+        assert name_column["nullable"] is True
 
     @pytest.mark.asyncio
     async def test_empty_table(self) -> None:
@@ -165,14 +175,15 @@ class TestHandleDescribeTable:
 
         response_text = result[0].text
 
-        # Should contain JSON structure
-        assert '"database": "empty_db"' in response_text
-        assert '"schema": "empty_schema"' in response_text
-        assert '"name": "empty_table"' in response_text
+        # Should be valid JSON
+        json_data = json.loads(response_text)
+        table_info = json_data["table_info"]
 
-        # Should contain key characteristics
-        assert "Required fields: None" in response_text
-        assert "Optional fields: None" in response_text
+        assert table_info["database"] == "empty_db"
+        assert table_info["schema"] == "empty_schema"
+        assert table_info["name"] == "empty_table"
+        assert table_info["column_count"] == 0
+        assert table_info["columns"] == []
 
     @pytest.mark.asyncio
     async def test_effect_handler_exception(self) -> None:
@@ -237,9 +248,30 @@ class TestHandleDescribeTable:
         # Assert
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        assert "Required fields: None" in result[0].text
-        assert "Optional fields: OPTIONAL1, OPTIONAL2" in result[0].text
-        assert "Primary key: Not identified" in result[0].text
+
+        response_text = result[0].text
+        json_data = json.loads(response_text)
+        table_info = json_data["table_info"]
+
+        assert table_info["database"] == "nullable_db"
+        assert table_info["schema"] == "nullable_schema"
+        assert table_info["name"] == "nullable_table"
+        assert table_info["column_count"] == 2
+
+        # All columns should be nullable
+        for column in table_info["columns"]:
+            assert column["nullable"] is True
+
+        # Verify specific columns
+        optional1 = next(
+            col for col in table_info["columns"] if col["name"] == "OPTIONAL1"
+        )
+        assert optional1["data_type"] == "VARCHAR(50)"
+
+        optional2 = next(
+            col for col in table_info["columns"] if col["name"] == "OPTIONAL2"
+        )
+        assert optional2["data_type"] == "INTEGER"
 
     @pytest.mark.asyncio
     async def test_all_required_columns(self) -> None:
@@ -282,6 +314,133 @@ class TestHandleDescribeTable:
         # Assert
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        assert "Required fields: REQUIRED1, REQUIRED2" in result[0].text
-        assert "Optional fields: None" in result[0].text
-        assert "Primary key: REQUIRED1" in result[0].text  # First required column
+
+        response_text = result[0].text
+        json_data = json.loads(response_text)
+        table_info = json_data["table_info"]
+
+        assert table_info["database"] == "required_db"
+        assert table_info["schema"] == "required_schema"
+        assert table_info["name"] == "required_table"
+        assert table_info["column_count"] == 2
+
+        # All columns should be non-nullable (required)
+        for column in table_info["columns"]:
+            assert column["nullable"] is False
+
+        # Verify specific columns
+        required1 = next(
+            col for col in table_info["columns"] if col["name"] == "REQUIRED1"
+        )
+        assert required1["data_type"] == "VARCHAR(50)"
+
+        required2 = next(
+            col for col in table_info["columns"] if col["name"] == "REQUIRED2"
+        )
+        assert required2["data_type"] == "INTEGER"
+
+    @pytest.mark.asyncio
+    async def test_pure_json_response(self) -> None:
+        """Test that response is pure JSON without any text formatting."""
+        # Arrange
+        args = DescribeTableArgs(
+            database="test_db",
+            schema_name="test_schema",
+            table_name="test_table",
+        )
+        mock_table_data = {
+            "database": "test_db",
+            "schema_name": "test_schema",
+            "name": "test_table",
+            "column_count": 2,
+            "columns": [
+                {
+                    "name": "ID",
+                    "data_type": "NUMBER(38,0)",
+                    "nullable": False,
+                    "default_value": None,
+                    "comment": "Primary key",
+                    "ordinal_position": 1,
+                },
+                {
+                    "name": "NAME",
+                    "data_type": "VARCHAR(100)",
+                    "nullable": True,
+                    "default_value": None,
+                    "comment": "Customer name",
+                    "ordinal_position": 2,
+                },
+            ],
+        }
+        effect_handler = MockEffectHandler(table_data=mock_table_data)
+
+        # Act
+        result = await handle_describe_table(args, effect_handler)
+
+        # Assert
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert result[0].type == "text"
+
+        response_text = result[0].text
+
+        # Response should be pure JSON
+        json_data = json.loads(response_text)  # Should not raise exception
+
+        # Verify JSON structure
+        assert "table_info" in json_data
+        table_info = json_data["table_info"]
+
+        assert table_info["database"] == "test_db"
+        assert table_info["schema"] == "test_schema"
+        assert table_info["name"] == "test_table"
+        assert table_info["column_count"] == 2
+        assert len(table_info["columns"]) == 2
+
+        # Verify column structure
+        id_column = table_info["columns"][0]
+        assert id_column["name"] == "ID"
+        assert id_column["nullable"] is False
+
+        name_column = table_info["columns"][1]
+        assert name_column["name"] == "NAME"
+        assert name_column["nullable"] is True
+
+        # Should NOT contain any text formatting
+        assert "**Key characteristics:**" not in response_text
+        assert "Primary key:" not in response_text
+        assert "Required fields:" not in response_text
+        assert "Optional fields:" not in response_text
+
+    @pytest.mark.asyncio
+    async def test_pure_json_empty_table(self) -> None:
+        """Test pure JSON response for empty table."""
+        # Arrange
+        args = DescribeTableArgs(
+            database="empty_db",
+            schema_name="empty_schema",
+            table_name="empty_table",
+        )
+        mock_table_data = {
+            "database": "empty_db",
+            "schema_name": "empty_schema",
+            "name": "empty_table",
+            "column_count": 0,
+            "columns": [],
+        }
+        effect_handler = MockEffectHandler(table_data=mock_table_data)
+
+        # Act
+        result = await handle_describe_table(args, effect_handler)
+
+        # Assert
+        assert len(result) == 1
+        response_text = result[0].text
+
+        # Should be valid JSON
+        json_data = json.loads(response_text)
+        assert json_data["table_info"]["column_count"] == 0
+        assert json_data["table_info"]["columns"] == []
+
+        # Should not contain text formatting
+        assert "**Key characteristics:**" not in response_text

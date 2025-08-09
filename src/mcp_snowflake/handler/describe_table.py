@@ -129,33 +129,12 @@ async def handle_describe_table(
         }
     }
 
-    required_fields = [col.name for col in table_info.columns if not col.nullable]
-    optional_fields = [col.name for col in table_info.columns if col.nullable]
-
-    # For primary key detection, we'll use a simple heuristic for now
-    # (first non-nullable column with "ID" in name or first column)
-    primary_key_candidates = [
-        col.name
-        for col in table_info.columns
-        if not col.nullable and ("id" in col.name.lower() or col.ordinal_position == 1)
-    ]
-    primary_key = (
-        primary_key_candidates[0] if primary_key_candidates else "Not identified"
-    )
-
-    # Format the hybrid response
+    # Format as pure JSON response
     json_str = json.dumps(table_json, indent=2)
-
-    response_text = f"""{json_str}
-
-**Key characteristics:**
-- Primary key: {primary_key}
-- Required fields: {", ".join(required_fields) if required_fields else "None"}
-- Optional fields: {", ".join(optional_fields) if optional_fields else "None"}"""
 
     return [
         types.TextContent(
             type="text",
-            text=response_text,
+            text=json_str,
         )
     ]
