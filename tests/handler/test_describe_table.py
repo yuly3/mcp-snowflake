@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, ClassVar
 
 import mcp.types as types
 import pytest
@@ -81,6 +81,15 @@ class TestDescribeTableArgs:
 class TestHandleDescribeTable:
     """Test handle_describe_table function."""
 
+    # Expected keys in describe_table response table_info object
+    EXPECTED_RESPONSE_KEYS: ClassVar[set[str]] = {
+        "database",
+        "schema",
+        "name",
+        "column_count",
+        "columns",
+    }
+
     @pytest.mark.asyncio
     async def test_successful_describe_table(self) -> None:
         """Test successful table description."""
@@ -130,6 +139,9 @@ class TestHandleDescribeTable:
         json_data = json.loads(response_text)
         table_info = json_data["table_info"]
 
+        # Strict key validation - ensure response contains exactly expected keys
+        assert set(table_info.keys()) == self.EXPECTED_RESPONSE_KEYS
+
         assert table_info["database"] == "test_db"
         assert table_info["schema"] == "test_schema"
         assert table_info["name"] == "test_table"
@@ -178,6 +190,9 @@ class TestHandleDescribeTable:
         # Should be valid JSON
         json_data = json.loads(response_text)
         table_info = json_data["table_info"]
+
+        # Strict key validation - ensure response contains exactly expected keys
+        assert set(table_info.keys()) == self.EXPECTED_RESPONSE_KEYS
 
         assert table_info["database"] == "empty_db"
         assert table_info["schema"] == "empty_schema"
@@ -253,6 +268,9 @@ class TestHandleDescribeTable:
         json_data = json.loads(response_text)
         table_info = json_data["table_info"]
 
+        # Strict key validation - ensure response contains exactly expected keys
+        assert set(table_info.keys()) == self.EXPECTED_RESPONSE_KEYS
+
         assert table_info["database"] == "nullable_db"
         assert table_info["schema"] == "nullable_schema"
         assert table_info["name"] == "nullable_table"
@@ -318,6 +336,9 @@ class TestHandleDescribeTable:
         response_text = result[0].text
         json_data = json.loads(response_text)
         table_info = json_data["table_info"]
+
+        # Strict key validation - ensure response contains exactly expected keys
+        assert set(table_info.keys()) == self.EXPECTED_RESPONSE_KEYS
 
         assert table_info["database"] == "required_db"
         assert table_info["schema"] == "required_schema"
@@ -391,6 +412,9 @@ class TestHandleDescribeTable:
         assert "table_info" in json_data
         table_info = json_data["table_info"]
 
+        # Strict key validation - ensure response contains exactly expected keys
+        assert set(table_info.keys()) == self.EXPECTED_RESPONSE_KEYS
+
         assert table_info["database"] == "test_db"
         assert table_info["schema"] == "test_schema"
         assert table_info["name"] == "test_table"
@@ -439,8 +463,13 @@ class TestHandleDescribeTable:
 
         # Should be valid JSON
         json_data = json.loads(response_text)
-        assert json_data["table_info"]["column_count"] == 0
-        assert json_data["table_info"]["columns"] == []
+        table_info = json_data["table_info"]
+
+        # Strict key validation - ensure response contains exactly expected keys
+        assert set(table_info.keys()) == self.EXPECTED_RESPONSE_KEYS
+
+        assert table_info["column_count"] == 0
+        assert table_info["columns"] == []
 
         # Should not contain text formatting
         assert "**Key characteristics:**" not in response_text
