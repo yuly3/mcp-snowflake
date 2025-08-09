@@ -4,7 +4,13 @@ import json
 import logging
 from typing import Any
 
-from ._types import ColumnInfo, DateStatsDict, NumericStatsDict, StringStatsDict
+from ._types import (
+    BooleanStatsDict,
+    ColumnInfo,
+    DateStatsDict,
+    NumericStatsDict,
+    StringStatsDict,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +18,7 @@ logger = logging.getLogger(__name__)
 def parse_statistics_result(
     result_row: dict[str, Any],
     columns_info: list[ColumnInfo],
-) -> dict[str, NumericStatsDict | StringStatsDict | DateStatsDict]:
+) -> dict[str, NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict]:
     """Parse the statistics query result into structured column statistics.
 
     Parameters
@@ -24,11 +30,11 @@ def parse_statistics_result(
 
     Returns
     -------
-    dict[str, NumericStatsDict | StringStatsDict | DateStatsDict]
+    dict[str, NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict]
         Parsed column statistics keyed by column name.
     """
     column_statistics: dict[
-        str, NumericStatsDict | StringStatsDict | DateStatsDict
+        str, NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict
     ] = {}
 
     for col_info in columns_info:
@@ -98,6 +104,31 @@ def parse_statistics_result(
                     min_date=str(min_date) if min_date is not None else "",
                     max_date=str(max_date) if max_date is not None else "",
                     date_range_days=result_row[f"{prefix}_RANGE_DAYS"] or 0,
+                )
+            case "boolean":
+                stats = BooleanStatsDict(
+                    column_type="boolean",
+                    data_type=data_type,
+                    count=result_row[f"{prefix}_COUNT"],
+                    null_count=result_row[f"{prefix}_NULL_COUNT"],
+                    true_count=result_row[f"{prefix}_TRUE_COUNT"],
+                    false_count=result_row[f"{prefix}_FALSE_COUNT"],
+                    true_percentage=float(result_row[f"{prefix}_TRUE_PERCENTAGE"])
+                    if result_row[f"{prefix}_TRUE_PERCENTAGE"] is not None
+                    else 0.0,
+                    false_percentage=float(result_row[f"{prefix}_FALSE_PERCENTAGE"])
+                    if result_row[f"{prefix}_FALSE_PERCENTAGE"] is not None
+                    else 0.0,
+                    true_percentage_with_nulls=float(
+                        result_row[f"{prefix}_TRUE_PERCENTAGE_WITH_NULLS"]
+                    )
+                    if result_row[f"{prefix}_TRUE_PERCENTAGE_WITH_NULLS"] is not None
+                    else 0.0,
+                    false_percentage_with_nulls=float(
+                        result_row[f"{prefix}_FALSE_PERCENTAGE_WITH_NULLS"]
+                    )
+                    if result_row[f"{prefix}_FALSE_PERCENTAGE_WITH_NULLS"] is not None
+                    else 0.0,
                 )
 
         column_statistics[col_name] = stats

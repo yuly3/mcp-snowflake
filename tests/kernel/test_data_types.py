@@ -145,13 +145,32 @@ class TestSnowflakeDataType:
     @pytest.mark.parametrize(
         ("raw_type", "expected"),
         [
+            # 論理型
+            ("BOOLEAN", True),
+            # 非論理型
+            ("VARCHAR(255)", False),
+            ("NUMBER(10,2)", False),
+            ("DATE", False),
+            ("TIMESTAMP_NTZ", False),
+            ("VARIANT", False),
+            ("BINARY", False),
+        ],
+    )
+    def test_is_boolean(self, raw_type: str, expected: bool) -> None:  # noqa: FBT001
+        """Test is_boolean method."""
+        sf_type = SnowflakeDataType(raw_type)
+        assert sf_type.is_boolean() == expected
+
+    @pytest.mark.parametrize(
+        ("raw_type", "expected"),
+        [
             # サポートされる型
             ("NUMBER(10,2)", True),
             ("VARCHAR(255)", True),
             ("DATE", True),
             ("TIMESTAMP_NTZ", True),
+            ("BOOLEAN", True),
             # サポートされない型
-            ("BOOLEAN", False),
             ("VARIANT", False),
             ("GEOGRAPHY", False),
             ("BINARY", False),
@@ -190,6 +209,8 @@ class TestStatisticsSupportDataType:
             ("TIMESTAMP_LTZ", "date"),
             ("TIME", "date"),
             ("DATETIME", "date"),
+            # 論理型 → boolean
+            ("BOOLEAN", "boolean"),
         ],
     )
     def test_from_snowflake_type_success(
@@ -203,7 +224,6 @@ class TestStatisticsSupportDataType:
     @pytest.mark.parametrize(
         "unsupported_raw_type",
         [
-            "BOOLEAN",
             "VARIANT",
             "GEOGRAPHY",
             "BINARY",
@@ -218,7 +238,7 @@ class TestStatisticsSupportDataType:
         with pytest.raises(
             ValueError, match="Unsupported Snowflake data type for statistics"
         ):
-            StatisticsSupportDataType.from_snowflake_type(sf_type)
+            _ = StatisticsSupportDataType.from_snowflake_type(sf_type)
 
 
 class TestNormalizedSnowflakeDataTypeLiteral:

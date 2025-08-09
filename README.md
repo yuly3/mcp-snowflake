@@ -10,7 +10,7 @@ A Model Context Protocol (MCP) server that connects to Snowflake databases and e
 - **Describe Table**: Retrieve detailed structure information for a specified table
 - **Execute Query**: Execute read-only SQL queries and return results
 - **Sample Table Data**: Retrieve sample data from a specified table using Snowflake's SAMPLE ROW clause
-- **Analyze Table Statistics**: Generate comprehensive statistical analysis for table columns using Snowflake's high-performance approximation functions
+- **Analyze Table Statistics**: Generate comprehensive statistical analysis for table columns using Snowflake's high-performance approximation functions (supports numeric, string, date, and boolean columns)
 
 ## Installation
 
@@ -241,7 +241,7 @@ Retrieve sample data from a specified table using Snowflake's SAMPLE ROW clause 
 ```
 
 #### analyze_table_statistics
-Analyze table statistics using Snowflake's high-performance approximation functions (APPROX_PERCENTILE, APPROX_TOP_K, APPROX_COUNT_DISTINCT) to efficiently retrieve statistical information for numeric, string, and date columns.
+Analyze table statistics using Snowflake's high-performance approximation functions (APPROX_PERCENTILE, APPROX_TOP_K, APPROX_COUNT_DISTINCT) to efficiently retrieve statistical information for numeric, string, date, and boolean columns.
 
 **Parameters:**
 - `database` (string, required): Database name containing the table
@@ -269,6 +269,7 @@ Returns comprehensive statistics tailored to each column type:
 - **Numeric columns**: count, min, max, avg, percentiles (25th, 50th, 75th), distinct count
 - **String columns**: count, min/max length, distinct count, top K most frequent values
 - **Date columns**: count, min/max dates, date range in days, distinct count
+- **Boolean columns**: count, true/false counts and percentages (both NULL-inclusive and NULL-exclusive)
 
 ## Development
 

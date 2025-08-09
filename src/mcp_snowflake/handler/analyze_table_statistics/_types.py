@@ -98,6 +98,21 @@ class DateStatsDict(TypedDict):
     date_range_days: int
 
 
+class BooleanStatsDict(TypedDict):
+    """TypedDict for boolean column statistics."""
+
+    column_type: str  # "boolean"
+    data_type: str
+    count: int
+    null_count: int
+    true_count: int
+    false_count: int
+    true_percentage: float  # NULL除外版（DIV0NULLで0.00になる）
+    false_percentage: float  # NULL除外版（DIV0NULLで0.00になる）
+    true_percentage_with_nulls: float  # NULL含む版
+    false_percentage_with_nulls: float  # NULL含む版
+
+
 class TableInfoDict(TypedDict):
     """TypedDict for table information."""
 
@@ -112,7 +127,9 @@ class TableStatisticsDict(TypedDict):
     """TypedDict for the complete table statistics response."""
 
     table_info: TableInfoDict
-    column_statistics: dict[str, NumericStatsDict | StringStatsDict | DateStatsDict]
+    column_statistics: dict[
+        str, NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict
+    ]
 
 
 class AnalyzeTableStatisticsJsonResponse(TypedDict):

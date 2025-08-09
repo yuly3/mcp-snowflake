@@ -60,6 +60,9 @@ def build_response(
     date_count = sum(
         1 for stats in column_statistics.values() if stats["column_type"] == "date"
     )
+    boolean_count = sum(
+        1 for stats in column_statistics.values() if stats["column_type"] == "boolean"
+    )
 
     summary_text = "\n".join(
         [
@@ -71,6 +74,7 @@ def build_response(
             f"- Numeric: {numeric_count} columns",
             f"- String: {string_count} columns",
             f"- Date: {date_count} columns",
+            f"- Boolean: {boolean_count} columns",
             "",
             "Full statistical details are provided in the JSON response below.",
         ]

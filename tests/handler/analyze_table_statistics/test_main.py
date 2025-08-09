@@ -381,3 +381,139 @@ class TestHandleAnalyzeTableStatistics:
 
         # Verify result is successful
         assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_handle_boolean_column_success(self) -> None:
+        """Test successful handling of boolean column analysis."""
+        table_data = {
+            "columns": [
+                {"name": "is_active", "data_type": "BOOLEAN"},
+            ]
+        }
+
+        query_result = [
+            {
+                "TOTAL_ROWS": 1000,
+                "BOOLEAN_IS_ACTIVE_COUNT": 950,
+                "BOOLEAN_IS_ACTIVE_NULL_COUNT": 50,
+                "BOOLEAN_IS_ACTIVE_TRUE_COUNT": 720,
+                "BOOLEAN_IS_ACTIVE_FALSE_COUNT": 230,
+                "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE": 75.79,
+                "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE": 24.21,
+                "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE_WITH_NULLS": 72.0,
+                "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 23.0,
+            }
+        ]
+
+        mock_effect = MockEffectHandler(table_data, query_result)
+
+        args = AnalyzeTableStatisticsArgs(
+            database="test_db",
+            schema_name="test_schema",
+            table_name="test_table",
+        )
+
+        result = await handle_analyze_table_statistics(args, mock_effect)
+
+        # Verify response structure
+        assert len(result) == 2
+        assert result[0].type == "text"
+        assert result[1].type == "text"
+
+        # Check summary text includes boolean columns
+        summary_text = result[0].text
+        assert "- Boolean: 1 columns" in summary_text
+
+        # Parse JSON response and verify structure
+        json_response = json.loads(result[1].text)
+        table_stats = json_response["table_statistics"]
+
+        # Check table info
+        assert table_stats["table_info"]["total_rows"] == 1000
+        assert table_stats["table_info"]["analyzed_columns"] == 1
+
+        # Check boolean column statistics
+        boolean_stats = table_stats["column_statistics"]["is_active"]
+        assert boolean_stats["column_type"] == "boolean"
+        assert boolean_stats["data_type"] == "BOOLEAN"
+        assert boolean_stats["count"] == 950
+        assert boolean_stats["null_count"] == 50
+        assert boolean_stats["true_count"] == 720
+        assert boolean_stats["false_count"] == 230
+        assert boolean_stats["true_percentage"] == 75.79
+        assert boolean_stats["false_percentage"] == 24.21
+        assert boolean_stats["true_percentage_with_nulls"] == 72.0
+        assert boolean_stats["false_percentage_with_nulls"] == 23.0
+
+    @pytest.mark.asyncio
+    async def test_handle_mixed_columns_including_boolean(self) -> None:
+        """Test handling mixed column types including boolean."""
+        table_data = {
+            "columns": [
+                {"name": "price", "data_type": "NUMBER(10,2)"},
+                {"name": "status", "data_type": "VARCHAR(10)"},
+                {"name": "is_active", "data_type": "BOOLEAN"},
+            ]
+        }
+
+        query_result = [
+            {
+                "TOTAL_ROWS": 1000,
+                # Numeric stats
+                "NUMERIC_PRICE_COUNT": 1000,
+                "NUMERIC_PRICE_NULL_COUNT": 0,
+                "NUMERIC_PRICE_MIN": 10.5,
+                "NUMERIC_PRICE_MAX": 999.99,
+                "NUMERIC_PRICE_AVG": 505.25,
+                "NUMERIC_PRICE_Q1": 250.0,
+                "NUMERIC_PRICE_MEDIAN": 500.0,
+                "NUMERIC_PRICE_Q3": 750.0,
+                "NUMERIC_PRICE_DISTINCT": 950,
+                # String stats
+                "STRING_STATUS_COUNT": 1000,
+                "STRING_STATUS_NULL_COUNT": 0,
+                "STRING_STATUS_MIN_LENGTH": 6,
+                "STRING_STATUS_MAX_LENGTH": 8,
+                "STRING_STATUS_DISTINCT": 3,
+                "STRING_STATUS_TOP_VALUES": '[["active", 400], ["inactive", 350], ["pending", 250]]',
+                # Boolean stats
+                "BOOLEAN_IS_ACTIVE_COUNT": 950,
+                "BOOLEAN_IS_ACTIVE_NULL_COUNT": 50,
+                "BOOLEAN_IS_ACTIVE_TRUE_COUNT": 720,
+                "BOOLEAN_IS_ACTIVE_FALSE_COUNT": 230,
+                "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE": 75.79,
+                "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE": 24.21,
+                "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE_WITH_NULLS": 72.0,
+                "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 23.0,
+            }
+        ]
+
+        mock_effect = MockEffectHandler(table_data, query_result)
+
+        args = AnalyzeTableStatisticsArgs(
+            database="test_db",
+            schema_name="test_schema",
+            table_name="test_table",
+        )
+
+        result = await handle_analyze_table_statistics(args, mock_effect)
+
+        # Check summary includes all column types
+        summary_text = cast("types.TextContent", result[0]).text
+        assert "- Numeric: 1 columns" in summary_text
+        assert "- String: 1 columns" in summary_text
+        assert "- Boolean: 1 columns" in summary_text
+
+        # Parse and verify JSON response
+        json_response = json.loads(cast("types.TextContent", result[1]).text)
+        column_stats = json_response["table_statistics"]["column_statistics"]
+
+        assert len(column_stats) == 3
+        assert "price" in column_stats
+        assert "status" in column_stats
+        assert "is_active" in column_stats
+
+        # Verify each column type
+        assert column_stats["price"]["column_type"] == "numeric"
+        assert column_stats["status"]["column_type"] == "string"
+        assert column_stats["is_active"]["column_type"] == "boolean"

@@ -4,7 +4,10 @@ from typing import Any
 
 import pytest
 
-from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
+from mcp_snowflake.handler.analyze_table_statistics._types import (
+    BooleanStatsDict,
+    ColumnInfo,
+)
 from mcp_snowflake.kernel import SnowflakeDataType, StatisticsSupportDataType
 
 
@@ -80,6 +83,13 @@ class TestColumnInfo:
                 "TIMESTAMP_NTZ",  # DATETIMEはTIMESTAMP_NTZのエイリアス
                 "date",
             ),
+            # 論理型
+            (
+                {"name": "is_active", "data_type": "BOOLEAN"},
+                "is_active",
+                "BOOLEAN",
+                "boolean",
+            ),
         ],
     )
     def test_from_dict_success(
@@ -101,7 +111,6 @@ class TestColumnInfo:
         "invalid_dict",
         [
             # サポートされていない型
-            {"name": "flag", "data_type": "BOOLEAN"},
             {"name": "metadata", "data_type": "VARIANT"},
             {"name": "location", "data_type": "GEOGRAPHY"},
             {"name": "binary_data", "data_type": "BINARY"},
@@ -170,3 +179,35 @@ class TestColumnInfo:
 
         # StatisticsSupportDataTypeの機能が正しく統合されているか確認
         assert col_info.statistics_type.type_name == "numeric"
+
+
+class TestBooleanStatsDict:
+    """Tests for BooleanStatsDict TypedDict."""
+
+    def test_boolean_stats_dict_structure(self) -> None:
+        """Test BooleanStatsDict structure and required fields."""
+        # This test will fail until BooleanStatsDict is implemented
+        boolean_stats: BooleanStatsDict = {
+            "column_type": "boolean",
+            "data_type": "BOOLEAN",
+            "count": 950,
+            "null_count": 50,
+            "true_count": 720,
+            "false_count": 230,
+            "true_percentage": 75.79,
+            "false_percentage": 24.21,
+            "true_percentage_with_nulls": 72.0,
+            "false_percentage_with_nulls": 23.0,
+        }
+
+        # Verify all required fields exist and have correct types
+        assert boolean_stats["column_type"] == "boolean"
+        assert boolean_stats["data_type"] == "BOOLEAN"
+        assert isinstance(boolean_stats["count"], int)
+        assert isinstance(boolean_stats["null_count"], int)
+        assert isinstance(boolean_stats["true_count"], int)
+        assert isinstance(boolean_stats["false_count"], int)
+        assert isinstance(boolean_stats["true_percentage"], float)
+        assert isinstance(boolean_stats["false_percentage"], float)
+        assert isinstance(boolean_stats["true_percentage_with_nulls"], float)
+        assert isinstance(boolean_stats["false_percentage_with_nulls"], float)

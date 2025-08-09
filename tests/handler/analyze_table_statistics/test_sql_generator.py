@@ -166,3 +166,56 @@ class TestGenerateStatisticsSQL:
         )
 
         assert '"my-database"."my-schema"."my-table"' in sql
+
+    def test_boolean_column_sql(self) -> None:
+        """Test SQL generation for boolean columns."""
+        columns_info = [
+            ColumnInfo.from_dict({"name": "is_active", "data_type": "BOOLEAN"}),
+        ]
+
+        sql = generate_statistics_sql(
+            "TEST_DB",
+            "TEST_SCHEMA",
+            "TEST_TABLE",
+            columns_info,
+            10,
+        )
+
+        # Check basic structure
+        assert "COUNT(*) as total_rows" in sql
+        assert '"TEST_DB"."TEST_SCHEMA"."TEST_TABLE"' in sql
+
+        # Check boolean-specific aggregations
+        assert 'COUNT("is_active") as boolean_is_active_count' in sql
+        assert (
+            'SUM(CASE WHEN "is_active" IS NULL THEN 1 ELSE 0 END) as boolean_is_active_null_count'
+            in sql
+        )
+        assert (
+            'SUM(CASE WHEN "is_active" = TRUE THEN 1 ELSE 0 END) as boolean_is_active_true_count'
+            in sql
+        )
+        assert (
+            'SUM(CASE WHEN "is_active" = FALSE THEN 1 ELSE 0 END) as boolean_is_active_false_count'
+            in sql
+        )
+
+        # Check percentage calculations with DIV0NULL
+        assert (
+            'ROUND(DIV0NULL(SUM(CASE WHEN "is_active" = TRUE THEN 1 ELSE 0 END) * 100.0, COUNT("is_active")), 2) as boolean_is_active_true_percentage'
+            in sql
+        )
+        assert (
+            'ROUND(DIV0NULL(SUM(CASE WHEN "is_active" = FALSE THEN 1 ELSE 0 END) * 100.0, COUNT("is_active")), 2) as boolean_is_active_false_percentage'
+            in sql
+        )
+
+        # Check percentage calculations with nulls included
+        assert (
+            'ROUND(DIV0NULL(SUM(CASE WHEN "is_active" = TRUE THEN 1 ELSE 0 END) * 100.0, COUNT(*)), 2) as boolean_is_active_true_percentage_with_nulls'
+            in sql
+        )
+        assert (
+            'ROUND(DIV0NULL(SUM(CASE WHEN "is_active" = FALSE THEN 1 ELSE 0 END) * 100.0, COUNT(*)), 2) as boolean_is_active_false_percentage_with_nulls'
+            in sql
+        )

@@ -9,6 +9,7 @@ from src.mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
 
 if TYPE_CHECKING:
     from src.mcp_snowflake.handler.analyze_table_statistics._types import (
+        BooleanStatsDict,
         DateStatsDict,
         NumericStatsDict,
         StringStatsDict,
@@ -259,3 +260,70 @@ class TestParseStatisticsResult:
 
         status_stats = cast("StringStatsDict", column_stats["status"])
         assert status_stats["top_values"] == []
+
+    def test_parse_boolean_column(self) -> None:
+        """Test parsing boolean column statistics."""
+        columns_info = _create_column_infos(
+            [
+                {"name": "is_active", "data_type": "BOOLEAN"},
+            ]
+        )
+
+        result_row = {
+            "TOTAL_ROWS": 1000,
+            "BOOLEAN_IS_ACTIVE_COUNT": 950,
+            "BOOLEAN_IS_ACTIVE_NULL_COUNT": 50,
+            "BOOLEAN_IS_ACTIVE_TRUE_COUNT": 720,
+            "BOOLEAN_IS_ACTIVE_FALSE_COUNT": 230,
+            "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE": 75.79,
+            "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE": 24.21,
+            "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE_WITH_NULLS": 72.0,
+            "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 23.0,
+        }
+
+        column_stats = parse_statistics_result(result_row, columns_info)
+
+        assert len(column_stats) == 1
+        boolean_stats = cast("BooleanStatsDict", column_stats["is_active"])
+        assert boolean_stats["column_type"] == "boolean"
+        assert boolean_stats["data_type"] == "BOOLEAN"
+        assert boolean_stats["count"] == 950
+        assert boolean_stats["null_count"] == 50
+        assert boolean_stats["true_count"] == 720
+        assert boolean_stats["false_count"] == 230
+        assert boolean_stats["true_percentage"] == 75.79
+        assert boolean_stats["false_percentage"] == 24.21
+        assert boolean_stats["true_percentage_with_nulls"] == 72.0
+        assert boolean_stats["false_percentage_with_nulls"] == 23.0
+
+    def test_parse_boolean_all_null(self) -> None:
+        """Test parsing boolean column with all null values."""
+        columns_info = _create_column_infos(
+            [
+                {"name": "is_active", "data_type": "BOOLEAN"},
+            ]
+        )
+
+        result_row = {
+            "TOTAL_ROWS": 1000,
+            "BOOLEAN_IS_ACTIVE_COUNT": 0,
+            "BOOLEAN_IS_ACTIVE_NULL_COUNT": 1000,
+            "BOOLEAN_IS_ACTIVE_TRUE_COUNT": 0,
+            "BOOLEAN_IS_ACTIVE_FALSE_COUNT": 0,
+            "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE": 0.0,  # DIV0NULL returns 0.0
+            "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE": 0.0,
+            "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE_WITH_NULLS": 0.0,
+            "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 0.0,
+        }
+
+        column_stats = parse_statistics_result(result_row, columns_info)
+
+        boolean_stats = cast("BooleanStatsDict", column_stats["is_active"])
+        assert boolean_stats["count"] == 0
+        assert boolean_stats["null_count"] == 1000
+        assert boolean_stats["true_count"] == 0
+        assert boolean_stats["false_count"] == 0
+        assert boolean_stats["true_percentage"] == 0.0
+        assert boolean_stats["false_percentage"] == 0.0
+        assert boolean_stats["true_percentage_with_nulls"] == 0.0
+        assert boolean_stats["false_percentage_with_nulls"] == 0.0

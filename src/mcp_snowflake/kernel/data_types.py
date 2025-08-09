@@ -125,16 +125,22 @@ class SnowflakeDataType:
             "TIMESTAMP_TZ",
         }
 
+    def is_boolean(self) -> bool:
+        """論理型かどうかを判定"""
+        return self.normalized_type == "BOOLEAN"
+
     def is_supported_for_statistics(self) -> bool:
         """統計分析でサポートされる型かどうかを判定"""
-        return self.is_numeric() or self.is_string() or self.is_date()
+        return (
+            self.is_numeric() or self.is_string() or self.is_date() or self.is_boolean()
+        )
 
 
 @attrs.define(frozen=True)
 class StatisticsSupportDataType:
     """Statistics-specific data type classification."""
 
-    type_name: Literal["numeric", "string", "date"]
+    type_name: Literal["numeric", "string", "date", "boolean"]
 
     @classmethod
     def from_snowflake_type(
@@ -147,6 +153,8 @@ class StatisticsSupportDataType:
             return cls("string")
         if sf_type.is_date():
             return cls("date")
+        if sf_type.is_boolean():
+            return cls("boolean")
         raise ValueError(
             f"Unsupported Snowflake data type for statistics: {sf_type.raw_type}"
         )
