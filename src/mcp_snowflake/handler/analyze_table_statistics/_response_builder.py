@@ -52,18 +52,20 @@ def build_response(
         }
     }
 
-    numeric_count = sum(
-        1 for stats in column_statistics.values() if stats["column_type"] == "numeric"
-    )
-    string_count = sum(
-        1 for stats in column_statistics.values() if stats["column_type"] == "string"
-    )
-    date_count = sum(
-        1 for stats in column_statistics.values() if stats["column_type"] == "date"
-    )
-    boolean_count = sum(
-        1 for stats in column_statistics.values() if stats["column_type"] == "boolean"
-    )
+    numeric_count = 0
+    string_count = 0
+    date_count = 0
+    boolean_count = 0
+    for stats in column_statistics.values():
+        match stats["column_type"]:
+            case "numeric":
+                numeric_count += 1
+            case "string":
+                string_count += 1
+            case "date":
+                date_count += 1
+            case "boolean":
+                boolean_count += 1
 
     summary_text = "\n".join(
         [

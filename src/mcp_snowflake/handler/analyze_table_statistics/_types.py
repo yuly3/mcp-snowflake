@@ -1,7 +1,7 @@
 """Internal type definitions for table statistics analysis."""
 
 from collections.abc import Mapping
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
 import attrs
 
@@ -60,7 +60,7 @@ class ColumnInfo:
 class NumericStatsDict(TypedDict):
     """TypedDict for numeric column statistics."""
 
-    column_type: str  # "numeric"
+    column_type: Literal["numeric"]
     data_type: str
     count: int
     null_count: int
@@ -76,7 +76,7 @@ class NumericStatsDict(TypedDict):
 class StringStatsDict(TypedDict):
     """TypedDict for string column statistics."""
 
-    column_type: str  # "string"
+    column_type: Literal["string"]
     data_type: str
     count: int
     null_count: int
@@ -89,7 +89,7 @@ class StringStatsDict(TypedDict):
 class DateStatsDict(TypedDict):
     """TypedDict for date column statistics."""
 
-    column_type: str  # "date"
+    column_type: Literal["date"]
     data_type: str
     count: int
     null_count: int
@@ -102,7 +102,7 @@ class DateStatsDict(TypedDict):
 class BooleanStatsDict(TypedDict):
     """TypedDict for boolean column statistics."""
 
-    column_type: str  # "boolean"
+    column_type: Literal["boolean"]
     data_type: str
     count: int
     null_count: int

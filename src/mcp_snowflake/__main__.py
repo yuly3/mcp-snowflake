@@ -45,13 +45,13 @@ class SnowflakeServerContext:
 
     def __init__(self) -> None:
         self.snowflake_client: SnowflakeClient | None = None
-        self.tools: Sequence[Tool] = []
+        self.tools: Mapping[str, Tool] = {}
 
     def build_tools(self) -> None:
         if not self.snowflake_client:
             raise ValueError("Snowflake client is not initialized")
 
-        self.tools = [
+        tools = [
             AnalyzeTableStatisticsTool(self.snowflake_client),
             DescribeTableTool(self.snowflake_client),
             ExecuteQueryTool(self.snowflake_client),
@@ -60,6 +60,7 @@ class SnowflakeServerContext:
             ListViewsTool(self.snowflake_client),
             SampleTableDataTool(self.snowflake_client),
         ]
+        self.tools = {tool.name: tool for tool in tools}
 
 
 server_context = SnowflakeServerContext()
@@ -68,7 +69,7 @@ server_context = SnowflakeServerContext()
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     """List available tools."""
-    return [tool.definition for tool in server_context.tools]
+    return [tool.definition for tool in server_context.tools.values()]
 
 
 @server.call_tool()
@@ -85,9 +86,8 @@ async def handle_call_tool(
             )
         ]
 
-    for tool in server_context.tools:
-        if tool.name == name:
-            return await tool.perform(arguments)
+    if tool := server_context.tools.get(name):
+        return await tool.perform(arguments)
 
     return [types.TextContent(type="text", text=f"Unknown tool: {name}")]
 
