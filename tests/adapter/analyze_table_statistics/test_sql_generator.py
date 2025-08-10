@@ -1,6 +1,6 @@
-"""Tests for SQL generation functionality."""
+"""Tests for SQL generation functionality in adapter layer."""
 
-from mcp_snowflake.handler.analyze_table_statistics._sql_generator import (
+from mcp_snowflake.adapter.analyze_table_statistics_handler import (
     generate_statistics_sql,
 )
 from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo

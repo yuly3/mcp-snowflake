@@ -1,6 +1,5 @@
 """Shared test fixtures for analyze_table_statistics tests."""
 
-from datetime import timedelta
 from typing import Any
 
 from mcp_snowflake.kernel.table_metadata import TableColumn, TableInfo
@@ -35,14 +34,19 @@ class MockEffectHandler:
             raise self.should_raise
         return self.table_data
 
-    async def execute_query(
+    async def analyze_table_statistics(
         self,
-        query: str,  # noqa: ARG002
-        query_timeout: timedelta | None = None,  # noqa: ARG002
-    ) -> list[dict[str, Any]]:
+        database: str,  # noqa: ARG002
+        schema_name: str,  # noqa: ARG002
+        table_name: str,  # noqa: ARG002
+        columns_to_analyze: Any,  # noqa: ARG002
+        top_k_limit: int,  # noqa: ARG002
+    ) -> dict[str, Any]:
         if self.should_raise:
             raise self.should_raise
-        return self.query_result
+        if not self.query_result:
+            raise ValueError("No data returned from statistics query")
+        return self.query_result[0]
 
 
 def create_test_table_info(

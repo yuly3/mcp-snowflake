@@ -1,11 +1,11 @@
 """Public API models for table statistics analysis."""
 
-from typing import Protocol
+from collections.abc import Iterable
+from typing import Any, Protocol
 
 from pydantic import BaseModel, Field
 
 from ..describe_table import EffectDescribeTable
-from ..execute_query import EffectExecuteQuery
 
 
 class AnalyzeTableStatisticsArgs(BaseModel):
@@ -20,5 +20,40 @@ class AnalyzeTableStatisticsArgs(BaseModel):
     """Number of most frequent values to retrieve"""
 
 
-class EffectAnalyzeTableStatistics(EffectDescribeTable, EffectExecuteQuery, Protocol):
+class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
     """Protocol for dependencies required by table statistics analysis."""
+
+    async def analyze_table_statistics(
+        self,
+        database: str,
+        schema_name: str,
+        table_name: str,
+        columns_to_analyze: Iterable[Any],  # ColumnInfo type from _types
+        top_k_limit: int,
+    ) -> dict[str, Any]:
+        """Execute statistics query and return the single result row.
+
+        Parameters
+        ----------
+        database : str
+            Database name
+        schema_name : str
+            Schema name
+        table_name : str
+            Table name
+        columns_to_analyze : Iterable[Any]
+            Column information objects
+        top_k_limit : int
+            Limit for APPROX_TOP_K function
+
+        Returns
+        -------
+        dict[str, Any]
+            Single row of statistics query results
+
+        Raises
+        ------
+        Exception
+            If query execution fails or returns no data
+        """
+        ...

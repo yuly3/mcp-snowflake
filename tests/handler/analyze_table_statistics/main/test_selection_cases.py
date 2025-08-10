@@ -1,11 +1,13 @@
 """Column selection and boundary value tests for analyze_table_statistics handler."""
 
 import json
-from datetime import timedelta
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
+from mcp_snowflake.adapter.analyze_table_statistics_handler import (
+    generate_statistics_sql,
+)
 from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
     handle_analyze_table_statistics,
@@ -111,13 +113,28 @@ class TestColumnSelection:
             ) -> TableInfo:
                 return table_data
 
-            async def execute_query(
+            async def analyze_table_statistics(
                 self,
-                query: str,
-                query_timeout: timedelta | None = None,  # noqa: ARG002
-            ) -> list[dict[str, Any]]:
+                database: str,
+                schema_name: str,
+                table_name: str,
+                columns_to_analyze: Any,
+                top_k_limit: int,
+            ) -> dict[str, Any]:
+                """Execute statistics query and track the top_k_limit."""
+                # Simulate SQL generation and execution for verification
+                query = generate_statistics_sql(
+                    database,
+                    schema_name,
+                    table_name,
+                    columns_to_analyze,
+                    top_k_limit,
+                )
                 executed_queries.append(query)
-                return query_result
+
+                if not query_result:
+                    raise ValueError("No data returned from statistics query")
+                return query_result[0]
 
         mock_effect = MockEffectWithQueryTracking()
 

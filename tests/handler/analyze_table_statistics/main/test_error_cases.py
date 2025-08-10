@@ -1,6 +1,5 @@
 """Error handling tests for analyze_table_statistics handler."""
 
-from datetime import timedelta
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -87,6 +86,7 @@ class TestErrorHandling:
         assert len(result) == 1
         error_content = cast("types.TextContent", result[0])
         assert "Error getting table information" in error_content.text
+        assert "Database connection failed" in error_content.text
 
     @pytest.mark.asyncio
     async def test_execute_query_error(self) -> None:
@@ -107,11 +107,14 @@ class TestErrorHandling:
             ) -> TableInfo:
                 return table_data
 
-            async def execute_query(
+            async def analyze_table_statistics(
                 self,
-                query: str,  # noqa: ARG002
-                query_timeout: timedelta | None = None,  # noqa: ARG002
-            ) -> list[dict[str, Any]]:
+                database: str,  # noqa: ARG002
+                schema_name: str,  # noqa: ARG002
+                table_name: str,  # noqa: ARG002
+                columns_to_analyze: Any,  # noqa: ARG002
+                top_k_limit: int,  # noqa: ARG002
+            ) -> dict[str, Any]:
                 raise Exception("Query execution failed")
 
         mock_effect = MockEffectWithQueryError()
@@ -127,6 +130,7 @@ class TestErrorHandling:
         assert len(result) == 1
         error_content = cast("types.TextContent", result[0])
         assert "Error executing statistics query" in error_content.text
+        assert "Query execution failed" in error_content.text
 
     @pytest.mark.asyncio
     async def test_multiple_unsupported_column_types(self) -> None:
