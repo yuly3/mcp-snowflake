@@ -9,7 +9,7 @@ from typing import Any
 
 import attrs
 
-from ..json_converter import converter, is_json_compatible_type
+from cattrs_converter import is_json_compatible_type, json_converter
 
 
 @attrs.define(frozen=True)
@@ -36,7 +36,7 @@ class RowProcessingResult:
         warnings: list[str] = []
 
         for column, value in raw_row.items():
-            processed_value = converter.unstructure(value)
+            processed_value = json_converter.unstructure(value)
             if is_json_compatible_type(processed_value):
                 processed_row[column] = processed_value
             else:

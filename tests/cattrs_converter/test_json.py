@@ -12,7 +12,7 @@ from uuid import UUID
 from hypothesis import given
 from hypothesis import strategies as st
 
-from mcp_snowflake.json_converter import convert_to_json_safe
+from cattrs_converter import convert_to_json_safe
 
 
 class TestConvertToJsonSafe:

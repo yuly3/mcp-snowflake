@@ -3,7 +3,6 @@ JSON conversion utilities using cattrs for flexible type handling.
 """
 
 import logging
-from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -14,40 +13,6 @@ logger = logging.getLogger(__name__)
 
 # Create a JSON converter with pre-configured settings
 converter = cattrs.preconf.json.make_converter()
-
-
-def convert_datetime_to_iso(dt: datetime) -> str:
-    """
-    Convert datetime to ISO format string.
-
-    Parameters
-    ----------
-    dt : datetime
-        Datetime object to convert
-
-    Returns
-    -------
-    str
-        ISO formatted datetime string
-    """
-    return dt.isoformat()
-
-
-def convert_date_to_iso(d: date) -> str:
-    """
-    Convert date to ISO format string.
-
-    Parameters
-    ----------
-    d : date
-        Date object to convert
-
-    Returns
-    -------
-    str
-        ISO formatted date string
-    """
-    return d.isoformat()
 
 
 def convert_decimal_to_float(dec: Decimal) -> float:
@@ -85,8 +50,6 @@ def convert_uuid_to_str(uuid_obj: UUID) -> str:
 
 
 # Register custom unstructure hooks for common types
-converter.register_unstructure_hook(datetime, convert_datetime_to_iso)
-converter.register_unstructure_hook(date, convert_date_to_iso)
 converter.register_unstructure_hook(Decimal, convert_decimal_to_float)
 converter.register_unstructure_hook(UUID, convert_uuid_to_str)
 

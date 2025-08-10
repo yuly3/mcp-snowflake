@@ -150,5 +150,6 @@ docstring-code-line-length = "dynamic"
 
 [lint.isort]
 known-first-party = [
+    "cattrs_converter",
     "expression",
 ]

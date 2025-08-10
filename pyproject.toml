@@ -2,7 +2,9 @@
 dependencies = [
     "anyio>=4.0.0",
     "attrs>=25.3.0",
+    "cattrs-converter",
     "cattrs>=23.0.0",
+    "expression",
     "mcp>=1.0.0",
     "pydantic-settings>=2.9.1",
     "pydantic>=2.0.0",
@@ -74,7 +76,12 @@ ignore = [
     ".ruff_cache",
 ]
 
+[tool.uv.sources]
+cattrs-converter = { workspace = true }
+expression = { workspace = true }
+
 [tool.uv.workspace]
 members = [
+    "packages/cattrs-converter",
     "packages/expression",
 ]
