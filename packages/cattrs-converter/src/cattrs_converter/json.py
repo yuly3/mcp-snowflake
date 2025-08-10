@@ -4,12 +4,15 @@ JSON conversion utilities using cattrs for flexible type handling.
 
 import logging
 from decimal import Decimal
-from typing import Any
+from typing import Any, TypeGuard
 from uuid import UUID
 
 import cattrs.preconf.json
 
 logger = logging.getLogger(__name__)
+
+Jsonable = None | bool | int | float | str | list["Jsonable"] | dict[str, "Jsonable"]
+
 
 # Create a JSON converter with pre-configured settings
 converter = cattrs.preconf.json.make_converter()
@@ -54,7 +57,7 @@ converter.register_unstructure_hook(Decimal, convert_decimal_to_float)
 converter.register_unstructure_hook(UUID, convert_uuid_to_str)
 
 
-def is_json_compatible_type(value: Any) -> bool:
+def is_json_compatible_type(value: Any) -> TypeGuard[Jsonable]:
     """
     Check if a value is a JSON-compatible type.
 
@@ -83,7 +86,7 @@ def is_json_compatible_type(value: Any) -> bool:
     return False
 
 
-def convert_to_json_safe(value: Any) -> Any:
+def convert_to_json_safe(value: Any) -> Jsonable:
     """
     Convert a value to a JSON-safe representation using cattrs.
 
@@ -94,7 +97,7 @@ def convert_to_json_safe(value: Any) -> Any:
 
     Returns
     -------
-    Any
+    Jsonable
         JSON-safe representation of the value
 
     Examples

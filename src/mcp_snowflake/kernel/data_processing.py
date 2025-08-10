@@ -9,7 +9,7 @@ from typing import Any
 
 import attrs
 
-from cattrs_converter import is_json_compatible_type, json_converter
+from cattrs_converter import Jsonable, is_json_compatible_type, json_converter
 
 
 @attrs.define(frozen=True)
@@ -21,18 +21,18 @@ class RowProcessingResult:
 
     Attributes
     ----------
-    processed_row : dict[str, Any]
+    processed_row : dict[str, Jsonable]
         The row data converted to JSON-compatible types
     warnings : list[str]
         List of warning messages for unsupported data types or processing issues
     """
 
-    processed_row: dict[str, Any]
+    processed_row: dict[str, Jsonable]
     warnings: list[str]
 
     @classmethod
     def from_raw_row(cls, raw_row: dict[str, Any]) -> "RowProcessingResult":
-        processed_row: dict[str, Any] = {}
+        processed_row: dict[str, Jsonable] = {}
         warnings: list[str] = []
 
         for column, value in raw_row.items():
@@ -56,13 +56,13 @@ class DataProcessingResult:
 
     Attributes
     ----------
-    processed_rows : list[dict[str, Any]]
+    processed_rows : list[dict[str, Jsonable]]
         List of row data converted to JSON-compatible types
     warnings : list[str]
         Deduplicated list of warning messages for unsupported data types or processing issues
     """
 
-    processed_rows: list[dict[str, Any]]
+    processed_rows: list[dict[str, Jsonable]]
     warnings: list[str]
 
     @classmethod
@@ -70,7 +70,7 @@ class DataProcessingResult:
         if not raw_rows:
             return cls(processed_rows=[], warnings=[])
 
-        processed_rows: list[dict[str, Any]] = []
+        processed_rows: list[dict[str, Jsonable]] = []
         warnings_set: set[str] = set()
 
         for row in raw_rows:
