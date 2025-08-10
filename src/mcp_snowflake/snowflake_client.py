@@ -75,7 +75,6 @@ class SnowflakeClient:
         """Get list of schemas in a database."""
         query = f"SHOW SCHEMAS IN DATABASE {database}"
 
-        # Run the synchronous query in a thread pool
         loop = asyncio.get_event_loop()
         try:
             results = await loop.run_in_executor(
@@ -108,7 +107,6 @@ class SnowflakeClient:
         """Get list of tables in a database schema."""
         query = f"SHOW TABLES IN SCHEMA {database}.{schema}"
 
-        # Run the synchronous query in a thread pool
         loop = asyncio.get_event_loop()
         try:
             results = await loop.run_in_executor(
@@ -141,7 +139,6 @@ class SnowflakeClient:
         """Get list of views in a database schema."""
         query = f"SHOW VIEWS IN SCHEMA {database}.{schema}"
 
-        # Run the synchronous query in a thread pool
         loop = asyncio.get_event_loop()
         try:
             results = await loop.run_in_executor(
@@ -179,7 +176,6 @@ class SnowflakeClient:
         """Get table structure information."""
         query = f"DESCRIBE TABLE {database}.{schema}.{table_name}"
 
-        # Run the synchronous query in a thread pool
         loop = asyncio.get_event_loop()
         try:
             results = await loop.run_in_executor(
@@ -247,10 +243,8 @@ class SnowflakeClient:
         list[dict[str, Any]]
             List of dictionaries representing sample rows
         """
-        # Build column list
         column_list = ", ".join(f'"{col}"' for col in columns) if columns else "*"
 
-        # Build query with SAMPLE ROW clause
         query = f"""
         SELECT {column_list}
         FROM "{database}"."{schema}"."{table_name}"
@@ -265,7 +259,6 @@ class SnowflakeClient:
             sample_size,
         )
 
-        # Execute with 60 second timeout
         timeout = timedelta(seconds=60)
         return await asyncio.get_running_loop().run_in_executor(
             self.thread_pool_executor,
