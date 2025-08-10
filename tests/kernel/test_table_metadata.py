@@ -134,3 +134,122 @@ class TestTableInfo:
         )
         with pytest.raises(AttributeError):
             table.new_field = "value"  # type: ignore[attr-defined]
+
+
+class TestTableColumnProperties:
+    """Test TableColumn computed properties."""
+
+    def test_snowflake_type_property(self) -> None:
+        """Test snowflake_type property returns correct SnowflakeDataType."""
+        column = TableColumn(
+            name="price",
+            data_type="NUMBER(10,2)",
+            nullable=True,
+            ordinal_position=1,
+        )
+
+        sf_type = column.snowflake_type
+        assert sf_type.raw_type == "NUMBER(10,2)"
+        assert sf_type.normalized_type == "NUMBER"
+        assert sf_type.is_numeric()
+
+    def test_statistics_type_property(self) -> None:
+        """Test statistics_type property returns correct StatisticsSupportDataType."""
+        column = TableColumn(
+            name="name",
+            data_type="VARCHAR(100)",
+            nullable=True,
+            ordinal_position=1,
+        )
+
+        stats_type = column.statistics_type
+        assert stats_type.type_name == "string"
+
+    @pytest.mark.parametrize(
+        (
+            "data_type",
+            "expected_normalized",
+            "expected_stats_type",
+            "is_numeric",
+            "is_string",
+            "is_date",
+            "is_boolean",
+        ),
+        [
+            # Numeric types
+            ("NUMBER(10,2)", "NUMBER", "numeric", True, False, False, False),
+            ("INTEGER", "INT", "numeric", True, False, False, False),
+            ("FLOAT", "FLOAT", "numeric", True, False, False, False),
+            # String types
+            ("VARCHAR(255)", "VARCHAR", "string", False, True, False, False),
+            ("CHAR(10)", "CHAR", "string", False, True, False, False),
+            ("TEXT", "TEXT", "string", False, True, False, False),
+            # Date types
+            ("DATE", "DATE", "date", False, False, True, False),
+            ("TIMESTAMP_NTZ", "TIMESTAMP_NTZ", "date", False, False, True, False),
+            ("DATETIME", "TIMESTAMP_NTZ", "date", False, False, True, False),  # alias
+            # Boolean type
+            ("BOOLEAN", "BOOLEAN", "boolean", False, False, False, True),
+        ],
+    )
+    def test_property_combinations(
+        self,
+        data_type: str,
+        expected_normalized: str,
+        expected_stats_type: str,
+        is_numeric: bool,  # noqa: FBT001
+        is_string: bool,  # noqa: FBT001
+        is_date: bool,  # noqa: FBT001
+        is_boolean: bool,  # noqa: FBT001
+    ) -> None:
+        """Test all property combinations for various data types."""
+        column = TableColumn(
+            name="test_col",
+            data_type=data_type,
+            nullable=True,
+            ordinal_position=1,
+        )
+
+        # Test snowflake_type properties
+        sf_type = column.snowflake_type
+        assert sf_type.normalized_type == expected_normalized
+        assert sf_type.is_numeric() == is_numeric
+        assert sf_type.is_string() == is_string
+        assert sf_type.is_date() == is_date
+        assert sf_type.is_boolean() == is_boolean
+
+        # Test statistics_type property
+        stats_type = column.statistics_type
+        assert stats_type.type_name == expected_stats_type
+
+    def test_unsupported_data_type_raises_error(self) -> None:
+        """Test that unsupported data types raise ValueError when accessing properties."""
+        column = TableColumn(
+            name="variant_col",
+            data_type="VARIANT",
+            nullable=True,
+            ordinal_position=1,
+        )
+
+        # snowflake_type should work (VARIANT is in normalized types)
+        sf_type = column.snowflake_type
+        assert sf_type.normalized_type == "VARIANT"
+        assert not sf_type.is_supported_for_statistics()
+
+        # statistics_type should raise ValueError
+        with pytest.raises(
+            ValueError, match="Unsupported Snowflake data type for statistics"
+        ):
+            _ = column.statistics_type
+
+    def test_empty_data_type_raises_error(self) -> None:
+        """Test that empty data_type raises ValueError when accessing properties."""
+        column = TableColumn(
+            name="bad_col",
+            data_type="",
+            nullable=True,
+            ordinal_position=1,
+        )
+
+        with pytest.raises(ValueError, match="raw_type cannot be empty"):
+            _ = column.snowflake_type

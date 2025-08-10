@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, cast
 from mcp_snowflake.handler.analyze_table_statistics._result_parser import (
     parse_statistics_result,
 )
-from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
 from mcp_snowflake.kernel.table_metadata import TableColumn
 
 if TYPE_CHECKING:
@@ -17,26 +16,19 @@ if TYPE_CHECKING:
     )
 
 
-def _create_column_infos(columns_dict: list[TableColumn]) -> list[ColumnInfo]:
-    """To convert dict columns to ColumnInfo objects."""
-    return [ColumnInfo.from_table_column(col) for col in columns_dict]
-
-
 class TestParseStatisticsResult:
     """Test parse_statistics_result function."""
 
     def test_parse_numeric_column(self) -> None:
         """Test parsing numeric column statistics."""
-        columns_info = _create_column_infos(
-            [
-                TableColumn(
-                    name="price",
-                    data_type="NUMBER(10,2)",
-                    nullable=False,
-                    ordinal_position=2,
-                )
-            ]
-        )
+        columns_info = [
+            TableColumn(
+                name="price",
+                data_type="NUMBER(10,2)",
+                nullable=False,
+                ordinal_position=2,
+            )
+        ]
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -69,16 +61,14 @@ class TestParseStatisticsResult:
 
     def test_parse_string_column(self) -> None:
         """Test parsing string column statistics."""
-        columns_info = _create_column_infos(
-            [
-                TableColumn(
-                    name="status",
-                    data_type="VARCHAR(10)",
-                    nullable=False,
-                    ordinal_position=1,
-                )
-            ]
-        )
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=1,
+            )
+        ]
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -109,16 +99,14 @@ class TestParseStatisticsResult:
 
     def test_parse_date_column(self) -> None:
         """Test parsing date column statistics."""
-        columns_info = _create_column_infos(
-            [
-                TableColumn(
-                    name="created_date",
-                    data_type="DATE",
-                    nullable=False,
-                    ordinal_position=3,
-                )
-            ]
-        )
+        columns_info = [
+            TableColumn(
+                name="created_date",
+                data_type="DATE",
+                nullable=False,
+                ordinal_position=3,
+            )
+        ]
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -145,28 +133,26 @@ class TestParseStatisticsResult:
 
     def test_parse_mixed_columns(self) -> None:
         """Test parsing mixed column types."""
-        columns_info = _create_column_infos(
-            [
-                TableColumn(
-                    name="price",
-                    data_type="NUMBER(10,2)",
-                    nullable=False,
-                    ordinal_position=1,
-                ),
-                TableColumn(
-                    name="status",
-                    data_type="VARCHAR(1)",
-                    nullable=False,
-                    ordinal_position=2,
-                ),
-                TableColumn(
-                    name="created_date",
-                    data_type="DATE",
-                    nullable=False,
-                    ordinal_position=3,
-                ),
-            ]
-        )
+        columns_info = [
+            TableColumn(
+                name="price",
+                data_type="NUMBER(10,2)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(1)",
+                nullable=False,
+                ordinal_position=2,
+            ),
+            TableColumn(
+                name="created_date",
+                data_type="DATE",
+                nullable=False,
+                ordinal_position=3,
+            ),
+        ]
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -217,16 +203,14 @@ class TestParseStatisticsResult:
 
     def test_parse_with_null_values(self) -> None:
         """Test parsing with null values in the result."""
-        columns_info = _create_column_infos(
-            [
-                TableColumn(
-                    name="price",
-                    data_type="NUMBER(10,2)",
-                    nullable=False,
-                    ordinal_position=1,
-                ),
-            ]
-        )
+        columns_info = [
+            TableColumn(
+                name="price",
+                data_type="NUMBER(10,2)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -253,16 +237,14 @@ class TestParseStatisticsResult:
 
     def test_parse_invalid_json_top_values(self) -> None:
         """Test parsing with invalid JSON in top_values."""
-        columns_info = _create_column_infos(
-            [
-                TableColumn(
-                    name="status",
-                    data_type="VARCHAR(10)",
-                    nullable=False,
-                    ordinal_position=2,
-                ),
-            ]
-        )
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=2,
+            ),
+        ]
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -281,16 +263,14 @@ class TestParseStatisticsResult:
 
     def test_parse_empty_top_values(self) -> None:
         """Test parsing with empty top_values."""
-        columns_info = _create_column_infos(
-            [
-                TableColumn(
-                    name="status",
-                    data_type="VARCHAR(10)",
-                    nullable=False,
-                    ordinal_position=2,
-                ),
-            ]
-        )
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=2,
+            ),
+        ]
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -309,16 +289,14 @@ class TestParseStatisticsResult:
 
     def test_parse_boolean_column(self) -> None:
         """Test parsing boolean column statistics."""
-        columns_info = _create_column_infos(
-            [
-                TableColumn(
-                    name="is_active",
-                    data_type="BOOLEAN",
-                    nullable=False,
-                    ordinal_position=1,
-                ),
-            ]
-        )
+        columns_info = [
+            TableColumn(
+                name="is_active",
+                data_type="BOOLEAN",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
 
         result_row = {
             "TOTAL_ROWS": 1000,
@@ -349,16 +327,14 @@ class TestParseStatisticsResult:
 
     def test_parse_boolean_all_null(self) -> None:
         """Test parsing boolean column with all null values."""
-        columns_info = _create_column_infos(
-            [
-                TableColumn(
-                    name="is_active",
-                    data_type="BOOLEAN",
-                    nullable=False,
-                    ordinal_position=1,
-                ),
-            ]
-        )
+        columns_info = [
+            TableColumn(
+                name="is_active",
+                data_type="BOOLEAN",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
 
         result_row = {
             "TOTAL_ROWS": 1000,

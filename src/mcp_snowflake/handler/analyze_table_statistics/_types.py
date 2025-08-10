@@ -2,53 +2,6 @@
 
 from typing import Any, Literal, TypedDict
 
-import attrs
-
-from ...kernel import SnowflakeDataType, StatisticsSupportDataType
-from ...kernel.table_metadata import TableColumn
-
-
-@attrs.define(frozen=True)
-class ColumnInfo:
-    """Column information for statistics analysis."""
-
-    name: str
-    snowflake_type: SnowflakeDataType
-    statistics_type: StatisticsSupportDataType
-
-    @classmethod
-    def from_table_column(cls, col: TableColumn) -> "ColumnInfo":
-        """Convert TableColumn to ColumnInfo.
-
-        Parameters
-        ----------
-        col : TableColumn
-            The TableColumn object to convert.
-
-        Returns
-        -------
-        ColumnInfo
-            Converted ColumnInfo object.
-        """
-        sf_type = SnowflakeDataType(col.data_type)
-        stats_type = StatisticsSupportDataType.from_snowflake_type(sf_type)
-        return cls(
-            name=col.name,
-            snowflake_type=sf_type,
-            statistics_type=stats_type,
-        )
-
-    @property
-    def column_type(self) -> str:
-        """Backward compatibility property.
-
-        Returns
-        -------
-        str
-            The column type as string: "numeric", "string", or "date".
-        """
-        return self.statistics_type.type_name
-
 
 class NumericStatsDict(TypedDict):
     """TypedDict for numeric column statistics."""

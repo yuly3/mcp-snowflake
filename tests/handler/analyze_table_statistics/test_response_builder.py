@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, cast
 from mcp_snowflake.handler.analyze_table_statistics._response_builder import (
     build_response,
 )
-from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
 from mcp_snowflake.handler.analyze_table_statistics.models import (
     AnalyzeTableStatisticsArgs,
 )
@@ -14,11 +13,6 @@ from mcp_snowflake.kernel.table_metadata import TableColumn
 
 if TYPE_CHECKING:
     from mcp import types
-
-
-def _create_column_infos(columns_dict: list[TableColumn]) -> list[ColumnInfo]:
-    """Convert dict columns to ColumnInfo objects."""
-    return [ColumnInfo.from_table_column(col) for col in columns_dict]
 
 
 class TestBuildResponse:
@@ -45,16 +39,14 @@ class TestBuildResponse:
             "NUMERIC_ID_DISTINCT": 100,
         }
 
-        columns_to_analyze = _create_column_infos(
-            [
-                TableColumn(
-                    name="id",
-                    data_type="NUMBER(10,0)",
-                    nullable=False,
-                    ordinal_position=1,
-                ),
-            ]
-        )
+        columns_to_analyze = [
+            TableColumn(
+                name="id",
+                data_type="NUMBER(10,0)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
 
         response = build_response(args, result_row, columns_to_analyze)
 
@@ -125,28 +117,26 @@ class TestBuildResponse:
             "DATE_CREATED_DISTINCT": 365,
         }
 
-        columns_to_analyze = _create_column_infos(
-            [
-                TableColumn(
-                    name="price",
-                    data_type="NUMBER(10,2)",
-                    nullable=False,
-                    ordinal_position=2,
-                ),
-                TableColumn(
-                    name="status",
-                    data_type="VARCHAR(10)",
-                    nullable=False,
-                    ordinal_position=3,
-                ),
-                TableColumn(
-                    name="created",
-                    data_type="DATE",
-                    nullable=False,
-                    ordinal_position=4,
-                ),
-            ]
-        )
+        columns_to_analyze = [
+            TableColumn(
+                name="price",
+                data_type="NUMBER(10,2)",
+                nullable=False,
+                ordinal_position=2,
+            ),
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=3,
+            ),
+            TableColumn(
+                name="created",
+                data_type="DATE",
+                nullable=False,
+                ordinal_position=4,
+            ),
+        ]
 
         response = build_response(args, result_row, columns_to_analyze)
 
@@ -189,16 +179,14 @@ class TestBuildResponse:
             "STRING_SPECIFIC_COLUMN_TOP_VALUES": '[["A", 10], ["B", 10], ["C", 10], ["D", 10], ["E", 10]]',
         }
 
-        columns_to_analyze = _create_column_infos(
-            [
-                TableColumn(
-                    name="specific_column",
-                    data_type="VARCHAR(10)",
-                    nullable=False,
-                    ordinal_position=1,
-                ),
-            ]
-        )
+        columns_to_analyze = [
+            TableColumn(
+                name="specific_column",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
 
         response = build_response(args, result_row, columns_to_analyze)
 
@@ -236,16 +224,14 @@ class TestBuildResponse:
             "NUMERIC_ID_DISTINCT": 1234567,
         }
 
-        columns_to_analyze = _create_column_infos(
-            [
-                TableColumn(
-                    name="id",
-                    data_type="NUMBER(10,0)",
-                    nullable=False,
-                    ordinal_position=1,
-                ),
-            ]
-        )
+        columns_to_analyze = [
+            TableColumn(
+                name="id",
+                data_type="NUMBER(10,0)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
 
         response = build_response(args, result_row, columns_to_analyze)
 
@@ -274,16 +260,14 @@ class TestBuildResponse:
             "NUMERIC_ID_DISTINCT": 100,
         }
 
-        columns_to_analyze = _create_column_infos(
-            [
-                TableColumn(
-                    name="id",
-                    data_type="NUMBER(10,0)",
-                    nullable=False,
-                    ordinal_position=1,
-                ),
-            ]
-        )
+        columns_to_analyze = [
+            TableColumn(
+                name="id",
+                data_type="NUMBER(10,0)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
 
         response = build_response(args, result_row, columns_to_analyze)
 

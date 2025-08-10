@@ -7,9 +7,9 @@ from typing import Any
 
 from expression import option
 
+from ...kernel.table_metadata import TableColumn
 from ._types import (
     BooleanStatsDict,
-    ColumnInfo,
     DateStatsDict,
     NumericStatsDict,
     StatsDict,
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def parse_statistics_result(
     result_row: Mapping[str, Any],
-    columns_info: Iterable[ColumnInfo],
+    columns_info: Iterable[TableColumn],
 ) -> dict[str, StatsDict]:
     """Parse the statistics query result into structured column statistics.
 
@@ -29,7 +29,7 @@ def parse_statistics_result(
     ----------
     result_row : Mapping[str, Any]
         Raw query result row containing all statistics.
-    columns_info : Iterable[ColumnInfo]
+    columns_info : Iterable[TableColumn]
         Column information including name and data_type.
 
     Returns
@@ -41,7 +41,7 @@ def parse_statistics_result(
 
     for col_info in columns_info:
         col_name = col_info.name
-        data_type = col_info.snowflake_type.raw_type
+        data_type = col_info.data_type
         col_type = col_info.statistics_type.type_name
         prefix = f"{col_type}_{col_name}".upper()  # Convert to uppercase for Snowflake
 

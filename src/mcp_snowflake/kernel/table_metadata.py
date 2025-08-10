@@ -3,6 +3,8 @@
 import attrs
 from cattrs import Converter
 
+from .data_types import SnowflakeDataType, StatisticsSupportDataType
+
 # Default cattrs converter for this module
 converter = Converter()
 
@@ -17,6 +19,16 @@ class TableColumn:
     ordinal_position: int
     default_value: str | None = None
     comment: str | None = None
+
+    @property
+    def snowflake_type(self) -> SnowflakeDataType:
+        """Get the Snowflake data type representation for this column."""
+        return SnowflakeDataType(self.data_type)
+
+    @property
+    def statistics_type(self) -> StatisticsSupportDataType:
+        """Get the statistics support data type for this column."""
+        return StatisticsSupportDataType.from_snowflake_type(self.snowflake_type)
 
 
 @attrs.define(frozen=True, slots=True)

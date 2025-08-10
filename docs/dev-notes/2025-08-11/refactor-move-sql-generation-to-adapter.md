@@ -7,6 +7,10 @@ status: completed
 
 # リファクタリング計画: SQL生成を adapter の責務へ移行（analyze_table_statistics）
 
+> 注記（2025-08-11 追記）
+>
+> 本メモ内の ColumnInfo に関する記述は当時の設計背景の説明として残しています。現在の実装では、列メタデータは kernel 層の `TableColumn` に統一されており、adapter/handler は `TableColumn.statistics_type` 等のプロパティを使用します。詳細は「Refactor: Remove adapter dependency on ColumnInfo and consolidate into TableColumn」を参照してください。
+
 ## ユーザー要望（プロンプト）
 
 - ゴール: SQL生成は adapter の責務だが analyze_table_statistics では handler が持っている。これを adapter に移行する。

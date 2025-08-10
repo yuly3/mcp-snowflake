@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Any
 
 import mcp.types as types
 
+from ...kernel.table_metadata import TableColumn
 from ._result_parser import parse_statistics_result
-from ._types import ColumnInfo
+from ._types import AnalyzeTableStatisticsJsonResponse
 from .models import AnalyzeTableStatisticsArgs
 
 if TYPE_CHECKING:
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 def build_response(
     args: AnalyzeTableStatisticsArgs,
     result_row: Mapping[str, Any],
-    columns_to_analyze: Sequence[ColumnInfo],
+    columns_to_analyze: Sequence[TableColumn],
 ) -> list[types.Content]:
     """Build the final response content.
 
@@ -27,7 +28,7 @@ def build_response(
         The original request arguments.
     result_row : Mapping[str, Any]
         The query result row containing statistics.
-    columns_to_analyze : Sequence[ColumnInfo]
+    columns_to_analyze : Sequence[TableColumn]
         The columns that were analyzed.
 
     Returns

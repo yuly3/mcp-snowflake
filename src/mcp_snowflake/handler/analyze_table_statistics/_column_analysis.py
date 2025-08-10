@@ -5,63 +5,64 @@ from collections.abc import Iterable, Sequence
 import mcp.types as types
 
 from ...kernel.table_metadata import TableColumn
-from ._types import ColumnInfo
 
 
-def create_column_info_list(columns: Iterable[TableColumn]) -> list[ColumnInfo]:
-    """Convert dict-based column information to ColumnInfo objects.
+def ensure_supported_columns(columns: Iterable[TableColumn]) -> list[TableColumn]:
+    """Validate that all columns are supported for statistics analysis.
 
     Parameters
     ----------
     columns : Iterable[TableColumn]
-        List of TableColumn objects.
+        List of TableColumn objects to validate.
 
     Returns
     -------
-    list[ColumnInfo]
-        List of ColumnInfo objects.
+    list[TableColumn]
+        List of supported TableColumn objects.
 
     Raises
     ------
     ValueError
-        If any column has unsupported data type or missing required keys.
+        If any column has unsupported data type.
     """
-    column_infos: list[ColumnInfo] = []
+    column_list: list[TableColumn] = []
     unsupported_columns: list[str] = []
 
     for col in columns:
         try:
-            column_info = ColumnInfo.from_table_column(col)
+            # Access the properties to validate support
+            _ = col.snowflake_type
+            _ = col.statistics_type
         except ValueError:
             unsupported_columns.append(f"{col.name} ({col.data_type})")
         else:
-            column_infos.append(column_info)
+            column_list.append(col)
 
     if unsupported_columns:
         raise ValueError(
             f"Unsupported column types found: {', '.join(unsupported_columns)}"
         )
 
-    return column_infos
+    return column_list
 
 
 def validate_and_select_columns(
     all_columns: list[TableColumn],
     requested_columns: Sequence[str],
-) -> list[ColumnInfo] | types.TextContent:
+) -> list[TableColumn] | types.TextContent:
     """Validate and select columns for analysis.
 
     Parameters
     ----------
-    all_columns : list[dict[str, Any]]
+    all_columns : list[TableColumn]
         All available columns from the table.
     requested_columns : Sequence[str]
         Columns requested for analysis. Empty list means all columns.
 
     Returns
     -------
-    list[ColumnInfo] | types.TextContent
-        List of ColumnInfo objects or an error message.
+    list[TableColumn] | types.TextContent
+        List of TableColumn objects or an error message.
     """
     # Filter columns if specified
     if requested_columns:
@@ -85,7 +86,7 @@ def validate_and_select_columns(
         )
 
     try:
-        column_info_objects = create_column_info_list(columns_to_analyze)
+        supported_columns = ensure_supported_columns(columns_to_analyze)
     except ValueError as e:
         # Extract column information from the error
         error_msg = str(e)
@@ -94,4 +95,4 @@ def validate_and_select_columns(
             text=f"Error: {error_msg}",
         )
     else:
-        return column_info_objects
+        return supported_columns
