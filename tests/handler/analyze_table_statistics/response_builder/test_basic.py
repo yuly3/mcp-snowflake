@@ -1,5 +1,3 @@
-"""Tests for response building functionality."""
-
 import json
 from typing import TYPE_CHECKING, cast
 

@@ -1,6 +1,6 @@
 """Internal type definitions for table statistics analysis."""
 
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
 
 
 class NumericStatsDict(TypedDict):
@@ -68,6 +68,13 @@ class BooleanStatsDict(TypedDict):
 StatsDict = NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict
 
 
+class UnsupportedColumnDict(TypedDict):
+    """TypedDict for unsupported column information."""
+
+    name: str
+    data_type: str
+
+
 class TableInfoDict(TypedDict):
     """TypedDict for table information."""
 
@@ -83,6 +90,7 @@ class TableStatisticsDict(TypedDict):
 
     table_info: TableInfoDict
     column_statistics: dict[str, StatsDict]
+    unsupported_columns: NotRequired[list[UnsupportedColumnDict]]
 
 
 class AnalyzeTableStatisticsJsonResponse(TypedDict):

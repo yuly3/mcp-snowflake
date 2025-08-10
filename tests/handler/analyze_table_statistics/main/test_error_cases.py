@@ -21,11 +21,11 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_unsupported_column_type(self) -> None:
-        """Test handler with unsupported column types."""
+        """Test handler with all unsupported column types."""
         table_data = create_test_table_info(
             [
-                ("id", "NUMBER(10,0)", False, 1),
-                ("metadata", "VARIANT", True, 2),  # Unsupported type
+                ("metadata", "VARIANT", True, 1),  # All unsupported
+                ("config", "OBJECT", True, 2),  # All unsupported
             ]
         )
 
@@ -41,8 +41,9 @@ class TestErrorHandling:
 
         assert len(result) == 1
         error_content = cast("types.TextContent", result[0])
-        assert "Error: Unsupported column types found" in error_content.text
-        assert "metadata (VARIANT)" in error_content.text
+        assert "Error: No supported columns for statistics" in error_content.text
+        assert "metadata(VARIANT)" in error_content.text
+        assert "config(OBJECT)" in error_content.text
 
     @pytest.mark.asyncio
     async def test_missing_columns_error(self) -> None:
@@ -131,33 +132,6 @@ class TestErrorHandling:
         error_content = cast("types.TextContent", result[0])
         assert "Error executing statistics query" in error_content.text
         assert "Query execution failed" in error_content.text
-
-    @pytest.mark.asyncio
-    async def test_multiple_unsupported_column_types(self) -> None:
-        """Test error when multiple unsupported column types are found."""
-        table_data = create_test_table_info(
-            [
-                ("id", "NUMBER(10,0)", False, 1),
-                ("metadata", "VARIANT", True, 2),
-                ("config", "OBJECT", True, 3),
-            ]
-        )
-
-        mock_effect = MockEffectHandler(table_data=table_data)
-
-        args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
-        )
-
-        result = await handle_analyze_table_statistics(args, mock_effect)
-
-        assert len(result) == 1
-        error_content = cast("types.TextContent", result[0])
-        assert "Error: Unsupported column types found" in error_content.text
-        assert "metadata (VARIANT)" in error_content.text
-        assert "config (OBJECT)" in error_content.text
 
     @pytest.mark.asyncio
     async def test_no_columns_to_analyze_error(self) -> None:

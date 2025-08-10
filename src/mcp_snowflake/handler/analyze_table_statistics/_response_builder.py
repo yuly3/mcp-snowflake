@@ -19,6 +19,7 @@ def build_response(
     args: AnalyzeTableStatisticsArgs,
     result_row: Mapping[str, Any],
     columns_to_analyze: Sequence[TableColumn],
+    unsupported_columns: Sequence[TableColumn] = (),
 ) -> list[types.Content]:
     """Build the final response content.
 
@@ -30,6 +31,8 @@ def build_response(
         The query result row containing statistics.
     columns_to_analyze : Sequence[TableColumn]
         The columns that were analyzed.
+    unsupported_columns : Sequence[TableColumn], optional
+        The columns that were not analyzed due to unsupported data types.
 
     Returns
     -------
@@ -51,6 +54,13 @@ def build_response(
         }
     }
 
+    # Add unsupported_columns if any exist
+    if unsupported_columns:
+        response["table_statistics"]["unsupported_columns"] = [
+            {"name": col.name, "data_type": col.data_type}
+            for col in unsupported_columns
+        ]
+
     numeric_count = 0
     string_count = 0
     date_count = 0
@@ -66,21 +76,35 @@ def build_response(
             case "boolean":
                 boolean_count += 1
 
-    summary_text = "\n".join(
+    summary_lines = [
+        f"Table Statistics Analysis: {args.database}.{args.schema_name}.{args.table_name}",
+        "",
+        f"Successfully analyzed {len(columns_to_analyze)} columns with {result_row['TOTAL_ROWS']:,} total rows.",
+        "",
+        "**Column Types Analyzed:**",
+        f"- Numeric: {numeric_count} columns",
+        f"- String: {string_count} columns",
+        f"- Date: {date_count} columns",
+        f"- Boolean: {boolean_count} columns",
+    ]
+
+    # Add unsupported columns note if any exist
+    if unsupported_columns:
+        summary_lines.extend(
+            [
+                "",
+                f"Note: Some columns were not analyzed due to unsupported data types. {len(unsupported_columns)} column(s) skipped.",
+            ]
+        )
+
+    summary_lines.extend(
         [
-            f"Table Statistics Analysis: {args.database}.{args.schema_name}.{args.table_name}",
-            "",
-            f"Successfully analyzed {len(columns_to_analyze)} columns with {result_row['TOTAL_ROWS']:,} total rows.",
-            "",
-            "**Column Types Analyzed:**",
-            f"- Numeric: {numeric_count} columns",
-            f"- String: {string_count} columns",
-            f"- Date: {date_count} columns",
-            f"- Boolean: {boolean_count} columns",
             "",
             "Full statistical details are provided in the JSON response below.",
         ]
     )
+
+    summary_text = "\n".join(summary_lines)
 
     return [
         types.TextContent(

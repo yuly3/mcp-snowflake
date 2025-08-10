@@ -3,16 +3,16 @@
 import mcp.types as types
 
 from mcp_snowflake.handler.analyze_table_statistics._column_analysis import (
-    validate_and_select_columns,
+    select_and_classify_columns,
 )
 from mcp_snowflake.kernel.table_metadata import TableColumn
 
 
-class TestValidateAndSelectColumns:
-    """Test validate_and_select_columns function."""
+class TestSelectAndClassifyColumns:
+    """Test select_and_classify_columns function."""
 
-    def test_valid_columns_selection(self) -> None:
-        """Test successful column selection."""
+    def test_classify_supported_and_unsupported_columns(self) -> None:
+        """Test classification of supported and unsupported columns."""
         all_columns = [
             TableColumn(
                 name="id",
@@ -31,25 +31,47 @@ class TestValidateAndSelectColumns:
                 ordinal_position=2,
             ),
             TableColumn(
-                name="date",
-                data_type="DATE",
+                name="metadata",
+                data_type="VARIANT",
                 nullable=True,
                 default_value=None,
                 comment=None,
                 ordinal_position=3,
             ),
+            TableColumn(
+                name="config",
+                data_type="OBJECT",
+                nullable=True,
+                default_value=None,
+                comment=None,
+                ordinal_position=4,
+            ),
         ]
-        requested_columns = ["id", "name"]
+        requested_columns: list[str] = []
 
-        columns = validate_and_select_columns(all_columns, requested_columns)
+        result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert not isinstance(columns, types.TextContent)
-        assert len(columns) == 2
-        assert columns[0].name == "id"
-        assert columns[1].name == "name"
+        assert not isinstance(result, types.TextContent)
+        supported_columns, unsupported_info = result
 
-    def test_no_columns_requested(self) -> None:
-        """Test when no specific columns are requested (all columns)."""
+        # Verify supported columns
+        assert len(supported_columns) == 2
+        assert supported_columns[0].name == "id"
+        assert supported_columns[1].name == "name"
+
+        # Verify unsupported columns
+        assert len(unsupported_info) == 2
+        unsupported_col_1, reason_1 = unsupported_info[0]
+        unsupported_col_2, reason_2 = unsupported_info[1]
+        assert unsupported_col_1.name == "metadata"
+        assert unsupported_col_1.data_type == "VARIANT"
+        assert "Unsupported" in reason_1
+        assert unsupported_col_2.name == "config"
+        assert unsupported_col_2.data_type == "OBJECT"
+        assert "Unsupported" in reason_2
+
+    def test_classify_all_supported_columns(self) -> None:
+        """Test classification when all columns are supported."""
         all_columns = [
             TableColumn(
                 name="id",
@@ -70,12 +92,47 @@ class TestValidateAndSelectColumns:
         ]
         requested_columns: list[str] = []
 
-        columns = validate_and_select_columns(all_columns, requested_columns)
+        result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert not isinstance(columns, types.TextContent)
-        assert len(columns) == 2
+        assert not isinstance(result, types.TextContent)
+        supported_columns, unsupported_info = result
 
-    def test_missing_columns(self) -> None:
+        assert len(supported_columns) == 2
+        assert len(unsupported_info) == 0
+
+    def test_classify_requested_columns_with_mixed_support(self) -> None:
+        """Test classification with specific requested columns."""
+        all_columns = [
+            TableColumn(
+                name="id",
+                data_type="NUMBER(10,0)",
+                nullable=False,
+                default_value=None,
+                comment=None,
+                ordinal_position=1,
+            ),
+            TableColumn(
+                name="metadata",
+                data_type="VARIANT",
+                nullable=True,
+                default_value=None,
+                comment=None,
+                ordinal_position=2,
+            ),
+        ]
+        requested_columns = ["id", "metadata"]
+
+        result = select_and_classify_columns(all_columns, requested_columns)
+
+        assert not isinstance(result, types.TextContent)
+        supported_columns, unsupported_info = result
+
+        assert len(supported_columns) == 1
+        assert supported_columns[0].name == "id"
+        assert len(unsupported_info) == 1
+        assert unsupported_info[0][0].name == "metadata"
+
+    def test_classify_missing_columns_returns_error(self) -> None:
         """Test error when requested columns don't exist."""
         all_columns = [
             TableColumn(
@@ -86,91 +143,20 @@ class TestValidateAndSelectColumns:
                 comment=None,
                 ordinal_position=1,
             ),
-            TableColumn(
-                name="name",
-                data_type="VARCHAR(50)",
-                nullable=True,
-                default_value=None,
-                comment=None,
-                ordinal_position=2,
-            ),
         ]
         requested_columns = ["id", "nonexistent"]
 
-        error = validate_and_select_columns(all_columns, requested_columns)
+        result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert isinstance(error, types.TextContent)
-        assert "nonexistent" in error.text
+        assert isinstance(result, types.TextContent)
+        assert "nonexistent" in result.text
 
-    def test_empty_columns_list(self) -> None:
+    def test_classify_empty_columns_list_returns_error(self) -> None:
         """Test error when no columns are available."""
         all_columns: list[TableColumn] = []
         requested_columns: list[str] = []
 
-        error = validate_and_select_columns(all_columns, requested_columns)
+        result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert isinstance(error, types.TextContent)
-        assert "No columns to analyze" in error.text
-
-    def test_unsupported_column_types(self) -> None:
-        """Test error when unsupported column types are found."""
-        all_columns = [
-            TableColumn(
-                name="id",
-                data_type="NUMBER(10,0)",
-                nullable=False,
-                default_value=None,
-                comment=None,
-                ordinal_position=1,
-            ),
-            TableColumn(
-                name="metadata",
-                data_type="VARIANT",
-                nullable=True,
-                default_value=None,
-                comment=None,
-                ordinal_position=2,
-            ),
-        ]
-        requested_columns: list[str] = []
-
-        error = validate_and_select_columns(all_columns, requested_columns)
-
-        assert isinstance(error, types.TextContent)
-        assert "metadata (VARIANT)" in error.text
-
-    def test_partial_unsupported_types(self) -> None:
-        """Test when some columns are supported and some are not."""
-        all_columns = [
-            TableColumn(
-                name="id",
-                data_type="NUMBER(10,0)",
-                nullable=False,
-                default_value=None,
-                comment=None,
-                ordinal_position=1,
-            ),
-            TableColumn(
-                name="metadata",
-                data_type="VARIANT",
-                nullable=True,
-                default_value=None,
-                comment=None,
-                ordinal_position=2,
-            ),
-            TableColumn(
-                name="config",
-                data_type="OBJECT",
-                nullable=True,
-                default_value=None,
-                comment=None,
-                ordinal_position=3,
-            ),
-        ]
-        requested_columns: list[str] = []
-
-        error = validate_and_select_columns(all_columns, requested_columns)
-
-        assert isinstance(error, types.TextContent)
-        assert "metadata (VARIANT)" in error.text
-        assert "config (OBJECT)" in error.text
+        assert isinstance(result, types.TextContent)
+        assert "No columns to analyze" in result.text

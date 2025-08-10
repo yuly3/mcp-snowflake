@@ -4,7 +4,7 @@ import logging
 
 import mcp.types as types
 
-from ._column_analysis import validate_and_select_columns
+from ._column_analysis import select_and_classify_columns
 from ._response_builder import build_response
 from .models import AnalyzeTableStatisticsArgs, EffectAnalyzeTableStatistics
 
@@ -51,19 +51,34 @@ async def handle_analyze_table_statistics(
             )
         ]
 
-    columns_to_analyze = validate_and_select_columns(
+    columns_result = select_and_classify_columns(
         table_info.columns,
         args.columns,
     )
-    if isinstance(columns_to_analyze, types.TextContent):
-        return [columns_to_analyze]
+    if isinstance(columns_result, types.TextContent):
+        return [columns_result]
+
+    supported_columns, unsupported_info = columns_result
+
+    # If no supported columns, return error with unsupported column list
+    if not supported_columns:
+        unsupported_list = [
+            f"{col.name}({col.data_type})" for col, _ in unsupported_info
+        ]
+        error_text = f"Error: No supported columns for statistics. Unsupported columns: {', '.join(unsupported_list)}"
+        return [
+            types.TextContent(
+                type="text",
+                text=error_text,
+            )
+        ]
 
     try:
         result_row = await effect.analyze_table_statistics(
             args.database,
             args.schema_name,
             args.table_name,
-            columns_to_analyze,
+            supported_columns,
             args.top_k_limit,
         )
     except Exception as e:
@@ -75,8 +90,11 @@ async def handle_analyze_table_statistics(
             )
         ]
 
+    # Extract unsupported columns from unsupported_info for response builder
+    unsupported_columns = [col for col, _ in unsupported_info]
+
     try:
-        return build_response(args, result_row, columns_to_analyze)
+        return build_response(args, result_row, supported_columns, unsupported_columns)
     except Exception as e:
         logger.exception("Error building response")
         return [
