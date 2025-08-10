@@ -25,7 +25,7 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
         database: str,
         schema_name: str,
         table_name: str,
-        columns_to_analyze: Iterable[Any],  # ColumnInfo type
+        columns_to_analyze: Iterable[ColumnInfo],
         top_k_limit: int,
     ) -> dict[str, Any]:
         """Execute statistics query and return the single result row.
@@ -38,8 +38,8 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
             Schema name
         table_name : str
             Table name
-        columns_to_analyze : Iterable[Any]
-            Column information objects (ColumnInfo)
+        columns_to_analyze : Iterable[ColumnInfo]
+            Column information objects
         top_k_limit : int
             Limit for APPROX_TOP_K function
 
