@@ -21,12 +21,12 @@ class TestSnowflakeDataType:
 
     def test_init_with_empty_raw_type_raises_error(self) -> None:
         """Test initialization with empty raw type raises ValueError."""
-        with pytest.raises(ValueError, match="raw_type cannot be empty"):
+        with pytest.raises(ValueError, match="Unsupported Snowflake data type"):
             _ = SnowflakeDataType("")
 
     def test_init_with_whitespace_only_raw_type_raises_error(self) -> None:
         """Test initialization with whitespace-only raw type raises ValueError."""
-        with pytest.raises(ValueError, match="raw_type cannot be empty"):
+        with pytest.raises(ValueError, match="Unsupported Snowflake data type"):
             _ = SnowflakeDataType("   ")
 
     @pytest.mark.parametrize(
@@ -70,10 +70,9 @@ class TestSnowflakeDataType:
         assert sf_type.normalized_type == expected
 
     def test_normalized_type_with_unsupported_type_raises_error(self) -> None:
-        """Test normalized_type with unsupported type raises ValueError."""
-        sf_type = SnowflakeDataType("UNSUPPORTED_TYPE")
+        """Test unsupported type raises ValueError at construction time."""
         with pytest.raises(ValueError, match="Unsupported Snowflake data type"):
-            _ = sf_type.normalized_type
+            _ = SnowflakeDataType("UNSUPPORTED_TYPE")
 
     @pytest.mark.parametrize(
         ("raw_type", "expected"),
@@ -180,6 +179,22 @@ class TestSnowflakeDataType:
         """Test is_supported_for_statistics method."""
         sf_type = SnowflakeDataType(raw_type)
         assert sf_type.is_supported_for_statistics() == expected
+
+    def test_from_raw_str_success(self) -> None:
+        """Test from_raw_str with supported types returns instance."""
+        sf_type = SnowflakeDataType.from_raw_str("VARCHAR(10)")
+        assert sf_type is not None
+        assert sf_type.normalized_type == "VARCHAR"
+
+    def test_from_raw_str_with_unsupported_type_returns_none(self) -> None:
+        """Test from_raw_str with unsupported type returns None."""
+        result = SnowflakeDataType.from_raw_str("UNSUPPORTED")
+        assert result is None
+
+    def test_from_raw_str_with_empty_string_returns_none(self) -> None:
+        """Test from_raw_str with empty string returns None."""
+        result = SnowflakeDataType.from_raw_str("   ")
+        assert result is None
 
 
 class TestStatisticsSupportDataType:

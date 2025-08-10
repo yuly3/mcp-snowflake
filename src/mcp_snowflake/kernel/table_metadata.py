@@ -1,12 +1,8 @@
 """Table metadata domain models using attrs."""
 
 import attrs
-from cattrs import Converter
 
 from .data_types import SnowflakeDataType, StatisticsSupportDataType
-
-# Default cattrs converter for this module
-converter = Converter()
 
 
 @attrs.define(frozen=True, slots=True)
@@ -23,7 +19,10 @@ class TableColumn:
     @property
     def snowflake_type(self) -> SnowflakeDataType:
         """Get the Snowflake data type representation for this column."""
-        return SnowflakeDataType(self.data_type)
+        sf_type = SnowflakeDataType.from_raw_str(self.data_type)
+        if sf_type is None:
+            raise ValueError(f"Unsupported Snowflake data type: {self.data_type}")
+        return sf_type
 
     @property
     def statistics_type(self) -> StatisticsSupportDataType:

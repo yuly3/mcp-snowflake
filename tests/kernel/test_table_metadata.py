@@ -251,5 +251,5 @@ class TestTableColumnProperties:
             ordinal_position=1,
         )
 
-        with pytest.raises(ValueError, match="raw_type cannot be empty"):
+        with pytest.raises(ValueError, match="Unsupported Snowflake data type"):
             _ = column.snowflake_type

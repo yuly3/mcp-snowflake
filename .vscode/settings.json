@@ -2,9 +2,11 @@
   "cSpell.words": [
     "BYTEINT",
     "classmethod",
+    "Geospatial",
     "Jsonable",
     "SMALLINT",
     "TINYINT",
+    "VARBINARY",
     "VARCHAR"
   ]
 }

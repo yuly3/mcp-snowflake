@@ -1,6 +1,6 @@
 """Data types for Snowflake domain layer."""
 
-from typing import Literal, cast
+from typing import Literal, Self, TypeGuard
 
 import attrs
 
@@ -44,6 +44,24 @@ NormalizedSnowflakeDataType = Literal[
     # Structured data types (for Iceberg)
     "MAP",
 ]
+NORMALIZED_SNOWFLAKE_DATA_TYPES: frozenset[str] = frozenset(
+    NormalizedSnowflakeDataType.__args__
+)
+ALIAS_MAPPING = {
+    "NUMERIC": "DECIMAL",
+    "INTEGER": "INT",
+    "DOUBLE PRECISION": "DOUBLE",
+    "FLOAT4": "FLOAT",
+    "FLOAT8": "FLOAT",
+    "CHARACTER": "CHAR",
+    "DATETIME": "TIMESTAMP_NTZ",  # DATETIME is an alias for TIMESTAMP_NTZ
+    "VARBINARY": "BINARY",
+}
+
+
+def is_normalized_snowflake_data_type(s: str) -> TypeGuard[NormalizedSnowflakeDataType]:
+    """Check if a string is a normalized Snowflake data type."""
+    return s in NORMALIZED_SNOWFLAKE_DATA_TYPES
 
 
 @attrs.define(frozen=True)
@@ -51,49 +69,45 @@ class SnowflakeDataType:
     """Snowflake data type representation."""
 
     raw_type: str
+    normalized_type: NormalizedSnowflakeDataType = attrs.field(init=False)
 
     def __attrs_post_init__(self) -> None:
-        if not self.raw_type.strip():
-            raise ValueError("raw_type cannot be empty")
+        normalized = self._normalize_raw_type(self.raw_type)
+        if normalized is None:
+            raise ValueError(f"Unsupported Snowflake data type: {self.raw_type}")
+        object.__setattr__(self, "normalized_type", normalized)
 
-    @property
-    def normalized_type(self) -> NormalizedSnowflakeDataType:
-        """
-        Convert raw Snowflake data type to normalized type name
+    @classmethod
+    def from_raw_str(cls, s: str) -> Self | None:
+        """Create SnowflakeDataType from raw string, returning None for unsupported types."""
+        normalized = cls._normalize_raw_type(s)
+        if normalized is None:
+            return None
+        return cls(s)
 
-        Examples
-        --------
-        - "VARCHAR(255)" -> "VARCHAR"
-        - "NUMBER(10,2)" -> "NUMBER"
-        - "TIMESTAMP_NTZ" -> "TIMESTAMP_NTZ"  # Suffix is preserved
-        - "DECIMAL" -> "DECIMAL"
+    @staticmethod
+    def _normalize_raw_type(s: str) -> NormalizedSnowflakeDataType | None:
         """
-        upper_type = self.raw_type.upper().strip()
+        Normalize raw Snowflake data type to NormalizedSnowflakeDataType.
+
+        Returns None if the type is not supported.
+        """
+        upper_type = s.upper().strip()
+        if not upper_type:
+            return None
 
         # Remove parentheses and their contents (e.g., VARCHAR(255) -> VARCHAR)
         if "(" in upper_type:
             upper_type = upper_type.split("(")[0]
 
-        # Alias normalization
-        alias_mapping = {
-            "NUMERIC": "DECIMAL",
-            "INTEGER": "INT",
-            "DOUBLE PRECISION": "DOUBLE",
-            "FLOAT4": "FLOAT",
-            "FLOAT8": "FLOAT",
-            "CHARACTER": "CHAR",
-            "DATETIME": "TIMESTAMP_NTZ",  # DATETIME is an alias for TIMESTAMP_NTZ
-            "VARBINARY": "BINARY",
-        }
-
         # Apply alias conversion
-        normalized = alias_mapping.get(upper_type, upper_type)
+        normalized = ALIAS_MAPPING.get(upper_type, upper_type)
 
-        # Type safety check: raise exception if not in Literal
-        if normalized not in NormalizedSnowflakeDataType.__args__:
-            raise ValueError(f"Unsupported Snowflake data type: {self.raw_type}")
+        # Type safety check: return None if not in Literal
+        if not is_normalized_snowflake_data_type(normalized):
+            return None
 
-        return cast("NormalizedSnowflakeDataType", normalized)
+        return normalized
 
     def is_numeric(self) -> bool:
         """Check if the data type is numeric"""
@@ -146,7 +160,7 @@ class StatisticsSupportDataType:
     def from_snowflake_type(
         cls,
         sf_type: SnowflakeDataType,
-    ) -> "StatisticsSupportDataType":
+    ) -> Self:
         """Convert SnowflakeDataType to StatisticsSupportDataType."""
         if sf_type.is_numeric():
             return cls("numeric")
