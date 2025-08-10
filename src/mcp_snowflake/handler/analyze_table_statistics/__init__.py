@@ -48,7 +48,6 @@ async def _execute_statistics_query(
     ValueError
         If query execution fails or returns no data.
     """
-    # Generate and execute statistics query
     stats_sql = generate_statistics_sql(
         args.database,
         args.schema_name,
@@ -98,7 +97,6 @@ async def handle_analyze_table_statistics(
             )
         ]
 
-    # Validate and select columns
     columns_to_analyze = validate_and_select_columns(
         table_info.columns,
         args.columns,

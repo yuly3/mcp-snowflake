@@ -94,12 +94,9 @@ async def handle_describe_table(
         }
     }
 
-    # Format as pure JSON response
-    json_str = json.dumps(table_json, indent=2)
-
     return [
         types.TextContent(
             type="text",
-            text=json_str,
+            text=json.dumps(table_json, indent=2),
         )
     ]
