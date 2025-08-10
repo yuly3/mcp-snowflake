@@ -1,10 +1,13 @@
 import json
 import logging
+from collections.abc import Mapping, Sequence
 from datetime import timedelta
 from typing import Any, Protocol, TypedDict
 
 import mcp.types as types
 from pydantic import BaseModel, Field
+
+from cattrs_converter import Jsonable
 
 from ..kernel import DataProcessingResult
 from ..sql_analyzer import SQLWriteDetector
@@ -19,7 +22,7 @@ class QueryResultDict(TypedDict):
     execution_time_ms: int
     row_count: int
     columns: list[str]
-    rows: list[dict[str, Any]]
+    rows: Sequence[Mapping[str, Jsonable]]
     warnings: list[str]
 
 
@@ -43,7 +46,7 @@ class EffectExecuteQuery(Protocol):
 
 
 def _format_query_response(
-    processed_rows: list[dict[str, Any]],
+    processed_rows: Sequence[Mapping[str, Jsonable]],
     warnings: list[str],
     execution_time_ms: int,
 ) -> ExecuteQueryJsonResponse:
@@ -52,7 +55,7 @@ def _format_query_response(
 
     Parameters
     ----------
-    processed_rows : list[dict[str, Any]]
+    processed_rows : Sequence[Mapping[str, Jsonable]]
         Processed query result rows
     warnings : list[str]
         List of warning messages

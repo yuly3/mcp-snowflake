@@ -1,9 +1,12 @@
 import json
 import logging
+from collections.abc import Mapping, Sequence
 from typing import Any, Protocol, TypedDict
 
 import mcp.types as types
 from pydantic import BaseModel, Field
+
+from cattrs_converter import Jsonable
 
 from ..kernel import DataProcessingResult
 
@@ -19,7 +22,7 @@ class SampleDataDict(TypedDict):
     sample_size: int
     actual_rows: int
     columns: list[str]
-    rows: list[dict[str, Any]]
+    rows: Sequence[Mapping[str, Jsonable]]
     warnings: list[str]
 
 
@@ -49,7 +52,7 @@ class EffectSampleTableData(Protocol):
 
 
 def _format_response(
-    processed_rows: list[dict[str, Any]],
+    processed_rows: Sequence[Mapping[str, Jsonable]],
     warnings: list[str],
     database: str,
     schema: str,
@@ -61,7 +64,7 @@ def _format_response(
 
     Parameters
     ----------
-    processed_rows : list[dict[str, Any]]
+    processed_rows : Sequence[Mapping[str, Jsonable]]
         Processed sample data rows
     warnings : list[str]
         List of warning messages
