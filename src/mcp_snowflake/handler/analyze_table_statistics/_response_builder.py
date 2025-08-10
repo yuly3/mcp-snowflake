@@ -35,10 +35,8 @@ def build_response(
     list[types.Content]
         The formatted response content.
     """
-    # Parse results into structured format
     column_statistics = parse_statistics_result(result_row, columns_to_analyze)
 
-    # Build response
     response: AnalyzeTableStatisticsJsonResponse = {
         "table_statistics": {
             "table_info": {

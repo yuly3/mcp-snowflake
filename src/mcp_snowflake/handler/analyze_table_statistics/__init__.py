@@ -86,7 +86,9 @@ async def handle_analyze_table_statistics(
     try:
         # Get table structure
         table_info = await effect.describe_table(
-            args.database, args.schema_name, args.table_name
+            args.database,
+            args.schema_name,
+            args.table_name,
         )
         all_columns = table_info["columns"]
     except Exception as e:

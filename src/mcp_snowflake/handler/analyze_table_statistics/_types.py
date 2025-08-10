@@ -83,7 +83,8 @@ class StringStatsDict(TypedDict):
     distinct_count_approx: int
     min_length: int
     max_length: int
-    top_values: list[list[Any]]  # [[value, count], ...]
+    top_values: list[list[Any]]
+    """[[value, count], ...]"""
 
 
 class DateStatsDict(TypedDict):
@@ -108,10 +109,14 @@ class BooleanStatsDict(TypedDict):
     null_count: int
     true_count: int
     false_count: int
-    true_percentage: float  # Excludes NULL values (DIV0NULL returns 0.00)
-    false_percentage: float  # Excludes NULL values (DIV0NULL returns 0.00)
-    true_percentage_with_nulls: float  # Includes NULL values
-    false_percentage_with_nulls: float  # Includes NULL values
+    true_percentage: float
+    """Excludes NULL values (DIV0NULL returns 0.00)"""
+    false_percentage: float
+    """Excludes NULL values (DIV0NULL returns 0.00)"""
+    true_percentage_with_nulls: float
+    """Includes NULL values"""
+    false_percentage_with_nulls: float
+    """Includes NULL values"""
 
 
 StatsDict = NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict
