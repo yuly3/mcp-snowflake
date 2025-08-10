@@ -108,10 +108,10 @@ class BooleanStatsDict(TypedDict):
     null_count: int
     true_count: int
     false_count: int
-    true_percentage: float  # NULL除外版（DIV0NULLで0.00になる）
-    false_percentage: float  # NULL除外版（DIV0NULLで0.00になる）
-    true_percentage_with_nulls: float  # NULL含む版
-    false_percentage_with_nulls: float  # NULL含む版
+    true_percentage: float  # Excludes NULL values (DIV0NULL returns 0.00)
+    false_percentage: float  # Excludes NULL values (DIV0NULL returns 0.00)
+    true_percentage_with_nulls: float  # Includes NULL values
+    false_percentage_with_nulls: float  # Includes NULL values
 
 
 StatsDict = NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict

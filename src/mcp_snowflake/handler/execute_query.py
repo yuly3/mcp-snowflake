@@ -94,7 +94,7 @@ async def handle_execute_query(
     list[types.TextContent]
         Response content with query results or error message
     """
-    # SQL安全性チェック
+    # SQL safety check
     detector = SQLWriteDetector()
     try:
         if detector.is_write_sql(args.sql):

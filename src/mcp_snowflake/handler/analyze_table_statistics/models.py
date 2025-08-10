@@ -14,8 +14,10 @@ class AnalyzeTableStatisticsArgs(BaseModel):
     database: str
     schema_name: str
     table_name: str
-    columns: list[str] = Field(default_factory=list)  # 空リストの場合は全列
-    top_k_limit: int = Field(default=10, ge=1, le=100)  # 最頻値の取得数
+    columns: list[str] = Field(default_factory=list)  # Empty list means all columns
+    top_k_limit: int = Field(
+        default=10, ge=1, le=100
+    )  # Number of most frequent values to retrieve
 
 
 class EffectAnalyzeTableStatistics(EffectDescribeTable, EffectExecuteQuery, Protocol):
