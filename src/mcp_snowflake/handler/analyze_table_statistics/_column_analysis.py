@@ -1,20 +1,20 @@
 """Column analysis utilities for table statistics."""
 
-from collections.abc import Iterable, Mapping, Sequence
-from typing import Any
+from collections.abc import Iterable, Sequence
 
 import mcp.types as types
 
+from ...kernel.table_metadata import TableColumn
 from ._types import ColumnInfo
 
 
-def create_column_info_list(columns: Iterable[Mapping[str, Any]]) -> list[ColumnInfo]:
+def create_column_info_list(columns: Iterable[TableColumn]) -> list[ColumnInfo]:
     """Convert dict-based column information to ColumnInfo objects.
 
     Parameters
     ----------
-    columns : Iterable[Mapping[str, Any]]
-        List of column dictionaries with 'name' and 'data_type' keys.
+    columns : Iterable[TableColumn]
+        List of TableColumn objects.
 
     Returns
     -------
@@ -31,12 +31,9 @@ def create_column_info_list(columns: Iterable[Mapping[str, Any]]) -> list[Column
 
     for col in columns:
         try:
-            column_info = ColumnInfo.from_dict(col)
+            column_info = ColumnInfo.from_table_column(col)
         except ValueError:
-            # Extract column name and type for error message
-            col_name = col.get("name", "unknown")
-            col_type = col.get("data_type", "unknown")
-            unsupported_columns.append(f"{col_name} ({col_type})")
+            unsupported_columns.append(f"{col.name} ({col.data_type})")
         else:
             column_infos.append(column_info)
 
@@ -49,7 +46,7 @@ def create_column_info_list(columns: Iterable[Mapping[str, Any]]) -> list[Column
 
 
 def validate_and_select_columns(
-    all_columns: list[dict[str, Any]],
+    all_columns: list[TableColumn],
     requested_columns: Sequence[str],
 ) -> list[ColumnInfo] | types.TextContent:
     """Validate and select columns for analysis.
@@ -69,10 +66,10 @@ def validate_and_select_columns(
     # Filter columns if specified
     if requested_columns:
         columns_to_analyze = [
-            col for col in all_columns if col["name"] in requested_columns
+            col for col in all_columns if col.name in requested_columns
         ]
         if len(columns_to_analyze) != len(requested_columns):
-            found_columns: set[str] = {col["name"] for col in columns_to_analyze}
+            found_columns: set[str] = {col.name for col in columns_to_analyze}
             missing_columns = set(requested_columns) - found_columns
             return types.TextContent(
                 type="text",
@@ -87,7 +84,6 @@ def validate_and_select_columns(
             text="Error: No columns to analyze",
         )
 
-    # Convert dict columns to ColumnInfo objects and filter unsupported types
     try:
         column_info_objects = create_column_info_list(columns_to_analyze)
     except ValueError as e:

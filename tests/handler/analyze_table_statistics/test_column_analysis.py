@@ -1,12 +1,11 @@
 """Tests for column analysis functionality."""
 
-from typing import Any
-
 import mcp.types as types
 
 from mcp_snowflake.handler.analyze_table_statistics._column_analysis import (
     validate_and_select_columns,
 )
+from mcp_snowflake.kernel.table_metadata import TableColumn
 
 
 class TestValidateAndSelectColumns:
@@ -15,9 +14,30 @@ class TestValidateAndSelectColumns:
     def test_valid_columns_selection(self) -> None:
         """Test successful column selection."""
         all_columns = [
-            {"name": "id", "data_type": "NUMBER(10,0)"},
-            {"name": "name", "data_type": "VARCHAR(50)"},
-            {"name": "date", "data_type": "DATE"},
+            TableColumn(
+                name="id",
+                data_type="NUMBER(10,0)",
+                nullable=False,
+                default_value=None,
+                comment=None,
+                ordinal_position=1,
+            ),
+            TableColumn(
+                name="name",
+                data_type="VARCHAR(50)",
+                nullable=True,
+                default_value=None,
+                comment=None,
+                ordinal_position=2,
+            ),
+            TableColumn(
+                name="date",
+                data_type="DATE",
+                nullable=True,
+                default_value=None,
+                comment=None,
+                ordinal_position=3,
+            ),
         ]
         requested_columns = ["id", "name"]
 
@@ -31,8 +51,22 @@ class TestValidateAndSelectColumns:
     def test_no_columns_requested(self) -> None:
         """Test when no specific columns are requested (all columns)."""
         all_columns = [
-            {"name": "id", "data_type": "NUMBER(10,0)"},
-            {"name": "name", "data_type": "VARCHAR(50)"},
+            TableColumn(
+                name="id",
+                data_type="NUMBER(10,0)",
+                nullable=False,
+                default_value=None,
+                comment=None,
+                ordinal_position=1,
+            ),
+            TableColumn(
+                name="name",
+                data_type="VARCHAR(50)",
+                nullable=True,
+                default_value=None,
+                comment=None,
+                ordinal_position=2,
+            ),
         ]
         requested_columns: list[str] = []
 
@@ -44,8 +78,22 @@ class TestValidateAndSelectColumns:
     def test_missing_columns(self) -> None:
         """Test error when requested columns don't exist."""
         all_columns = [
-            {"name": "id", "data_type": "NUMBER(10,0)"},
-            {"name": "name", "data_type": "VARCHAR(50)"},
+            TableColumn(
+                name="id",
+                data_type="NUMBER(10,0)",
+                nullable=False,
+                default_value=None,
+                comment=None,
+                ordinal_position=1,
+            ),
+            TableColumn(
+                name="name",
+                data_type="VARCHAR(50)",
+                nullable=True,
+                default_value=None,
+                comment=None,
+                ordinal_position=2,
+            ),
         ]
         requested_columns = ["id", "nonexistent"]
 
@@ -56,7 +104,7 @@ class TestValidateAndSelectColumns:
 
     def test_empty_columns_list(self) -> None:
         """Test error when no columns are available."""
-        all_columns: list[dict[str, Any]] = []
+        all_columns: list[TableColumn] = []
         requested_columns: list[str] = []
 
         error = validate_and_select_columns(all_columns, requested_columns)
@@ -67,8 +115,22 @@ class TestValidateAndSelectColumns:
     def test_unsupported_column_types(self) -> None:
         """Test error when unsupported column types are found."""
         all_columns = [
-            {"name": "id", "data_type": "NUMBER(10,0)"},
-            {"name": "metadata", "data_type": "VARIANT"},
+            TableColumn(
+                name="id",
+                data_type="NUMBER(10,0)",
+                nullable=False,
+                default_value=None,
+                comment=None,
+                ordinal_position=1,
+            ),
+            TableColumn(
+                name="metadata",
+                data_type="VARIANT",
+                nullable=True,
+                default_value=None,
+                comment=None,
+                ordinal_position=2,
+            ),
         ]
         requested_columns: list[str] = []
 
@@ -80,9 +142,30 @@ class TestValidateAndSelectColumns:
     def test_partial_unsupported_types(self) -> None:
         """Test when some columns are supported and some are not."""
         all_columns = [
-            {"name": "id", "data_type": "NUMBER(10,0)"},
-            {"name": "metadata", "data_type": "VARIANT"},
-            {"name": "config", "data_type": "OBJECT"},
+            TableColumn(
+                name="id",
+                data_type="NUMBER(10,0)",
+                nullable=False,
+                default_value=None,
+                comment=None,
+                ordinal_position=1,
+            ),
+            TableColumn(
+                name="metadata",
+                data_type="VARIANT",
+                nullable=True,
+                default_value=None,
+                comment=None,
+                ordinal_position=2,
+            ),
+            TableColumn(
+                name="config",
+                data_type="OBJECT",
+                nullable=True,
+                default_value=None,
+                comment=None,
+                ordinal_position=3,
+            ),
         ]
         requested_columns: list[str] = []
 

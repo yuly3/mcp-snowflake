@@ -10,6 +10,7 @@ from typing import Any, cast
 
 from snowflake.connector import DictCursor, ProgrammingError, SnowflakeConnection
 
+from .kernel.table_metadata import TableColumn, TableInfo
 from .settings import SnowflakeSettings
 
 logger = logging.getLogger(__name__)
@@ -174,7 +175,7 @@ class SnowflakeClient:
         database: str,
         schema: str,
         table_name: str,
-    ) -> dict[str, Any]:
+    ) -> TableInfo:
         """Get table structure information."""
         query = f"DESCRIBE TABLE {database}.{schema}.{table_name}"
 
@@ -195,28 +196,27 @@ class SnowflakeClient:
             ) from e
 
         # Transform results into structured format
-        columns: list[dict[str, Any]] = []
-        for i, row in enumerate(results, 1):
+        columns = [
             # Snowflake DESCRIBE TABLE returns columns like:
             # name, type, kind, null?, default, primary key, unique key, check, expression, comment
-            columns.append(
-                {
-                    "name": row.get("name", ""),
-                    "data_type": row.get("type", ""),
-                    "nullable": row.get("null?", "Y") == "Y",
-                    "default_value": row.get("default"),
-                    "comment": row.get("comment"),
-                    "ordinal_position": i,
-                }
+            TableColumn(
+                name=row.get("name", ""),
+                data_type=row.get("type", ""),
+                nullable=row.get("null?", "Y") == "Y",
+                default_value=row.get("default"),
+                comment=row.get("comment"),
+                ordinal_position=i,
             )
+            for i, row in enumerate(results, 1)
+        ]
 
-        return {
-            "database": database,
-            "schema_name": schema,
-            "name": table_name,
-            "column_count": len(columns),
-            "columns": columns,
-        }
+        return TableInfo(
+            database=database,
+            schema=schema,
+            name=table_name,
+            column_count=len(columns),
+            columns=columns,
+        )
 
     async def sample_table_data(
         self,

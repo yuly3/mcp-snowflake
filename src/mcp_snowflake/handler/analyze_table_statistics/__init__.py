@@ -84,13 +84,11 @@ async def handle_analyze_table_statistics(
         The response content.
     """
     try:
-        # Get table structure
         table_info = await effect.describe_table(
             args.database,
             args.schema_name,
             args.table_name,
         )
-        all_columns = table_info["columns"]
     except Exception as e:
         logger.exception("Error getting table information")
         return [
@@ -102,14 +100,13 @@ async def handle_analyze_table_statistics(
 
     # Validate and select columns
     columns_to_analyze = validate_and_select_columns(
-        all_columns,
+        table_info.columns,
         args.columns,
     )
     if isinstance(columns_to_analyze, types.TextContent):
         return [columns_to_analyze]
 
     try:
-        # Execute statistics query
         result_row = await _execute_statistics_query(effect, args, columns_to_analyze)
     except Exception as e:
         logger.exception("Error executing statistics query")
@@ -121,7 +118,6 @@ async def handle_analyze_table_statistics(
         ]
 
     try:
-        # Build and return response
         return build_response(args, result_row, columns_to_analyze)
     except Exception as e:
         logger.exception("Error building response")

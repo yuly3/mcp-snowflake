@@ -1,9 +1,11 @@
 import json
 import logging
-from typing import Any, Protocol, TypedDict
+from typing import Protocol, TypedDict
 
 import mcp.types as types
 from pydantic import BaseModel
+
+from ..kernel.table_metadata import TableInfo
 
 logger = logging.getLogger(__name__)
 
@@ -41,30 +43,13 @@ class DescribeTableArgs(BaseModel):
     table_name: str
 
 
-class TableColumn(BaseModel):
-    name: str
-    data_type: str
-    nullable: bool
-    default_value: str | None
-    comment: str | None
-    ordinal_position: int
-
-
-class TableInfo(BaseModel):
-    database: str
-    schema_name: str
-    name: str
-    column_count: int
-    columns: list[TableColumn]
-
-
 class EffectDescribeTable(Protocol):
     async def describe_table(
         self,
         database: str,
         schema: str,
         table_name: str,
-    ) -> dict[str, Any]: ...
+    ) -> TableInfo: ...
 
 
 async def handle_describe_table(
@@ -87,26 +72,6 @@ async def handle_describe_table(
             )
         ]
 
-    columns = [
-        TableColumn(
-            name=col["name"],
-            data_type=col["data_type"],
-            nullable=col["nullable"],
-            default_value=col["default_value"],
-            comment=col["comment"],
-            ordinal_position=col["ordinal_position"],
-        )
-        for col in table_data["columns"]
-    ]
-
-    table_info = TableInfo(
-        database=table_data["database"],
-        schema_name=table_data["schema_name"],
-        name=table_data["name"],
-        column_count=table_data["column_count"],
-        columns=columns,
-    )
-
     columns_dict: list[ColumnDict] = [
         {
             "name": col.name,
@@ -116,15 +81,15 @@ async def handle_describe_table(
             "comment": col.comment,
             "ordinal_position": col.ordinal_position,
         }
-        for col in table_info.columns
+        for col in table_data.columns
     ]
 
     table_json: TableJsonResponse = {
         "table_info": {
-            "database": table_info.database,
-            "schema": table_info.schema_name,
-            "name": table_info.name,
-            "column_count": table_info.column_count,
+            "database": table_data.database,
+            "schema": table_data.schema,
+            "name": table_data.name,
+            "column_count": table_data.column_count,
             "columns": columns_dict,
         }
     }

@@ -10,14 +10,15 @@ from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
 from mcp_snowflake.handler.analyze_table_statistics.models import (
     AnalyzeTableStatisticsArgs,
 )
+from mcp_snowflake.kernel.table_metadata import TableColumn
 
 if TYPE_CHECKING:
     from mcp import types
 
 
-def _create_column_infos(columns_dict: list[dict[str, str]]) -> list[ColumnInfo]:
+def _create_column_infos(columns_dict: list[TableColumn]) -> list[ColumnInfo]:
     """Convert dict columns to ColumnInfo objects."""
-    return [ColumnInfo.from_dict(col) for col in columns_dict]
+    return [ColumnInfo.from_table_column(col) for col in columns_dict]
 
 
 class TestBuildResponse:
@@ -46,7 +47,12 @@ class TestBuildResponse:
 
         columns_to_analyze = _create_column_infos(
             [
-                {"name": "id", "data_type": "NUMBER(10,0)"},
+                TableColumn(
+                    name="id",
+                    data_type="NUMBER(10,0)",
+                    nullable=False,
+                    ordinal_position=1,
+                ),
             ]
         )
 
@@ -121,9 +127,24 @@ class TestBuildResponse:
 
         columns_to_analyze = _create_column_infos(
             [
-                {"name": "price", "data_type": "NUMBER(10,2)"},
-                {"name": "status", "data_type": "VARCHAR(10)"},
-                {"name": "created", "data_type": "DATE"},
+                TableColumn(
+                    name="price",
+                    data_type="NUMBER(10,2)",
+                    nullable=False,
+                    ordinal_position=2,
+                ),
+                TableColumn(
+                    name="status",
+                    data_type="VARCHAR(10)",
+                    nullable=False,
+                    ordinal_position=3,
+                ),
+                TableColumn(
+                    name="created",
+                    data_type="DATE",
+                    nullable=False,
+                    ordinal_position=4,
+                ),
             ]
         )
 
@@ -170,7 +191,12 @@ class TestBuildResponse:
 
         columns_to_analyze = _create_column_infos(
             [
-                {"name": "specific_column", "data_type": "VARCHAR(10)"},
+                TableColumn(
+                    name="specific_column",
+                    data_type="VARCHAR(10)",
+                    nullable=False,
+                    ordinal_position=1,
+                ),
             ]
         )
 
@@ -212,7 +238,12 @@ class TestBuildResponse:
 
         columns_to_analyze = _create_column_infos(
             [
-                {"name": "id", "data_type": "NUMBER(10,0)"},
+                TableColumn(
+                    name="id",
+                    data_type="NUMBER(10,0)",
+                    nullable=False,
+                    ordinal_position=1,
+                ),
             ]
         )
 
@@ -245,7 +276,12 @@ class TestBuildResponse:
 
         columns_to_analyze = _create_column_infos(
             [
-                {"name": "id", "data_type": "NUMBER(10,0)"},
+                TableColumn(
+                    name="id",
+                    data_type="NUMBER(10,0)",
+                    nullable=False,
+                    ordinal_position=1,
+                ),
             ]
         )
 

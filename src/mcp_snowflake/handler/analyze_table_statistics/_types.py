@@ -1,11 +1,11 @@
 """Internal type definitions for table statistics analysis."""
 
-from collections.abc import Mapping
 from typing import Any, Literal, TypedDict
 
 import attrs
 
-from mcp_snowflake.kernel import SnowflakeDataType, StatisticsSupportDataType
+from ...kernel import SnowflakeDataType, StatisticsSupportDataType
+from ...kernel.table_metadata import TableColumn
 
 
 @attrs.define(frozen=True)
@@ -17,30 +17,23 @@ class ColumnInfo:
     statistics_type: StatisticsSupportDataType
 
     @classmethod
-    def from_dict(cls, col_dict: Mapping[str, Any]) -> "ColumnInfo":
-        """Convert dictionary column info to ColumnInfo.
+    def from_table_column(cls, col: TableColumn) -> "ColumnInfo":
+        """Convert TableColumn to ColumnInfo.
 
         Parameters
         ----------
-        col_dict : Mapping[str, Any]
-            Dictionary containing column information with 'name' and 'data_type' keys.
+        col : TableColumn
+            The TableColumn object to convert.
 
         Returns
         -------
         ColumnInfo
-            Column information object with type-safe data types.
-
-        Raises
-        ------
-        KeyError
-            If required keys ('name' or 'data_type') are missing.
-        ValueError
-            If the data type is not supported for statistics or is invalid.
+            Converted ColumnInfo object.
         """
-        sf_type = SnowflakeDataType(col_dict["data_type"])
+        sf_type = SnowflakeDataType(col.data_type)
         stats_type = StatisticsSupportDataType.from_snowflake_type(sf_type)
         return cls(
-            name=col_dict["name"],
+            name=col.name,
             snowflake_type=sf_type,
             statistics_type=stats_type,
         )

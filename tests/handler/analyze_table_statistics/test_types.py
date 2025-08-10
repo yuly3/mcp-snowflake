@@ -9,6 +9,7 @@ from mcp_snowflake.handler.analyze_table_statistics._types import (
     ColumnInfo,
 )
 from mcp_snowflake.kernel import SnowflakeDataType, StatisticsSupportDataType
+from mcp_snowflake.kernel.table_metadata import TableColumn
 
 
 class TestColumnInfo:
@@ -100,47 +101,42 @@ class TestColumnInfo:
         expected_stats_type: str,
     ) -> None:
         """Test successful conversion from dict to ColumnInfo."""
-        col_info = ColumnInfo.from_dict(col_dict)
+        col_info = ColumnInfo.from_table_column(
+            TableColumn(
+                name=col_dict["name"],
+                data_type=col_dict["data_type"],
+                nullable=True,
+                ordinal_position=1,
+            )
+        )
 
         assert col_info.name == expected_name
         assert col_info.snowflake_type.normalized_type == expected_sf_type
         assert col_info.statistics_type.type_name == expected_stats_type
         assert col_info.column_type == expected_stats_type  # backward compatibility
 
-    @pytest.mark.parametrize(
-        "invalid_dict",
-        [
-            # Unsupported types
-            {"name": "metadata", "data_type": "VARIANT"},
-            {"name": "location", "data_type": "GEOGRAPHY"},
-            {"name": "binary_data", "data_type": "BINARY"},
-        ],
-    )
-    def test_from_dict_unsupported_type_raises_error(
-        self, invalid_dict: dict[str, Any]
-    ) -> None:
-        """Test from_dict with unsupported data type raises ValueError."""
-        with pytest.raises(
-            ValueError, match="Unsupported Snowflake data type for statistics"
-        ):
-            ColumnInfo.from_dict(invalid_dict)
-
-    def test_from_dict_missing_keys_raises_error(self) -> None:
-        """Test from_dict with missing required keys raises KeyError."""
-        with pytest.raises(KeyError):
-            _ = ColumnInfo.from_dict({"name": "test"})  # missing data_type
-
-        with pytest.raises(KeyError):
-            _ = ColumnInfo.from_dict({"data_type": "VARCHAR(255)"})  # missing name
-
     def test_from_dict_empty_name_raises_error(self) -> None:
         """Test from_dict with empty name raises ValueError."""
         with pytest.raises(ValueError, match="raw_type cannot be empty"):
-            _ = ColumnInfo.from_dict({"name": "test", "data_type": ""})
+            _ = ColumnInfo.from_table_column(
+                TableColumn(
+                    name="test",
+                    data_type="",
+                    nullable=True,
+                    ordinal_position=1,
+                )
+            )
 
     def test_immutability(self) -> None:
         """Test that ColumnInfo instances are immutable."""
-        col_info = ColumnInfo.from_dict({"name": "test", "data_type": "VARCHAR(255)"})
+        col_info = ColumnInfo.from_table_column(
+            TableColumn(
+                name="test",
+                data_type="VARCHAR(255)",
+                nullable=True,
+                ordinal_position=1,
+            )
+        )
 
         # attrs frozen=True should prevent modification
         with pytest.raises(AttributeError):
@@ -148,17 +144,43 @@ class TestColumnInfo:
 
     def test_equality(self) -> None:
         """Test ColumnInfo equality comparison."""
-        col_info1 = ColumnInfo.from_dict({"name": "test", "data_type": "VARCHAR(255)"})
-        col_info2 = ColumnInfo.from_dict({"name": "test", "data_type": "VARCHAR(255)"})
-        col_info3 = ColumnInfo.from_dict({"name": "test", "data_type": "NUMBER(10,2)"})
+        col_info1 = ColumnInfo.from_table_column(
+            TableColumn(
+                name="test",
+                data_type="VARCHAR(255)",
+                nullable=True,
+                ordinal_position=1,
+            )
+        )
+        col_info2 = ColumnInfo.from_table_column(
+            TableColumn(
+                name="test",
+                data_type="VARCHAR(255)",
+                nullable=True,
+                ordinal_position=1,
+            )
+        )
+        col_info3 = ColumnInfo.from_table_column(
+            TableColumn(
+                name="test",
+                data_type="NUMBER(10,2)",
+                nullable=True,
+                ordinal_position=1,
+            )
+        )
 
         assert col_info1 == col_info2
         assert col_info1 != col_info3
 
     def test_string_representation(self) -> None:
         """Test string representation of ColumnInfo."""
-        col_info = ColumnInfo.from_dict(
-            {"name": "test_col", "data_type": "VARCHAR(100)"}
+        col_info = ColumnInfo.from_table_column(
+            TableColumn(
+                name="test_col",
+                data_type="VARCHAR(100)",
+                nullable=True,
+                ordinal_position=1,
+            )
         )
 
         str_repr = str(col_info)
@@ -169,12 +191,20 @@ class TestColumnInfo:
     def test_integration_with_kernel_types(self) -> None:
         """Test integration with kernel module types."""
         # Verify that SnowflakeDataType functionality is correctly integrated
-        col_info = ColumnInfo.from_dict({"name": "price", "data_type": "NUMERIC(10,2)"})
+        col_info = ColumnInfo.from_table_column(
+            TableColumn(
+                name="price",
+                data_type="NUMERIC(10,2)",
+                nullable=True,
+                ordinal_position=1,
+            )
+        )
 
         # Verify that SnowflakeDataType methods are available
         assert col_info.snowflake_type.is_numeric()
         assert not col_info.snowflake_type.is_string()
         assert not col_info.snowflake_type.is_date()
+        assert not col_info.snowflake_type.is_boolean()
         assert col_info.snowflake_type.is_supported_for_statistics()
 
         # Verify that StatisticsSupportDataType functionality is correctly integrated

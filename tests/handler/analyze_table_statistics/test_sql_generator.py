@@ -4,6 +4,7 @@ from mcp_snowflake.handler.analyze_table_statistics._sql_generator import (
     generate_statistics_sql,
 )
 from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
+from mcp_snowflake.kernel.table_metadata import TableColumn
 
 
 class TestGenerateStatisticsSQL:
@@ -12,7 +13,14 @@ class TestGenerateStatisticsSQL:
     def test_numeric_column_sql(self) -> None:
         """Test SQL generation for numeric columns."""
         columns_info = [
-            ColumnInfo.from_dict({"name": "price", "data_type": "NUMBER(10,2)"}),
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="price",
+                    data_type="NUMBER(10,2)",
+                    nullable=False,
+                    ordinal_position=1,
+                )
+            ),
         ]
 
         sql = generate_statistics_sql(
@@ -40,7 +48,14 @@ class TestGenerateStatisticsSQL:
     def test_string_column_sql(self) -> None:
         """Test SQL generation for string columns."""
         columns_info = [
-            ColumnInfo.from_dict({"name": "status", "data_type": "VARCHAR(10)"}),
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="status",
+                    data_type="VARCHAR(10)",
+                    nullable=False,
+                    ordinal_position=1,
+                )
+            ),
         ]
 
         sql = generate_statistics_sql(
@@ -61,7 +76,14 @@ class TestGenerateStatisticsSQL:
     def test_date_column_sql(self) -> None:
         """Test SQL generation for date columns."""
         columns_info = [
-            ColumnInfo.from_dict({"name": "created_date", "data_type": "DATE"}),
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="created_date",
+                    data_type="DATE",
+                    nullable=False,
+                    ordinal_position=3,
+                )
+            ),
         ]
 
         sql = generate_statistics_sql(
@@ -87,9 +109,30 @@ class TestGenerateStatisticsSQL:
     def test_mixed_column_types(self) -> None:
         """Test SQL generation with mixed column types."""
         columns_info = [
-            ColumnInfo.from_dict({"name": "price", "data_type": "NUMBER(10,2)"}),
-            ColumnInfo.from_dict({"name": "status", "data_type": "VARCHAR(10)"}),
-            ColumnInfo.from_dict({"name": "created_date", "data_type": "DATE"}),
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="price",
+                    data_type="NUMBER(10,2)",
+                    nullable=False,
+                    ordinal_position=1,
+                )
+            ),
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="status",
+                    data_type="VARCHAR(10)",
+                    nullable=False,
+                    ordinal_position=2,
+                )
+            ),
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="created_date",
+                    data_type="DATE",
+                    nullable=False,
+                    ordinal_position=3,
+                )
+            ),
         ]
 
         sql = generate_statistics_sql(
@@ -115,11 +158,21 @@ class TestGenerateStatisticsSQL:
     def test_column_name_escaping(self) -> None:
         """Test that column names are properly escaped."""
         columns_info = [
-            ColumnInfo.from_dict(
-                {"name": "special-column", "data_type": "NUMBER(10,2)"}
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="special-column",
+                    data_type="NUMBER(10,2)",
+                    nullable=False,
+                    ordinal_position=1,
+                )
             ),
-            ColumnInfo.from_dict(
-                {"name": "ORDER", "data_type": "VARCHAR(10)"}
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="ORDER",
+                    data_type="VARCHAR(10)",
+                    nullable=False,
+                    ordinal_position=2,
+                )
             ),  # Reserved keyword
         ]
 
@@ -138,7 +191,14 @@ class TestGenerateStatisticsSQL:
     def test_top_k_limit_parameter(self) -> None:
         """Test that top_k_limit parameter is correctly used."""
         columns_info = [
-            ColumnInfo.from_dict({"name": "category", "data_type": "VARCHAR(50)"}),
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="category",
+                    data_type="VARCHAR(50)",
+                    nullable=False,
+                    ordinal_position=1,
+                )
+            ),
         ]
 
         sql = generate_statistics_sql(
@@ -154,7 +214,14 @@ class TestGenerateStatisticsSQL:
     def test_database_schema_table_escaping(self) -> None:
         """Test that database, schema, and table names are properly escaped."""
         columns_info = [
-            ColumnInfo.from_dict({"name": "id", "data_type": "NUMBER(10,0)"}),
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="id",
+                    data_type="NUMBER(10,0)",
+                    nullable=False,
+                    ordinal_position=1,
+                )
+            ),
         ]
 
         sql = generate_statistics_sql(
@@ -170,7 +237,14 @@ class TestGenerateStatisticsSQL:
     def test_boolean_column_sql(self) -> None:
         """Test SQL generation for boolean columns."""
         columns_info = [
-            ColumnInfo.from_dict({"name": "is_active", "data_type": "BOOLEAN"}),
+            ColumnInfo.from_table_column(
+                TableColumn(
+                    name="is_active",
+                    data_type="BOOLEAN",
+                    nullable=False,
+                    ordinal_position=1,
+                )
+            ),
         ]
 
         sql = generate_statistics_sql(

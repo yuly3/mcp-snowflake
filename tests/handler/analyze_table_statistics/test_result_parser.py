@@ -6,6 +6,7 @@ from mcp_snowflake.handler.analyze_table_statistics._result_parser import (
     parse_statistics_result,
 )
 from mcp_snowflake.handler.analyze_table_statistics._types import ColumnInfo
+from mcp_snowflake.kernel.table_metadata import TableColumn
 
 if TYPE_CHECKING:
     from mcp_snowflake.handler.analyze_table_statistics._types import (
@@ -16,9 +17,9 @@ if TYPE_CHECKING:
     )
 
 
-def _create_column_infos(columns_dict: list[dict[str, str]]) -> list[ColumnInfo]:
+def _create_column_infos(columns_dict: list[TableColumn]) -> list[ColumnInfo]:
     """To convert dict columns to ColumnInfo objects."""
-    return [ColumnInfo.from_dict(col) for col in columns_dict]
+    return [ColumnInfo.from_table_column(col) for col in columns_dict]
 
 
 class TestParseStatisticsResult:
@@ -28,7 +29,12 @@ class TestParseStatisticsResult:
         """Test parsing numeric column statistics."""
         columns_info = _create_column_infos(
             [
-                {"name": "price", "data_type": "NUMBER(10,2)"},
+                TableColumn(
+                    name="price",
+                    data_type="NUMBER(10,2)",
+                    nullable=False,
+                    ordinal_position=2,
+                )
             ]
         )
 
@@ -65,7 +71,12 @@ class TestParseStatisticsResult:
         """Test parsing string column statistics."""
         columns_info = _create_column_infos(
             [
-                {"name": "status", "data_type": "VARCHAR(10)"},
+                TableColumn(
+                    name="status",
+                    data_type="VARCHAR(10)",
+                    nullable=False,
+                    ordinal_position=1,
+                )
             ]
         )
 
@@ -100,7 +111,12 @@ class TestParseStatisticsResult:
         """Test parsing date column statistics."""
         columns_info = _create_column_infos(
             [
-                {"name": "created_date", "data_type": "DATE"},
+                TableColumn(
+                    name="created_date",
+                    data_type="DATE",
+                    nullable=False,
+                    ordinal_position=3,
+                )
             ]
         )
 
@@ -131,9 +147,24 @@ class TestParseStatisticsResult:
         """Test parsing mixed column types."""
         columns_info = _create_column_infos(
             [
-                {"name": "price", "data_type": "NUMBER(10,2)"},
-                {"name": "status", "data_type": "VARCHAR(1)"},
-                {"name": "created_date", "data_type": "DATE"},
+                TableColumn(
+                    name="price",
+                    data_type="NUMBER(10,2)",
+                    nullable=False,
+                    ordinal_position=1,
+                ),
+                TableColumn(
+                    name="status",
+                    data_type="VARCHAR(1)",
+                    nullable=False,
+                    ordinal_position=2,
+                ),
+                TableColumn(
+                    name="created_date",
+                    data_type="DATE",
+                    nullable=False,
+                    ordinal_position=3,
+                ),
             ]
         )
 
@@ -188,7 +219,12 @@ class TestParseStatisticsResult:
         """Test parsing with null values in the result."""
         columns_info = _create_column_infos(
             [
-                {"name": "price", "data_type": "NUMBER(10,2)"},
+                TableColumn(
+                    name="price",
+                    data_type="NUMBER(10,2)",
+                    nullable=False,
+                    ordinal_position=1,
+                ),
             ]
         )
 
@@ -219,7 +255,12 @@ class TestParseStatisticsResult:
         """Test parsing with invalid JSON in top_values."""
         columns_info = _create_column_infos(
             [
-                {"name": "status", "data_type": "VARCHAR(10)"},
+                TableColumn(
+                    name="status",
+                    data_type="VARCHAR(10)",
+                    nullable=False,
+                    ordinal_position=2,
+                ),
             ]
         )
 
@@ -242,7 +283,12 @@ class TestParseStatisticsResult:
         """Test parsing with empty top_values."""
         columns_info = _create_column_infos(
             [
-                {"name": "status", "data_type": "VARCHAR(10)"},
+                TableColumn(
+                    name="status",
+                    data_type="VARCHAR(10)",
+                    nullable=False,
+                    ordinal_position=2,
+                ),
             ]
         )
 
@@ -265,7 +311,12 @@ class TestParseStatisticsResult:
         """Test parsing boolean column statistics."""
         columns_info = _create_column_infos(
             [
-                {"name": "is_active", "data_type": "BOOLEAN"},
+                TableColumn(
+                    name="is_active",
+                    data_type="BOOLEAN",
+                    nullable=False,
+                    ordinal_position=1,
+                ),
             ]
         )
 
@@ -300,7 +351,12 @@ class TestParseStatisticsResult:
         """Test parsing boolean column with all null values."""
         columns_info = _create_column_infos(
             [
-                {"name": "is_active", "data_type": "BOOLEAN"},
+                TableColumn(
+                    name="is_active",
+                    data_type="BOOLEAN",
+                    nullable=False,
+                    ordinal_position=1,
+                ),
             ]
         )
 

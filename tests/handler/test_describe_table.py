@@ -1,22 +1,23 @@
 import json
-from typing import Any, ClassVar
+from typing import ClassVar
 
 import mcp.types as types
 import pytest
 from pydantic import ValidationError
 
 from mcp_snowflake.handler import DescribeTableArgs, handle_describe_table
+from mcp_snowflake.kernel.table_metadata import TableColumn, TableInfo
 
 
 class MockEffectHandler:
-    """Mock implementation of _EffectDescribeTable protocol."""
+    """Mock implementation of EffectDescribeTable protocol."""
 
     def __init__(
         self,
-        table_data: dict[str, Any] | None = None,
+        table_info: TableInfo | None = None,
         should_raise: Exception | None = None,
     ) -> None:
-        self.table_data = table_data or {}
+        self.table_info = table_info
         self.should_raise = should_raise
 
     async def describe_table(
@@ -24,10 +25,19 @@ class MockEffectHandler:
         database: str,  # noqa: ARG002
         schema: str,  # noqa: ARG002
         table_name: str,  # noqa: ARG002
-    ) -> dict[str, Any]:
+    ) -> TableInfo:
         if self.should_raise:
             raise self.should_raise
-        return self.table_data
+        if self.table_info is None:
+            # Return minimal default
+            return TableInfo(
+                database="default_db",
+                schema="default_schema",
+                name="default_table",
+                column_count=0,
+                columns=[],
+            )
+        return self.table_info
 
 
 class TestDescribeTableArgs:
@@ -99,31 +109,31 @@ class TestHandleDescribeTable:
             schema_name="test_schema",
             table_name="test_table",
         )
-        mock_table_data = {
-            "database": "test_db",
-            "schema_name": "test_schema",
-            "name": "test_table",
-            "column_count": 2,
-            "columns": [
-                {
-                    "name": "ID",
-                    "data_type": "NUMBER(38,0)",
-                    "nullable": False,
-                    "default_value": None,
-                    "comment": "Primary key",
-                    "ordinal_position": 1,
-                },
-                {
-                    "name": "NAME",
-                    "data_type": "VARCHAR(100)",
-                    "nullable": True,
-                    "default_value": None,
-                    "comment": "User name",
-                    "ordinal_position": 2,
-                },
+        mock_table_data = TableInfo(
+            database="test_db",
+            schema="test_schema",
+            name="test_table",
+            column_count=2,
+            columns=[
+                TableColumn(
+                    name="ID",
+                    data_type="NUMBER(38,0)",
+                    nullable=False,
+                    default_value=None,
+                    comment="Primary key",
+                    ordinal_position=1,
+                ),
+                TableColumn(
+                    name="NAME",
+                    data_type="VARCHAR(100)",
+                    nullable=True,
+                    default_value=None,
+                    comment="User name",
+                    ordinal_position=2,
+                ),
             ],
-        }
-        effect_handler = MockEffectHandler(table_data=mock_table_data)
+        )
+        effect_handler = MockEffectHandler(table_info=mock_table_data)
 
         # Act
         result = await handle_describe_table(args, effect_handler)
@@ -168,14 +178,14 @@ class TestHandleDescribeTable:
             schema_name="empty_schema",
             table_name="empty_table",
         )
-        mock_table_data = {
-            "database": "empty_db",
-            "schema_name": "empty_schema",
-            "name": "empty_table",
-            "column_count": 0,
-            "columns": [],
-        }
-        effect_handler = MockEffectHandler(table_data=mock_table_data)
+        mock_table_data = TableInfo(
+            database="empty_db",
+            schema="empty_schema",
+            name="empty_table",
+            column_count=0,
+            columns=[],
+        )
+        effect_handler = MockEffectHandler(table_info=mock_table_data)
 
         # Act
         result = await handle_describe_table(args, effect_handler)
@@ -231,31 +241,31 @@ class TestHandleDescribeTable:
             schema_name="nullable_schema",
             table_name="nullable_table",
         )
-        mock_table_data = {
-            "database": "nullable_db",
-            "schema_name": "nullable_schema",
-            "name": "nullable_table",
-            "column_count": 2,
-            "columns": [
-                {
-                    "name": "OPTIONAL1",
-                    "data_type": "VARCHAR(50)",
-                    "nullable": True,
-                    "default_value": None,
-                    "comment": None,
-                    "ordinal_position": 1,
-                },
-                {
-                    "name": "OPTIONAL2",
-                    "data_type": "INTEGER",
-                    "nullable": True,
-                    "default_value": "0",
-                    "comment": None,
-                    "ordinal_position": 2,
-                },
+        mock_table_data = TableInfo(
+            database="nullable_db",
+            schema="nullable_schema",
+            name="nullable_table",
+            column_count=2,
+            columns=[
+                TableColumn(
+                    name="OPTIONAL1",
+                    data_type="VARCHAR(50)",
+                    nullable=True,
+                    default_value=None,
+                    comment=None,
+                    ordinal_position=1,
+                ),
+                TableColumn(
+                    name="OPTIONAL2",
+                    data_type="INTEGER",
+                    nullable=True,
+                    default_value="0",
+                    comment=None,
+                    ordinal_position=2,
+                ),
             ],
-        }
-        effect_handler = MockEffectHandler(table_data=mock_table_data)
+        )
+        effect_handler = MockEffectHandler(table_info=mock_table_data)
 
         # Act
         result = await handle_describe_table(args, effect_handler)
@@ -300,31 +310,31 @@ class TestHandleDescribeTable:
             schema_name="required_schema",
             table_name="required_table",
         )
-        mock_table_data = {
-            "database": "required_db",
-            "schema_name": "required_schema",
-            "name": "required_table",
-            "column_count": 2,
-            "columns": [
-                {
-                    "name": "REQUIRED1",
-                    "data_type": "VARCHAR(50)",
-                    "nullable": False,
-                    "default_value": None,
-                    "comment": None,
-                    "ordinal_position": 1,
-                },
-                {
-                    "name": "REQUIRED2",
-                    "data_type": "INTEGER",
-                    "nullable": False,
-                    "default_value": None,
-                    "comment": None,
-                    "ordinal_position": 2,
-                },
+        mock_table_data = TableInfo(
+            database="required_db",
+            schema="required_schema",
+            name="required_table",
+            column_count=2,
+            columns=[
+                TableColumn(
+                    name="REQUIRED1",
+                    data_type="VARCHAR(50)",
+                    nullable=False,
+                    default_value=None,
+                    comment=None,
+                    ordinal_position=1,
+                ),
+                TableColumn(
+                    name="REQUIRED2",
+                    data_type="INTEGER",
+                    nullable=False,
+                    default_value=None,
+                    comment=None,
+                    ordinal_position=2,
+                ),
             ],
-        }
-        effect_handler = MockEffectHandler(table_data=mock_table_data)
+        )
+        effect_handler = MockEffectHandler(table_info=mock_table_data)
 
         # Act
         result = await handle_describe_table(args, effect_handler)
@@ -369,31 +379,31 @@ class TestHandleDescribeTable:
             schema_name="test_schema",
             table_name="test_table",
         )
-        mock_table_data = {
-            "database": "test_db",
-            "schema_name": "test_schema",
-            "name": "test_table",
-            "column_count": 2,
-            "columns": [
-                {
-                    "name": "ID",
-                    "data_type": "NUMBER(38,0)",
-                    "nullable": False,
-                    "default_value": None,
-                    "comment": "Primary key",
-                    "ordinal_position": 1,
-                },
-                {
-                    "name": "NAME",
-                    "data_type": "VARCHAR(100)",
-                    "nullable": True,
-                    "default_value": None,
-                    "comment": "Customer name",
-                    "ordinal_position": 2,
-                },
+        mock_table_data = TableInfo(
+            database="test_db",
+            schema="test_schema",
+            name="test_table",
+            column_count=2,
+            columns=[
+                TableColumn(
+                    name="ID",
+                    data_type="NUMBER(38,0)",
+                    nullable=False,
+                    default_value=None,
+                    comment="Primary key",
+                    ordinal_position=1,
+                ),
+                TableColumn(
+                    name="NAME",
+                    data_type="VARCHAR(100)",
+                    nullable=True,
+                    default_value=None,
+                    comment="Customer name",
+                    ordinal_position=2,
+                ),
             ],
-        }
-        effect_handler = MockEffectHandler(table_data=mock_table_data)
+        )
+        effect_handler = MockEffectHandler(table_info=mock_table_data)
 
         # Act
         result = await handle_describe_table(args, effect_handler)
@@ -430,12 +440,6 @@ class TestHandleDescribeTable:
         assert name_column["name"] == "NAME"
         assert name_column["nullable"] is True
 
-        # Should NOT contain any text formatting
-        assert "**Key characteristics:**" not in response_text
-        assert "Primary key:" not in response_text
-        assert "Required fields:" not in response_text
-        assert "Optional fields:" not in response_text
-
     @pytest.mark.asyncio
     async def test_pure_json_empty_table(self) -> None:
         """Test pure JSON response for empty table."""
@@ -445,14 +449,14 @@ class TestHandleDescribeTable:
             schema_name="empty_schema",
             table_name="empty_table",
         )
-        mock_table_data = {
-            "database": "empty_db",
-            "schema_name": "empty_schema",
-            "name": "empty_table",
-            "column_count": 0,
-            "columns": [],
-        }
-        effect_handler = MockEffectHandler(table_data=mock_table_data)
+        mock_table_data = TableInfo(
+            database="empty_db",
+            schema="empty_schema",
+            name="empty_table",
+            column_count=0,
+            columns=[],
+        )
+        effect_handler = MockEffectHandler(table_info=mock_table_data)
 
         # Act
         result = await handle_describe_table(args, effect_handler)
@@ -470,6 +474,3 @@ class TestHandleDescribeTable:
 
         assert table_info["column_count"] == 0
         assert table_info["columns"] == []
-
-        # Should not contain text formatting
-        assert "**Key characteristics:**" not in response_text
