@@ -18,6 +18,15 @@ from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 from pydantic_settings import SettingsConfigDict
 
+from .adapter import (
+    AnalyzeTableStatisticsEffectHandler,
+    DescribeTableEffectHandler,
+    ExecuteQueryEffectHandler,
+    ListSchemasEffectHandler,
+    ListTablesEffectHandler,
+    ListViewsEffectHandler,
+    SampleTableDataEffectHandler,
+)
 from .cli import Cli
 from .settings import Settings
 from .snowflake_client import SnowflakeClient
@@ -52,13 +61,15 @@ class SnowflakeServerContext:
             raise ValueError("Snowflake client is not initialized")
 
         tools = [
-            AnalyzeTableStatisticsTool(self.snowflake_client),
-            DescribeTableTool(self.snowflake_client),
-            ExecuteQueryTool(self.snowflake_client),
-            ListSchemasTool(self.snowflake_client),
-            ListTablesTool(self.snowflake_client),
-            ListViewsTool(self.snowflake_client),
-            SampleTableDataTool(self.snowflake_client),
+            AnalyzeTableStatisticsTool(
+                AnalyzeTableStatisticsEffectHandler(self.snowflake_client)
+            ),
+            DescribeTableTool(DescribeTableEffectHandler(self.snowflake_client)),
+            ExecuteQueryTool(ExecuteQueryEffectHandler(self.snowflake_client)),
+            ListSchemasTool(ListSchemasEffectHandler(self.snowflake_client)),
+            ListTablesTool(ListTablesEffectHandler(self.snowflake_client)),
+            ListViewsTool(ListViewsEffectHandler(self.snowflake_client)),
+            SampleTableDataTool(SampleTableDataEffectHandler(self.snowflake_client)),
         ]
         self.tools = {tool.name: tool for tool in tools}
 
