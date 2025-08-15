@@ -7,7 +7,7 @@ from typing import Any
 
 from expression import option
 
-from ...kernel.table_metadata import TableColumn
+from ...kernel.statistics_support_column import StatisticsSupportColumn
 from ._types import (
     BooleanStatsDict,
     DateStatsDict,
@@ -21,21 +21,21 @@ logger = logging.getLogger(__name__)
 
 def parse_statistics_result(
     result_row: Mapping[str, Any],
-    columns_info: Iterable[TableColumn],
+    columns_info: Iterable[StatisticsSupportColumn],
 ) -> dict[str, StatsDict]:
     """Parse the statistics query result into structured column statistics.
 
     Parameters
     ----------
     result_row : Mapping[str, Any]
-        Raw query result row containing all statistics.
-    columns_info : Iterable[TableColumn]
-        Column information including name and data_type.
+        Single result row from statistics query.
+    columns_info : Iterable[StatisticsSupportColumn]
+        Column information with statistics support guaranteed.
 
     Returns
     -------
     dict[str, StatsDict]
-        Parsed column statistics keyed by column name.
+        Mapping of column names to their statistics.
     """
     column_statistics: dict[str, StatsDict] = {}
 

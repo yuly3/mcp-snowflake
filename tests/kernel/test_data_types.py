@@ -200,10 +200,22 @@ class TestSnowflakeDataType:
 class TestStatisticsSupportDataType:
     """Tests for StatisticsSupportDataType class."""
 
-    def test_init_with_valid_type_name(self) -> None:
-        """Test initialization with valid type name."""
-        stats_type = StatisticsSupportDataType("numeric")
+    def test_constructor_with_supported_snowflake_type(self) -> None:
+        """Test constructor with supported SnowflakeDataType."""
+        sf_type = SnowflakeDataType("NUMBER(10,2)")
+        stats_type = StatisticsSupportDataType(sf_type)
         assert stats_type.type_name == "numeric"
+        assert stats_type.snowflake_type == sf_type
+
+    def test_constructor_with_unsupported_snowflake_type_raises_value_error(
+        self,
+    ) -> None:
+        """Test constructor with unsupported SnowflakeDataType raises ValueError."""
+        sf_type = SnowflakeDataType("VARIANT")
+        with pytest.raises(
+            ValueError, match="Unsupported Snowflake data type for statistics"
+        ):
+            _ = StatisticsSupportDataType(sf_type)
 
     @pytest.mark.parametrize(
         ("snowflake_raw_type", "expected_stats_type"),
@@ -236,6 +248,7 @@ class TestStatisticsSupportDataType:
         """Test successful conversion from SnowflakeDataType."""
         sf_type = SnowflakeDataType(snowflake_raw_type)
         stats_type = StatisticsSupportDataType.from_snowflake_type(sf_type)
+        assert stats_type is not None
         assert stats_type.type_name == expected_stats_type
 
     @pytest.mark.parametrize(
@@ -247,16 +260,14 @@ class TestStatisticsSupportDataType:
             "VECTOR",
         ],
     )
-    def test_from_snowflake_type_unsupported_raises_error(
+    def test_from_snowflake_type_unsupported_returns_none(
         self,
         unsupported_raw_type: str,
     ) -> None:
-        """Test conversion from unsupported SnowflakeDataType raises ValueError."""
+        """Test conversion from unsupported SnowflakeDataType returns None."""
         sf_type = SnowflakeDataType(unsupported_raw_type)
-        with pytest.raises(
-            ValueError, match="Unsupported Snowflake data type for statistics"
-        ):
-            _ = StatisticsSupportDataType.from_snowflake_type(sf_type)
+        result = StatisticsSupportDataType.from_snowflake_type(sf_type)
+        assert result is None
 
 
 class TestNormalizedSnowflakeDataTypeLiteral:

@@ -1,10 +1,11 @@
-"""Tests for column analysis functionality."""
+"""Column analysis test module."""
 
 import mcp.types as types
 
 from mcp_snowflake.handler.analyze_table_statistics._column_analysis import (
     select_and_classify_columns,
 )
+from mcp_snowflake.kernel.statistics_support_column import StatisticsSupportColumn
 from mcp_snowflake.kernel.table_metadata import TableColumn
 
 
@@ -54,8 +55,10 @@ class TestSelectAndClassifyColumns:
         assert not isinstance(result, types.TextContent)
         supported_columns, unsupported_info = result
 
-        # Verify supported columns
+        # Verify supported columns (now StatisticsSupportColumn instances)
         assert len(supported_columns) == 2
+        assert isinstance(supported_columns[0], StatisticsSupportColumn)
+        assert isinstance(supported_columns[1], StatisticsSupportColumn)
         assert supported_columns[0].name == "id"
         assert supported_columns[1].name == "name"
 
@@ -98,6 +101,9 @@ class TestSelectAndClassifyColumns:
         supported_columns, unsupported_info = result
 
         assert len(supported_columns) == 2
+        assert all(
+            isinstance(col, StatisticsSupportColumn) for col in supported_columns
+        )
         assert len(unsupported_info) == 0
 
     def test_classify_requested_columns_with_mixed_support(self) -> None:
@@ -128,6 +134,7 @@ class TestSelectAndClassifyColumns:
         supported_columns, unsupported_info = result
 
         assert len(supported_columns) == 1
+        assert isinstance(supported_columns[0], StatisticsSupportColumn)
         assert supported_columns[0].name == "id"
         assert len(unsupported_info) == 1
         assert unsupported_info[0][0].name == "metadata"

@@ -5,7 +5,7 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, Field
 
-from ...kernel.table_metadata import TableColumn
+from ...kernel.statistics_support_column import StatisticsSupportColumn
 from ..describe_table import EffectDescribeTable
 
 
@@ -29,7 +29,7 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
         database: str,
         schema_name: str,
         table_name: str,
-        columns_to_analyze: Iterable[TableColumn],
+        columns_to_analyze: Iterable[StatisticsSupportColumn],
         top_k_limit: int,
     ) -> dict[str, Any]:
         """Execute statistics query and return the single result row.
@@ -42,8 +42,8 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
             Schema name
         table_name : str
             Table name
-        columns_to_analyze : Iterable[TableColumn]
-            Column information objects
+        columns_to_analyze : Iterable[StatisticsSupportColumn]
+            Column information objects with statistics support
         top_k_limit : int
             Limit for APPROX_TOP_K function
 

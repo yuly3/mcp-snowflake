@@ -28,7 +28,7 @@ class TableColumn:
     comment: str | None = None
 
     @property
-    def statistics_type(self) -> StatisticsSupportDataType:
+    def statistics_type(self) -> StatisticsSupportDataType | None:
         """Get the statistics support data type for this column."""
         return StatisticsSupportDataType.from_snowflake_type(self.data_type)
 

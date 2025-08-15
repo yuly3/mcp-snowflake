@@ -4,6 +4,7 @@ from collections.abc import Sequence
 
 import mcp.types as types
 
+from ...kernel.statistics_support_column import StatisticsSupportColumn
 from ...kernel.table_metadata import TableColumn
 
 # Type alias for unsupported column information (column, reason)
@@ -13,7 +14,7 @@ UnsupportedInfo = tuple[TableColumn, str]
 def select_and_classify_columns(
     all_columns: list[TableColumn],
     requested_columns: Sequence[str],
-) -> types.TextContent | tuple[list[TableColumn], list[UnsupportedInfo]]:
+) -> types.TextContent | tuple[list[StatisticsSupportColumn], list[UnsupportedInfo]]:
     """Select and classify columns into supported and unsupported for analysis.
 
     Parameters
@@ -25,9 +26,10 @@ def select_and_classify_columns(
 
     Returns
     -------
-    types.TextContent | tuple[list[TableColumn], list[UnsupportedInfo]]
+    types.TextContent | tuple[list[StatisticsSupportColumn], list[UnsupportedInfo]]
         Error message or tuple of (supported_columns, unsupported_info).
         UnsupportedInfo is (TableColumn, reason) pairs.
+        supported_columns are now StatisticsSupportColumn instances.
     """
     # Filter columns if specified
     if requested_columns:
@@ -51,16 +53,16 @@ def select_and_classify_columns(
         )
 
     # Classify columns into supported and unsupported
-    supported_columns: list[TableColumn] = []
+    supported_columns: list[StatisticsSupportColumn] = []
     unsupported_info: list[UnsupportedInfo] = []
 
     for col in columns_to_analyze:
-        try:
-            # Access the properties to validate support
-            _ = col.statistics_type
-        except ValueError as e:
-            unsupported_info.append((col, str(e)))
+        stats_col = StatisticsSupportColumn.from_table_column(col)
+        if stats_col is None:
+            # Generate the same error message format as before
+            reason = f"Unsupported Snowflake data type for statistics: {col.data_type.raw_type}"
+            unsupported_info.append((col, reason))
         else:
-            supported_columns.append(col)
+            supported_columns.append(stats_col)
 
     return supported_columns, unsupported_info

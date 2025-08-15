@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, cast
 from mcp_snowflake.handler.analyze_table_statistics._result_parser import (
     parse_statistics_result,
 )
+from mcp_snowflake.kernel.statistics_support_column import StatisticsSupportColumn
 from mcp_snowflake.kernel.table_metadata import TableColumn
 
 if TYPE_CHECKING:
@@ -14,6 +15,18 @@ if TYPE_CHECKING:
         NumericStatsDict,
         StringStatsDict,
     )
+
+
+def _convert_to_statistics_support_columns(
+    columns: list[TableColumn],
+) -> list[StatisticsSupportColumn]:
+    """Convert TableColumns to StatisticsSupportColumns for testing."""
+    result = []
+    for col in columns:
+        stats_col = StatisticsSupportColumn.from_table_column(col)
+        if stats_col is not None:
+            result.append(stats_col)
+    return result
 
 
 class TestParseStatisticsResult:
@@ -43,7 +56,9 @@ class TestParseStatisticsResult:
             "NUMERIC_PRICE_DISTINCT": 950,
         }
 
-        column_stats = parse_statistics_result(result_row, columns_info)
+        column_stats = parse_statistics_result(
+            result_row, _convert_to_statistics_support_columns(columns_info)
+        )
 
         assert len(column_stats) == 1
         price_stats = cast("NumericStatsDict", column_stats["price"])
@@ -80,7 +95,9 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": '[["active", 400], ["inactive", 350], ["pending", 250]]',
         }
 
-        column_stats = parse_statistics_result(result_row, columns_info)
+        column_stats = parse_statistics_result(
+            result_row, _convert_to_statistics_support_columns(columns_info)
+        )
 
         assert len(column_stats) == 1
         status_stats = cast("StringStatsDict", column_stats["status"])
@@ -118,7 +135,9 @@ class TestParseStatisticsResult:
             "DATE_CREATED_DATE_DISTINCT": 300,
         }
 
-        column_stats = parse_statistics_result(result_row, columns_info)
+        column_stats = parse_statistics_result(
+            result_row, _convert_to_statistics_support_columns(columns_info)
+        )
 
         assert len(column_stats) == 1
         date_stats = cast("DateStatsDict", column_stats["created_date"])
@@ -182,7 +201,9 @@ class TestParseStatisticsResult:
             "DATE_CREATED_DATE_DISTINCT": 300,
         }
 
-        column_stats = parse_statistics_result(result_row, columns_info)
+        column_stats = parse_statistics_result(
+            result_row, _convert_to_statistics_support_columns(columns_info)
+        )
 
         assert len(column_stats) == 3
 
@@ -225,7 +246,9 @@ class TestParseStatisticsResult:
             "NUMERIC_PRICE_DISTINCT": 0,
         }
 
-        column_stats = parse_statistics_result(result_row, columns_info)
+        column_stats = parse_statistics_result(
+            result_row, _convert_to_statistics_support_columns(columns_info)
+        )
 
         price_stats = cast("NumericStatsDict", column_stats["price"])
         assert price_stats["min"] == 0.0  # Default for None
@@ -256,7 +279,9 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": "invalid_json",
         }
 
-        column_stats = parse_statistics_result(result_row, columns_info)
+        column_stats = parse_statistics_result(
+            result_row, _convert_to_statistics_support_columns(columns_info)
+        )
 
         status_stats = cast("StringStatsDict", column_stats["status"])
         assert status_stats["top_values"] == []  # Should default to empty list
@@ -282,7 +307,9 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": None,
         }
 
-        column_stats = parse_statistics_result(result_row, columns_info)
+        column_stats = parse_statistics_result(
+            result_row, _convert_to_statistics_support_columns(columns_info)
+        )
 
         status_stats = cast("StringStatsDict", column_stats["status"])
         assert status_stats["top_values"] == []
@@ -310,7 +337,9 @@ class TestParseStatisticsResult:
             "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 23.0,
         }
 
-        column_stats = parse_statistics_result(result_row, columns_info)
+        column_stats = parse_statistics_result(
+            result_row, _convert_to_statistics_support_columns(columns_info)
+        )
 
         assert len(column_stats) == 1
         boolean_stats = cast("BooleanStatsDict", column_stats["is_active"])
@@ -348,7 +377,9 @@ class TestParseStatisticsResult:
             "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 0.0,
         }
 
-        column_stats = parse_statistics_result(result_row, columns_info)
+        column_stats = parse_statistics_result(
+            result_row, _convert_to_statistics_support_columns(columns_info)
+        )
 
         boolean_stats = cast("BooleanStatsDict", column_stats["is_active"])
         assert boolean_stats["count"] == 0

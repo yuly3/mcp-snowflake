@@ -6,11 +6,13 @@ from .data_types import (
     SnowflakeDataType,
     StatisticsSupportDataType,
 )
+from .statistics_support_column import StatisticsSupportColumn
 
 __all__ = [
     "DataProcessingResult",
     "NormalizedSnowflakeDataType",
     "RowProcessingResult",
     "SnowflakeDataType",
+    "StatisticsSupportColumn",
     "StatisticsSupportDataType",
 ]

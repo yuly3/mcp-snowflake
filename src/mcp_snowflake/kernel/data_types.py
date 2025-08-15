@@ -154,22 +154,39 @@ class SnowflakeDataType:
 class StatisticsSupportDataType:
     """Statistics-specific data type classification."""
 
-    type_name: Literal["numeric", "string", "date", "boolean"]
+    snowflake_type: SnowflakeDataType
+    _classification: Literal["numeric", "string", "date", "boolean"] = attrs.field(
+        init=False
+    )
+
+    def __attrs_post_init__(self) -> None:
+        """Initialize classification based on snowflake_type."""
+        if self.snowflake_type.is_numeric():
+            classification = "numeric"
+        elif self.snowflake_type.is_string():
+            classification = "string"
+        elif self.snowflake_type.is_date():
+            classification = "date"
+        elif self.snowflake_type.is_boolean():
+            classification = "boolean"
+        else:
+            raise ValueError(
+                f"Unsupported Snowflake data type for statistics: {self.snowflake_type.raw_type}"
+            )
+        object.__setattr__(self, "_classification", classification)
+
+    @property
+    def type_name(self) -> Literal["numeric", "string", "date", "boolean"]:
+        """Get the classification type name."""
+        return self._classification
 
     @classmethod
     def from_snowflake_type(
         cls,
         sf_type: SnowflakeDataType,
-    ) -> Self:
-        """Convert SnowflakeDataType to StatisticsSupportDataType."""
-        if sf_type.is_numeric():
-            return cls("numeric")
-        if sf_type.is_string():
-            return cls("string")
-        if sf_type.is_date():
-            return cls("date")
-        if sf_type.is_boolean():
-            return cls("boolean")
-        raise ValueError(
-            f"Unsupported Snowflake data type for statistics: {sf_type.raw_type}"
-        )
+    ) -> Self | None:
+        """Convert SnowflakeDataType to StatisticsSupportDataType, returning None for unsupported types."""
+        try:
+            return cls(sf_type)
+        except ValueError:
+            return None

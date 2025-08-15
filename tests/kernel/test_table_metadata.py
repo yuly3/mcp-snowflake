@@ -168,6 +168,7 @@ class TestTableColumnProperties:
         )
 
         stats_type = column.statistics_type
+        assert stats_type is not None
         assert stats_type.type_name == "string"
 
     @pytest.mark.parametrize(
@@ -225,10 +226,11 @@ class TestTableColumnProperties:
 
         # Test statistics_type property
         stats_type = column.statistics_type
+        assert stats_type is not None
         assert stats_type.type_name == expected_stats_type
 
-    def test_unsupported_data_type_raises_error(self) -> None:
-        """Test that unsupported data types raise ValueError when accessing properties."""
+    def test_statistics_type_is_none_for_unsupported_type(self) -> None:
+        """Test that statistics_type property returns None for unsupported data types."""
         column = TableColumn(
             name="variant_col",
             data_type="VARIANT",
@@ -241,11 +243,8 @@ class TestTableColumnProperties:
         assert sf_type.normalized_type == "VARIANT"
         assert not sf_type.is_supported_for_statistics()
 
-        # statistics_type should raise ValueError
-        with pytest.raises(
-            ValueError, match="Unsupported Snowflake data type for statistics"
-        ):
-            _ = column.statistics_type
+        # statistics_type should return None
+        assert column.statistics_type is None
 
     def test_empty_data_type_raises_error(self) -> None:
         """Test that empty data_type raises ValueError during construction."""

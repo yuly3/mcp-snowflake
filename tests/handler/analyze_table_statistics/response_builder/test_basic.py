@@ -7,10 +7,23 @@ from mcp_snowflake.handler.analyze_table_statistics._response_builder import (
 from mcp_snowflake.handler.analyze_table_statistics.models import (
     AnalyzeTableStatisticsArgs,
 )
+from mcp_snowflake.kernel.statistics_support_column import StatisticsSupportColumn
 from mcp_snowflake.kernel.table_metadata import TableColumn
 
 if TYPE_CHECKING:
     from mcp import types
+
+
+def _convert_to_statistics_support_columns(
+    columns: list[TableColumn],
+) -> list[StatisticsSupportColumn]:
+    """Convert TableColumns to StatisticsSupportColumns for testing."""
+    result = []
+    for col in columns:
+        stats_col = StatisticsSupportColumn.from_table_column(col)
+        if stats_col is not None:
+            result.append(stats_col)
+    return result
 
 
 class TestBuildResponse:
@@ -46,7 +59,9 @@ class TestBuildResponse:
             ),
         ]
 
-        response = build_response(args, result_row, columns_to_analyze)
+        response = build_response(
+            args, result_row, _convert_to_statistics_support_columns(columns_to_analyze)
+        )
 
         assert len(response) == 2
         assert response[0].type == "text"
@@ -136,7 +151,9 @@ class TestBuildResponse:
             ),
         ]
 
-        response = build_response(args, result_row, columns_to_analyze)
+        response = build_response(
+            args, result_row, _convert_to_statistics_support_columns(columns_to_analyze)
+        )
 
         # Check summary text
         summary_text = cast("types.TextContent", response[0]).text
@@ -186,7 +203,9 @@ class TestBuildResponse:
             ),
         ]
 
-        response = build_response(args, result_row, columns_to_analyze)
+        response = build_response(
+            args, result_row, _convert_to_statistics_support_columns(columns_to_analyze)
+        )
 
         # Check summary reflects custom database/schema/table
         summary_text = cast("types.TextContent", response[0]).text
@@ -231,7 +250,9 @@ class TestBuildResponse:
             ),
         ]
 
-        response = build_response(args, result_row, columns_to_analyze)
+        response = build_response(
+            args, result_row, _convert_to_statistics_support_columns(columns_to_analyze)
+        )
 
         # Check that large numbers are formatted with commas
         summary_text = cast("types.TextContent", response[0]).text
@@ -267,7 +288,9 @@ class TestBuildResponse:
             ),
         ]
 
-        response = build_response(args, result_row, columns_to_analyze)
+        response = build_response(
+            args, result_row, _convert_to_statistics_support_columns(columns_to_analyze)
+        )
 
         # Check JSON is properly formatted (indented)
         text_content = cast("types.TextContent", response[1])

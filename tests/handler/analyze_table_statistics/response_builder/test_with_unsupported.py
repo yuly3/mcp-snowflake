@@ -7,10 +7,23 @@ from mcp_snowflake.handler.analyze_table_statistics._response_builder import (
 from mcp_snowflake.handler.analyze_table_statistics.models import (
     AnalyzeTableStatisticsArgs,
 )
+from mcp_snowflake.kernel.statistics_support_column import StatisticsSupportColumn
 from mcp_snowflake.kernel.table_metadata import TableColumn
 
 if TYPE_CHECKING:
     from mcp import types
+
+
+def _convert_to_statistics_support_columns(
+    columns: list[TableColumn],
+) -> list[StatisticsSupportColumn]:
+    """Convert TableColumns to StatisticsSupportColumns for testing."""
+    result = []
+    for col in columns:
+        stats_col = StatisticsSupportColumn.from_table_column(col)
+        if stats_col is not None:
+            result.append(stats_col)
+    return result
 
 
 class TestBuildResponseWithUnsupportedColumns:
@@ -62,7 +75,10 @@ class TestBuildResponseWithUnsupportedColumns:
         ]
 
         response = build_response(
-            args, result_row, supported_columns, unsupported_columns
+            args,
+            result_row,
+            _convert_to_statistics_support_columns(supported_columns),
+            unsupported_columns,
         )
 
         assert len(response) == 2
@@ -125,7 +141,9 @@ class TestBuildResponseWithUnsupportedColumns:
         ]
 
         # Test with default empty unsupported_columns
-        response = build_response(args, result_row, supported_columns)
+        response = build_response(
+            args, result_row, _convert_to_statistics_support_columns(supported_columns)
+        )
 
         assert len(response) == 2
         text_content = cast("types.TextContent", response[0])
@@ -173,7 +191,12 @@ class TestBuildResponseWithUnsupportedColumns:
         ]
 
         # Test with explicitly empty list
-        response = build_response(args, result_row, supported_columns, [])
+        response = build_response(
+            args,
+            result_row,
+            _convert_to_statistics_support_columns(supported_columns),
+            [],
+        )
 
         assert len(response) == 2
         text_content = cast("types.TextContent", response[0])

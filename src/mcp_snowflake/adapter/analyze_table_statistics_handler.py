@@ -3,7 +3,7 @@
 from collections.abc import Iterable
 from typing import Any
 
-from ..kernel.table_metadata import TableColumn
+from ..kernel.statistics_support_column import StatisticsSupportColumn
 from ..snowflake_client import SnowflakeClient
 from .describe_table_handler import DescribeTableEffectHandler
 
@@ -24,7 +24,7 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
         database: str,
         schema_name: str,
         table_name: str,
-        columns_to_analyze: Iterable[TableColumn],
+        columns_to_analyze: Iterable[StatisticsSupportColumn],
         top_k_limit: int,
     ) -> dict[str, Any]:
         """Execute statistics query and return the single result row.
@@ -37,8 +37,8 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
             Schema name
         table_name : str
             Table name
-        columns_to_analyze : Iterable[TableColumn]
-            Column information objects
+        columns_to_analyze : Iterable[StatisticsSupportColumn]
+            Column information objects with statistics support
         top_k_limit : int
             Limit for APPROX_TOP_K function
 
@@ -72,7 +72,7 @@ def generate_statistics_sql(
     database: str,
     schema: str,
     table_name: str,
-    columns_info: Iterable[TableColumn],
+    columns_info: Iterable[StatisticsSupportColumn],
     top_k_limit: int,
 ) -> str:
     """Generate SQL query for analyzing table statistics.
@@ -85,8 +85,8 @@ def generate_statistics_sql(
         Schema name.
     table_name : str
         Table name.
-    columns_info : Iterable[TableColumn]
-        Column information with type-safe data types.
+    columns_info : Iterable[StatisticsSupportColumn]
+        Column information with statistics support guaranteed.
     top_k_limit : int
         Limit for APPROX_TOP_K function.
 
