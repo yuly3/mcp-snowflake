@@ -57,7 +57,6 @@ def select_and_classify_columns(
     for col in columns_to_analyze:
         try:
             # Access the properties to validate support
-            _ = col.snowflake_type
             _ = col.statistics_type
         except ValueError as e:
             unsupported_info.append((col, str(e)))

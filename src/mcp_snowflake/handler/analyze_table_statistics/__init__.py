@@ -63,7 +63,7 @@ async def handle_analyze_table_statistics(
     # If no supported columns, return error with unsupported column list
     if not supported_columns:
         unsupported_list = [
-            f"{col.name}({col.data_type})" for col, _ in unsupported_info
+            f"{col.name}({col.data_type.raw_type})" for col, _ in unsupported_info
         ]
         error_text = f"Error: No supported columns for statistics. Unsupported columns: {', '.join(unsupported_list)}"
         return [

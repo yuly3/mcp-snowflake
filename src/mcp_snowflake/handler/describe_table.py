@@ -75,7 +75,7 @@ async def handle_describe_table(
     columns_dict: list[ColumnDict] = [
         {
             "name": col.name,
-            "data_type": col.data_type,
+            "data_type": col.data_type.raw_type,
             "nullable": col.nullable,
             "default_value": col.default_value,
             "comment": col.comment,

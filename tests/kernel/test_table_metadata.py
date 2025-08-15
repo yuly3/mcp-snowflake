@@ -2,6 +2,7 @@
 
 import pytest
 
+from mcp_snowflake.kernel.data_types import SnowflakeDataType
 from mcp_snowflake.kernel.table_metadata import TableColumn, TableInfo
 
 
@@ -19,7 +20,9 @@ class TestTableColumn:
             ordinal_position=1,
         )
         assert column.name == "id"
-        assert column.data_type == "NUMBER(10,0)"
+        # After refactor: data_type is SnowflakeDataType
+        assert column.data_type.raw_type == "NUMBER(10,0)"
+        assert column.data_type.normalized_type == "NUMBER"
         assert column.nullable is False
         assert column.default_value is None
         assert column.comment is None
@@ -36,7 +39,9 @@ class TestTableColumn:
             ordinal_position=3,
         )
         assert column.name == "created_at"
-        assert column.data_type == "TIMESTAMP_TZ"
+        # After refactor: data_type is SnowflakeDataType
+        assert column.data_type.raw_type == "TIMESTAMP_TZ"
+        assert column.data_type.normalized_type == "TIMESTAMP_TZ"
         assert column.nullable is True
         assert column.default_value == "CURRENT_TIMESTAMP()"
         assert column.comment == "Record creation time"
@@ -139,8 +144,8 @@ class TestTableInfo:
 class TestTableColumnProperties:
     """Test TableColumn computed properties."""
 
-    def test_snowflake_type_property(self) -> None:
-        """Test snowflake_type property returns correct SnowflakeDataType."""
+    def test_data_type_property(self) -> None:
+        """Test data_type property is SnowflakeDataType with correct values."""
         column = TableColumn(
             name="price",
             data_type="NUMBER(10,2)",
@@ -148,7 +153,7 @@ class TestTableColumnProperties:
             ordinal_position=1,
         )
 
-        sf_type = column.snowflake_type
+        sf_type = column.data_type
         assert sf_type.raw_type == "NUMBER(10,2)"
         assert sf_type.normalized_type == "NUMBER"
         assert sf_type.is_numeric()
@@ -210,8 +215,8 @@ class TestTableColumnProperties:
             ordinal_position=1,
         )
 
-        # Test snowflake_type properties
-        sf_type = column.snowflake_type
+        # Test data_type properties
+        sf_type = column.data_type
         assert sf_type.normalized_type == expected_normalized
         assert sf_type.is_numeric() == is_numeric
         assert sf_type.is_string() == is_string
@@ -231,8 +236,8 @@ class TestTableColumnProperties:
             ordinal_position=1,
         )
 
-        # snowflake_type should work (VARIANT is in normalized types)
-        sf_type = column.snowflake_type
+        # data_type should work (VARIANT is in normalized types)
+        sf_type = column.data_type
         assert sf_type.normalized_type == "VARIANT"
         assert not sf_type.is_supported_for_statistics()
 
@@ -243,13 +248,24 @@ class TestTableColumnProperties:
             _ = column.statistics_type
 
     def test_empty_data_type_raises_error(self) -> None:
-        """Test that empty data_type raises ValueError when accessing properties."""
+        """Test that empty data_type raises ValueError during construction."""
+        with pytest.raises(ValueError, match="Unsupported Snowflake data type"):
+            _ = TableColumn(
+                name="bad_col",
+                data_type="",
+                nullable=True,
+                ordinal_position=1,
+            )
+
+    def test_construction_accepts_snowflake_data_type(self) -> None:
+        """Test that constructor accepts SnowflakeDataType instances."""
+        sf_type = SnowflakeDataType("NUMBER(10,2)")
         column = TableColumn(
-            name="bad_col",
-            data_type="",
+            name="price",
+            data_type=sf_type,
             nullable=True,
             ordinal_position=1,
         )
 
-        with pytest.raises(ValueError, match="Unsupported Snowflake data type"):
-            _ = column.snowflake_type
+        assert column.data_type.raw_type == "NUMBER(10,2)"
+        assert column.data_type.normalized_type == "NUMBER"

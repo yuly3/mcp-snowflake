@@ -41,7 +41,7 @@ def parse_statistics_result(
 
     for col_info in columns_info:
         col_name = col_info.name
-        data_type = col_info.data_type
+        data_type = col_info.data_type.raw_type  # Use raw_type for JSON serialization
         col_type = col_info.statistics_type.type_name
         prefix = f"{col_type}_{col_name}".upper()  # Convert to uppercase for Snowflake
 

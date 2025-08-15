@@ -64,11 +64,11 @@ class TestSelectAndClassifyColumns:
         unsupported_col_1, reason_1 = unsupported_info[0]
         unsupported_col_2, reason_2 = unsupported_info[1]
         assert unsupported_col_1.name == "metadata"
-        assert unsupported_col_1.data_type == "VARIANT"
-        assert "Unsupported" in reason_1
+        assert unsupported_col_1.data_type.raw_type == "VARIANT"
+        assert reason_1 == "Unsupported Snowflake data type for statistics: VARIANT"
         assert unsupported_col_2.name == "config"
-        assert unsupported_col_2.data_type == "OBJECT"
-        assert "Unsupported" in reason_2
+        assert unsupported_col_2.data_type.raw_type == "OBJECT"
+        assert reason_2 == "Unsupported Snowflake data type for statistics: OBJECT"
 
     def test_classify_all_supported_columns(self) -> None:
         """Test classification when all columns are supported."""
