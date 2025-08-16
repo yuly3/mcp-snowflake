@@ -2,6 +2,8 @@
 
 import re
 
+from .table_metadata import DataBase, Schema, Table
+
 # Pattern for simple identifiers that don't need quoting
 # (uppercase letters, digits, underscores, must start with letter or underscore)
 SIMPLE_IDENTIFIER_PATTERN = re.compile(r"^[A-Z_][A-Z0-9_]*$")
@@ -41,16 +43,16 @@ def quote_ident(name: str) -> str:
     return f'"{escaped}"'
 
 
-def fully_qualified(database: str, schema: str | None, name: str) -> str:
+def fully_qualified(database: DataBase, schema: Schema | None, name: Table) -> str:
     """Create a fully qualified identifier.
 
     Parameters
     ----------
-    database : str
+    database : DataBase
         Database name
-    schema : str | None
+    schema : Schema | None
         Schema name (if None, creates two-part identifier)
-    name : str
+    name : Table
         Object name
 
     Returns

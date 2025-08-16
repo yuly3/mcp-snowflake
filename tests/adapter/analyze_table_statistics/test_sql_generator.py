@@ -1,7 +1,7 @@
 """Tests for SQL generation functionality in adapter layer."""
 
 from kernel.statistics_support_column import StatisticsSupportColumn
-from kernel.table_metadata import TableColumn
+from kernel.table_metadata import DataBase, Schema, Table, TableColumn
 from mcp_snowflake.adapter.analyze_table_statistics_handler import (
     generate_statistics_sql,
 )
@@ -34,9 +34,9 @@ class TestGenerateStatisticsSQL:
         ]
 
         sql = generate_statistics_sql(
-            "TEST_DB",
-            "TEST_SCHEMA",
-            "TEST_TABLE",
+            DataBase("TEST_DB"),
+            Schema("TEST_SCHEMA"),
+            Table("TEST_TABLE"),
             _convert_to_statistics_support_columns(columns_info),
             10,
         )
@@ -67,9 +67,9 @@ class TestGenerateStatisticsSQL:
         ]
 
         sql = generate_statistics_sql(
-            "TEST_DB",
-            "TEST_SCHEMA",
-            "TEST_TABLE",
+            DataBase("TEST_DB"),
+            Schema("TEST_SCHEMA"),
+            Table("TEST_TABLE"),
             _convert_to_statistics_support_columns(columns_info),
             5,
         )
@@ -93,9 +93,9 @@ class TestGenerateStatisticsSQL:
         ]
 
         sql = generate_statistics_sql(
-            "TEST_DB",
-            "TEST_SCHEMA",
-            "TEST_TABLE",
+            DataBase("TEST_DB"),
+            Schema("TEST_SCHEMA"),
+            Table("TEST_TABLE"),
             _convert_to_statistics_support_columns(columns_info),
             10,
         )
@@ -136,9 +136,9 @@ class TestGenerateStatisticsSQL:
         ]
 
         sql = generate_statistics_sql(
-            "TEST_DB",
-            "TEST_SCHEMA",
-            "TEST_TABLE",
+            DataBase("TEST_DB"),
+            Schema("TEST_SCHEMA"),
+            Table("TEST_TABLE"),
             _convert_to_statistics_support_columns(columns_info),
             5,
         )
@@ -173,9 +173,9 @@ class TestGenerateStatisticsSQL:
         ]
 
         sql = generate_statistics_sql(
-            "TEST_DB",
-            "TEST_SCHEMA",
-            "TEST_TABLE",
+            DataBase("TEST_DB"),
+            Schema("TEST_SCHEMA"),
+            Table("TEST_TABLE"),
             _convert_to_statistics_support_columns(columns_info),
             10,
         )
@@ -196,9 +196,9 @@ class TestGenerateStatisticsSQL:
         ]
 
         sql = generate_statistics_sql(
-            "TEST_DB",
-            "TEST_SCHEMA",
-            "TEST_TABLE",
+            DataBase("TEST_DB"),
+            Schema("TEST_SCHEMA"),
+            Table("TEST_TABLE"),
             _convert_to_statistics_support_columns(columns_info),
             20,
         )
@@ -217,9 +217,9 @@ class TestGenerateStatisticsSQL:
         ]
 
         sql = generate_statistics_sql(
-            "my-database",
-            "my-schema",
-            "my-table",
+            DataBase("my-database"),
+            Schema("my-schema"),
+            Table("my-table"),
             _convert_to_statistics_support_columns(columns_info),
             10,
         )
@@ -238,9 +238,9 @@ class TestGenerateStatisticsSQL:
         ]
 
         sql = generate_statistics_sql(
-            "TEST_DB",
-            "TEST_SCHEMA",
-            "TEST_TABLE",
+            DataBase("TEST_DB"),
+            Schema("TEST_SCHEMA"),
+            Table("TEST_TABLE"),
             _convert_to_statistics_support_columns(columns_info),
             10,
         )

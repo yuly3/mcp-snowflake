@@ -2,7 +2,7 @@ import json
 from typing import TYPE_CHECKING, cast
 
 from kernel.statistics_support_column import StatisticsSupportColumn
-from kernel.table_metadata import TableColumn
+from kernel.table_metadata import DataBase, Schema, Table, TableColumn
 from mcp_snowflake.handler.analyze_table_statistics._response_builder import (
     build_response,
 )
@@ -32,9 +32,9 @@ class TestBuildResponse:
     def test_build_response_single_numeric_column(self) -> None:
         """Test response building with a single numeric column."""
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result_row = {
@@ -99,9 +99,9 @@ class TestBuildResponse:
     def test_build_response_mixed_columns(self) -> None:
         """Test response building with mixed column types."""
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result_row = {
@@ -181,9 +181,9 @@ class TestBuildResponse:
     def test_build_response_with_custom_args(self) -> None:
         """Test response building with custom arguments."""
         args = AnalyzeTableStatisticsArgs(
-            database="custom_db",
-            schema="custom_schema",
-            table="custom_table",
+            database=DataBase("custom_db"),
+            schema=Schema("custom_schema"),
+            table=Table("custom_table"),
             columns=["specific_column"],
             top_k_limit=5,
         )
@@ -229,9 +229,9 @@ class TestBuildResponse:
     def test_build_response_large_numbers(self) -> None:
         """Test response building with large numbers (formatting)."""
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result_row = {
@@ -269,9 +269,9 @@ class TestBuildResponse:
     def test_build_response_json_formatting(self) -> None:
         """Test that JSON response is properly formatted."""
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result_row = {

@@ -15,6 +15,7 @@ from typing import Any, Protocol
 from pydantic import BaseModel, Field
 
 from kernel.statistics_support_column import StatisticsSupportColumn
+from kernel.table_metadata import DataBase, Schema, Table
 
 from ..describe_table import EffectDescribeTable
 
@@ -22,9 +23,9 @@ from ..describe_table import EffectDescribeTable
 class AnalyzeTableStatisticsArgs(BaseModel):
     """Arguments for analyzing table statistics."""
 
-    database: str
-    schema_: str = Field(alias="schema")
-    table_: str = Field(alias="table")
+    database: DataBase
+    schema_: Schema = Field(alias="schema")
+    table_: Table = Field(alias="table")
     columns: list[str] = Field(default_factory=list)
     """Empty list means all columns"""
     top_k_limit: int = Field(default=10, ge=1, le=100)
@@ -36,9 +37,9 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
 
     async def analyze_table_statistics(
         self,
-        database: str,
-        schema: str,
-        table: str,
+        database: DataBase,
+        schema: Schema,
+        table: Table,
         columns_to_analyze: Iterable[StatisticsSupportColumn],
         top_k_limit: int,
     ) -> dict[str, Any]:
@@ -46,11 +47,11 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
 
         Parameters
         ----------
-        database : str
+        database : DataBase
             Database name
-        schema : str
+        schema : Schema
             Schema name
-        table : str
+        table : Table
             Table name
         columns_to_analyze : Iterable[StatisticsSupportColumn]
             Column information objects with statistics support

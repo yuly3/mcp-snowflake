@@ -1,8 +1,14 @@
 """Table metadata domain models using attrs."""
 
+from typing import NewType
+
 import attrs
 
 from .data_types import SnowflakeDataType, StatisticsSupportDataType
+
+DataBase = NewType("DataBase", str)
+Schema = NewType("Schema", str)
+Table = NewType("Table", str)
 
 
 def _to_snowflake_data_type(value: str | SnowflakeDataType) -> SnowflakeDataType:
@@ -37,8 +43,8 @@ class TableColumn:
 class TableInfo:
     """Domain model for table information."""
 
-    database: str
-    schema: str
+    database: DataBase
+    schema: Schema
     name: str
     column_count: int
     columns: list[TableColumn]

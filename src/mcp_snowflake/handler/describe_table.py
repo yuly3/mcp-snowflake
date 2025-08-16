@@ -5,7 +5,7 @@ from typing import Protocol, TypedDict
 import mcp.types as types
 from pydantic import BaseModel, Field
 
-from kernel.table_metadata import TableInfo
+from kernel.table_metadata import DataBase, Schema, Table, TableInfo
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +24,8 @@ class ColumnDict(TypedDict):
 class TableInfoDict(TypedDict):
     """TypedDict for table information in JSON response."""
 
-    database: str
-    schema: str
+    database: DataBase
+    schema: Schema
     name: str
     column_count: int
     columns: list[ColumnDict]
@@ -38,17 +38,17 @@ class TableJsonResponse(TypedDict):
 
 
 class DescribeTableArgs(BaseModel):
-    database: str
-    schema_: str = Field(alias="schema")
-    table_: str = Field(alias="table")
+    database: DataBase
+    schema_: Schema = Field(alias="schema")
+    table_: Table = Field(alias="table")
 
 
 class EffectDescribeTable(Protocol):
     async def describe_table(
         self,
-        database: str,
-        schema: str,
-        table: str,
+        database: DataBase,
+        schema: Schema,
+        table: Table,
     ) -> TableInfo: ...
 
 

@@ -2,7 +2,7 @@ import json
 from typing import TYPE_CHECKING, cast
 
 from kernel.statistics_support_column import StatisticsSupportColumn
-from kernel.table_metadata import TableColumn
+from kernel.table_metadata import DataBase, Schema, Table, TableColumn
 from mcp_snowflake.handler.analyze_table_statistics._response_builder import (
     build_response,
 )
@@ -32,9 +32,9 @@ class TestBuildResponseWithUnsupportedColumns:
     def test_build_response_with_unsupported_columns(self) -> None:
         """Test response building with unsupported columns."""
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result_row = {
@@ -113,9 +113,9 @@ class TestBuildResponseWithUnsupportedColumns:
     def test_build_response_without_unsupported_columns(self) -> None:
         """Test response building without unsupported columns (default behavior)."""
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result_row = {
@@ -165,9 +165,9 @@ class TestBuildResponseWithUnsupportedColumns:
     def test_build_response_empty_unsupported_columns(self) -> None:
         """Test response building with explicitly empty unsupported columns."""
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result_row = {

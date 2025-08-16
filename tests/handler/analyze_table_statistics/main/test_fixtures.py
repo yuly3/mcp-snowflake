@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from kernel.table_metadata import TableColumn, TableInfo
+from kernel.table_metadata import DataBase, Schema, TableColumn, TableInfo
 
 
 class MockEffectHandler:
@@ -15,8 +15,8 @@ class MockEffectHandler:
         should_raise: Exception | None = None,
     ) -> None:
         self.table_data = table_data or TableInfo(
-            database="default_db",
-            schema="default_schema",
+            database=DataBase("default_db"),
+            schema=Schema("default_schema"),
             name="default_table",
             column_count=0,
             columns=[],
@@ -92,8 +92,8 @@ def create_test_table_info(
     ]
 
     return TableInfo(
-        database=database,
-        schema=schema,
+        database=DataBase(database),
+        schema=Schema(schema),
         name=table_name,
         column_count=len(table_columns),
         columns=table_columns,

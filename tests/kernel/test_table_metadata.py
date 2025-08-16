@@ -3,7 +3,7 @@
 import pytest
 
 from kernel.data_types import SnowflakeDataType
-from kernel.table_metadata import TableColumn, TableInfo
+from kernel.table_metadata import DataBase, Schema, TableColumn, TableInfo
 
 
 class TestTableColumn:
@@ -90,8 +90,8 @@ class TestTableInfo:
             ),
         ]
         table = TableInfo(
-            database="test_db",
-            schema="test_schema",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
             name="test_table",
             column_count=2,
             columns=columns,
@@ -107,8 +107,8 @@ class TestTableInfo:
     def test_empty_columns(self) -> None:
         """Test table with no columns."""
         table = TableInfo(
-            database="empty_db",
-            schema="empty_schema",
+            database=DataBase("empty_db"),
+            schema=Schema("empty_schema"),
             name="empty_table",
             column_count=0,
             columns=[],
@@ -119,8 +119,8 @@ class TestTableInfo:
     def test_immutable_frozen(self) -> None:
         """Test that TableInfo is immutable (frozen)."""
         table = TableInfo(
-            database="db",
-            schema="schema",
+            database=DataBase("db"),
+            schema=Schema("schema"),
             name="table",
             column_count=0,
             columns=[],
@@ -131,8 +131,8 @@ class TestTableInfo:
     def test_slots_no_new_attributes(self) -> None:
         """Test that slots prevent adding new attributes."""
         table = TableInfo(
-            database="db",
-            schema="schema",
+            database=DataBase("db"),
+            schema=Schema("schema"),
             name="table",
             column_count=0,
             columns=[],

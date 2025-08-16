@@ -8,6 +8,7 @@ import pytest
 if TYPE_CHECKING:
     from mcp.types import TextContent
 
+from kernel.table_metadata import DataBase, Schema, Table
 from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
     handle_analyze_table_statistics,
@@ -52,9 +53,9 @@ class TestPartialResults:
         )
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
@@ -123,9 +124,9 @@ class TestPartialResults:
         )
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
@@ -172,9 +173,9 @@ class TestPartialResults:
         )
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
             columns=["id", "metadata"],  # Request both supported and unsupported
         )
 
@@ -231,9 +232,9 @@ class TestPartialResults:
         )
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)

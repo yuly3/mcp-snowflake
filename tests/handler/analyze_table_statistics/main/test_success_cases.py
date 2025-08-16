@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 
+from kernel.table_metadata import DataBase, Schema, Table
 from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
     handle_analyze_table_statistics,
@@ -53,9 +54,9 @@ class TestSuccessCases:
         )
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
@@ -145,9 +146,9 @@ class TestSuccessCases:
         mock_effect = MockEffectHandler(table_data, query_result)
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
@@ -219,9 +220,9 @@ class TestSuccessCases:
         )
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)

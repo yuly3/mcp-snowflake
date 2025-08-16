@@ -3,7 +3,7 @@ from typing import ClassVar
 import pytest
 from pydantic import ValidationError
 
-from kernel.table_metadata import TableColumn, TableInfo
+from kernel.table_metadata import DataBase, Schema, Table, TableColumn, TableInfo
 from mcp_snowflake.handler import DescribeTableArgs, handle_describe_table
 
 from ._utils import assert_keys_exact, assert_single_text, parse_json_text
@@ -31,8 +31,8 @@ class MockEffectHandler:
         if self.table_info is None:
             # Return minimal default
             return TableInfo(
-                database="default_db",
-                schema="default_schema",
+                database=DataBase("default_db"),
+                schema=Schema("default_schema"),
                 name="default_table",
                 column_count=0,
                 columns=[],
@@ -46,13 +46,13 @@ class TestDescribeTableArgs:
     def test_describe_table_args_validation(self) -> None:
         """Test DescribeTableArgs validation."""
         args = DescribeTableArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
-        assert args.database == "test_db"
-        assert args.schema_ == "test_schema"
-        assert args.table_ == "test_table"
+        assert args.database == DataBase("test_db")
+        assert args.schema_ == Schema("test_schema")
+        assert args.table_ == Table("test_table")
 
     def test_missing_database(self) -> None:
         """Test missing database argument."""
@@ -82,10 +82,12 @@ class TestDescribeTableArgs:
 
     def test_empty_strings(self) -> None:
         """Test empty string arguments."""
-        args = DescribeTableArgs(database="", schema="", table="")
-        assert args.database == ""
-        assert args.schema_ == ""
-        assert args.table_ == ""
+        args = DescribeTableArgs(
+            database=DataBase(""), schema=Schema(""), table=Table("")
+        )
+        assert args.database == DataBase("")
+        assert args.schema_ == Schema("")
+        assert args.table_ == Table("")
 
 
 class TestHandleDescribeTable:
@@ -201,10 +203,12 @@ class TestHandleDescribeTable:
     ) -> None:
         """Test successful table description scenarios with parametrized variants."""
         # Arrange
-        args = DescribeTableArgs(database=database, schema=schema, table=table)
+        args = DescribeTableArgs(
+            database=DataBase(database), schema=Schema(schema), table=Table(table)
+        )
         mock_table_data = TableInfo(
-            database=database,
-            schema=schema,
+            database=DataBase(database),
+            schema=Schema(schema),
             name=table,
             column_count=len(columns_spec),
             columns=columns_spec,
@@ -267,9 +271,9 @@ class TestHandleDescribeTable:
         """Test exception handling from effect handler."""
         # Arrange
         args = DescribeTableArgs(
-            database="error_db",
-            schema="error_schema",
-            table="error_table",
+            database=DataBase("error_db"),
+            schema=Schema("error_schema"),
+            table=Table("error_table"),
         )
         error_message = "Table not found"
         effect_handler = MockEffectHandler(should_raise=Exception(error_message))

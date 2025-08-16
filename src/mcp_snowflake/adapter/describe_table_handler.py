@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 from kernel.sql_utils import fully_qualified
-from kernel.table_metadata import TableColumn, TableInfo
+from kernel.table_metadata import DataBase, Schema, Table, TableColumn, TableInfo
 
 from ..snowflake_client import SnowflakeClient
 
@@ -17,9 +17,9 @@ class DescribeTableEffectHandler:
 
     async def describe_table(
         self,
-        database: str,
-        schema: str,
-        table: str,
+        database: DataBase,
+        schema: Schema,
+        table: Table,
     ) -> TableInfo:
         """Get table structure information."""
         query = f"DESCRIBE TABLE {fully_qualified(database, schema, table)}"

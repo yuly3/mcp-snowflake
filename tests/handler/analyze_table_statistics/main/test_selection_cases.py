@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
-from kernel.table_metadata import TableInfo
+from kernel.table_metadata import DataBase, Schema, Table, TableInfo
 from mcp_snowflake.adapter.analyze_table_statistics_handler import (
     generate_statistics_sql,
 )
@@ -55,9 +55,9 @@ class TestColumnSelection:
         )
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
             columns=["id"],  # Only analyze ID column
         )
 
@@ -107,17 +107,17 @@ class TestColumnSelection:
         class MockEffectWithQueryTracking:
             async def describe_table(
                 self,
-                database: str,  # noqa: ARG002
-                schema: str,  # noqa: ARG002
-                table: str,  # noqa: ARG002
+                database: DataBase,  # noqa: ARG002
+                schema: Schema,  # noqa: ARG002
+                table: Table,  # noqa: ARG002
             ) -> TableInfo:
                 return table_data
 
             async def analyze_table_statistics(
                 self,
-                database: str,
-                schema: str,
-                table: str,
+                database: DataBase,
+                schema: Schema,
+                table: Table,
                 columns_to_analyze: Any,
                 top_k_limit: int,
             ) -> dict[str, Any]:
@@ -139,9 +139,9 @@ class TestColumnSelection:
         mock_effect = MockEffectWithQueryTracking()
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
             top_k_limit=25,  # Custom limit
         )
 
@@ -198,9 +198,9 @@ class TestColumnSelection:
         )
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
             columns=["id", "price"],  # Only analyze numeric columns
         )
 
@@ -256,9 +256,9 @@ class TestColumnSelection:
         )
 
         args = AnalyzeTableStatisticsArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)

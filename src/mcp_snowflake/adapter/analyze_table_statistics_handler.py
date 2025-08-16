@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from kernel.statistics_support_column import StatisticsSupportColumn
+from kernel.table_metadata import DataBase, Schema, Table
 
 from ..snowflake_client import SnowflakeClient
 from .describe_table_handler import DescribeTableEffectHandler
@@ -22,9 +23,9 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
 
     async def analyze_table_statistics(
         self,
-        database: str,
-        schema: str,
-        table: str,
+        database: DataBase,
+        schema: Schema,
+        table: Table,
         columns_to_analyze: Iterable[StatisticsSupportColumn],
         top_k_limit: int,
     ) -> dict[str, Any]:
@@ -32,11 +33,11 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
 
         Parameters
         ----------
-        database : str
+        database : DataBase
             Database name
-        schema : str
+        schema : Schema
             Schema name
-        table : str
+        table : Table
             Table name
         columns_to_analyze : Iterable[StatisticsSupportColumn]
             Column information objects with statistics support
@@ -70,9 +71,9 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
 
 
 def generate_statistics_sql(
-    database: str,
-    schema: str,
-    table: str,
+    database: DataBase,
+    schema: Schema,
+    table: Table,
     columns_info: Iterable[StatisticsSupportColumn],
     top_k_limit: int,
 ) -> str:
@@ -80,11 +81,11 @@ def generate_statistics_sql(
 
     Parameters
     ----------
-    database : str
+    database : DataBase
         Database name.
-    schema : str
+    schema : Schema
         Schema name.
-    table : str
+    table : Table
         Table name.
     columns_info : Iterable[StatisticsSupportColumn]
         Column information with statistics support guaranteed.
