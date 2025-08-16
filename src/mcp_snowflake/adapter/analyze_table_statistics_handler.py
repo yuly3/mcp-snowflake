@@ -22,8 +22,8 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
     async def analyze_table_statistics(
         self,
         database: str,
-        schema_name: str,
-        table_name: str,
+        schema: str,
+        table: str,
         columns_to_analyze: Iterable[StatisticsSupportColumn],
         top_k_limit: int,
     ) -> dict[str, Any]:
@@ -33,9 +33,9 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
         ----------
         database : str
             Database name
-        schema_name : str
+        schema : str
             Schema name
-        table_name : str
+        table : str
             Table name
         columns_to_analyze : Iterable[StatisticsSupportColumn]
             Column information objects with statistics support
@@ -54,8 +54,8 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
         """
         stats_sql = generate_statistics_sql(
             database,
-            schema_name,
-            table_name,
+            schema,
+            table,
             columns_to_analyze,
             top_k_limit,
         )
@@ -71,7 +71,7 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
 def generate_statistics_sql(
     database: str,
     schema: str,
-    table_name: str,
+    table: str,
     columns_info: Iterable[StatisticsSupportColumn],
     top_k_limit: int,
 ) -> str:
@@ -83,7 +83,7 @@ def generate_statistics_sql(
         Database name.
     schema : str
         Schema name.
-    table_name : str
+    table : str
         Table name.
     columns_info : Iterable[StatisticsSupportColumn]
         Column information with statistics support guaranteed.
@@ -95,7 +95,7 @@ def generate_statistics_sql(
     str
         The generated SQL query.
     """
-    table_ref = f'"{database}"."{schema}"."{table_name}"'
+    table_ref = f'"{database}"."{schema}"."{table}"'
 
     sql_parts = ["SELECT", "  COUNT(*) as total_rows,"]
 

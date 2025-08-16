@@ -56,8 +56,8 @@ class TestColumnSelection:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
             columns=["id"],  # Only analyze ID column
         )
 
@@ -109,15 +109,15 @@ class TestColumnSelection:
                 self,
                 database: str,  # noqa: ARG002
                 schema: str,  # noqa: ARG002
-                table_name: str,  # noqa: ARG002
+                table: str,  # noqa: ARG002
             ) -> TableInfo:
                 return table_data
 
             async def analyze_table_statistics(
                 self,
                 database: str,
-                schema_name: str,
-                table_name: str,
+                schema: str,
+                table: str,
                 columns_to_analyze: Any,
                 top_k_limit: int,
             ) -> dict[str, Any]:
@@ -125,8 +125,8 @@ class TestColumnSelection:
                 # Simulate SQL generation and execution for verification
                 query = generate_statistics_sql(
                     database,
-                    schema_name,
-                    table_name,
+                    schema,
+                    table,
                     columns_to_analyze,
                     top_k_limit,
                 )
@@ -140,8 +140,8 @@ class TestColumnSelection:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
             top_k_limit=25,  # Custom limit
         )
 
@@ -199,8 +199,8 @@ class TestColumnSelection:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
             columns=["id", "price"],  # Only analyze numeric columns
         )
 
@@ -257,8 +257,8 @@ class TestColumnSelection:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)

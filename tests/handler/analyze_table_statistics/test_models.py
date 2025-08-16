@@ -15,12 +15,12 @@ class TestAnalyzeTableStatisticsArgs:
         """Test valid arguments."""
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
         assert args.database == "test_db"
-        assert args.schema_name == "test_schema"
-        assert args.table_name == "test_table"
+        assert args.schema_ == "test_schema"
+        assert args.table_ == "test_table"
         assert args.columns == []
         assert args.top_k_limit == 10
 
@@ -28,8 +28,8 @@ class TestAnalyzeTableStatisticsArgs:
         """Test with specific columns."""
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
             columns=["col1", "col2"],
         )
         assert args.columns == ["col1", "col2"]
@@ -38,8 +38,8 @@ class TestAnalyzeTableStatisticsArgs:
         """Test with custom top_k_limit."""
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
             top_k_limit=50,
         )
         assert args.top_k_limit == 50
@@ -49,14 +49,14 @@ class TestAnalyzeTableStatisticsArgs:
         # Valid boundaries
         _ = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
             top_k_limit=1,
         )
         _ = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
             top_k_limit=100,
         )
 
@@ -64,15 +64,15 @@ class TestAnalyzeTableStatisticsArgs:
         with pytest.raises(ValidationError):
             _ = AnalyzeTableStatisticsArgs(
                 database="test_db",
-                schema_name="test_schema",
-                table_name="test_table",
+                schema="test_schema",
+                table="test_table",
                 top_k_limit=0,
             )
 
         with pytest.raises(ValidationError):
             _ = AnalyzeTableStatisticsArgs(
                 database="test_db",
-                schema_name="test_schema",
-                table_name="test_table",
+                schema="test_schema",
+                table="test_table",
                 top_k_limit=101,
             )

@@ -33,8 +33,8 @@ class TestErrorHandling:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
@@ -58,8 +58,8 @@ class TestErrorHandling:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
             columns=["id", "nonexistent"],  # nonexistent column
         )
 
@@ -78,8 +78,8 @@ class TestErrorHandling:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
@@ -104,15 +104,15 @@ class TestErrorHandling:
                 self,
                 database: str,  # noqa: ARG002
                 schema: str,  # noqa: ARG002
-                table_name: str,  # noqa: ARG002
+                table: str,  # noqa: ARG002
             ) -> TableInfo:
                 return table_data
 
             async def analyze_table_statistics(
                 self,
                 database: str,  # noqa: ARG002
-                schema_name: str,  # noqa: ARG002
-                table_name: str,  # noqa: ARG002
+                schema: str,  # noqa: ARG002
+                table: str,  # noqa: ARG002
                 columns_to_analyze: Any,  # noqa: ARG002
                 top_k_limit: int,  # noqa: ARG002
             ) -> dict[str, Any]:
@@ -122,8 +122,8 @@ class TestErrorHandling:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
@@ -142,8 +142,8 @@ class TestErrorHandling:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)

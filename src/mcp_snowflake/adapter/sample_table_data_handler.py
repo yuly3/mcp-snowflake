@@ -20,7 +20,7 @@ class SampleTableDataEffectHandler:
         self,
         database: str,
         schema: str,
-        table_name: str,
+        table: str,
         sample_size: int,
         columns: list[str],
     ) -> list[dict[str, Any]]:
@@ -32,7 +32,7 @@ class SampleTableDataEffectHandler:
             Database name
         schema : str
             Schema name
-        table_name : str
+        table : str
             Table name
         sample_size : int
             Number of sample rows to retrieve
@@ -48,7 +48,7 @@ class SampleTableDataEffectHandler:
 
         query = f"""
         SELECT {column_list}
-        FROM "{database}"."{schema}"."{table_name}"
+        FROM "{database}"."{schema}"."{table}"
         SAMPLE ROW ({sample_size} ROWS)
         """  # noqa: S608
 
@@ -56,7 +56,7 @@ class SampleTableDataEffectHandler:
             "Executing sample_table_data query for %s.%s.%s with sample_size=%d",
             database,
             schema,
-            table_name,
+            table,
             sample_size,
         )
 

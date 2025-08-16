@@ -47,11 +47,11 @@ class AnalyzeTableStatisticsTool(Tool):
                         "type": "string",
                         "description": "Database name containing the table",
                     },
-                    "schema_name": {
+                    "schema": {
                         "type": "string",
                         "description": "Schema name containing the table",
                     },
-                    "table_name": {
+                    "table": {
                         "type": "string",
                         "description": "Name of the table to analyze",
                     },
@@ -69,6 +69,6 @@ class AnalyzeTableStatisticsTool(Tool):
                         "description": "Number of top values to retrieve for string columns",
                     },
                 },
-                "required": ["database", "schema_name", "table_name"],
+                "required": ["database", "schema", "table"],
             },
         )

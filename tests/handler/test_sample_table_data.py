@@ -28,7 +28,7 @@ class MockEffectSampleTableData:
         self,
         database: str,  # noqa: ARG002
         schema: str,  # noqa: ARG002
-        table_name: str,  # noqa: ARG002
+        table: str,  # noqa: ARG002
         sample_size: int,  # noqa: ARG002
         columns: list[str],  # noqa: ARG002
     ) -> list[dict[str, Any]]:
@@ -44,49 +44,47 @@ class TestSampleTableDataArgs:
         """Test valid arguments."""
         args = SampleTableDataArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
         assert args.database == "test_db"
-        assert args.schema_name == "test_schema"
-        assert args.table_name == "test_table"
+        assert args.schema_ == "test_schema"
+        assert args.table_ == "test_table"
         assert args.sample_size == 10  # default
         assert args.columns == []  # default
 
-    def test_valid_args_with_optional_params(self) -> None:
-        """Test valid arguments with optional parameters."""
+    def test_valid_args_all_fields(self) -> None:
+        """Test valid arguments with all fields specified."""
         args = SampleTableDataArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
-            sample_size=50,
+            schema="test_schema",
+            table="test_table",
+            sample_size=20,
             columns=["col1", "col2"],
         )
         assert args.database == "test_db"
-        assert args.schema_name == "test_schema"
-        assert args.table_name == "test_table"
-        assert args.sample_size == 50
-        assert args.columns == ["col1", "col2"]
+        assert args.schema_ == "test_schema"
+        assert args.table_ == "test_table"
 
     def test_missing_database(self) -> None:
         """Test missing database argument."""
         with pytest.raises(ValidationError):
             _ = SampleTableDataArgs.model_validate(
-                {"schema_name": "test_schema", "table_name": "test_table"}
+                {"schema": "test_schema", "table": "test_table"}
             )
 
-    def test_missing_schema_name(self) -> None:
-        """Test missing schema_name argument."""
+    def test_missing_schema(self) -> None:
+        """Test missing schema argument."""
         with pytest.raises(ValidationError):
             _ = SampleTableDataArgs.model_validate(
-                {"database": "test_db", "table_name": "test_table"}
+                {"database": "test_db", "table": "test_table"}
             )
 
-    def test_missing_table_name(self) -> None:
-        """Test missing table_name argument."""
+    def test_missing_table(self) -> None:
+        """Test missing table argument."""
         with pytest.raises(ValidationError):
             _ = SampleTableDataArgs.model_validate(
-                {"database": "test_db", "schema_name": "test_schema"}
+                {"database": "test_db", "schema": "test_schema"}
             )
 
     def test_invalid_sample_size(self) -> None:
@@ -95,8 +93,8 @@ class TestSampleTableDataArgs:
             _ = SampleTableDataArgs.model_validate(
                 {
                     "database": "test_db",
-                    "schema_name": "test_schema",
-                    "table_name": "test_table",
+                    "schema": "test_schema",
+                    "table": "test_table",
                     "sample_size": "invalid",
                 }
             )
@@ -253,8 +251,8 @@ class TestHandleSampleTableData:
 
         args = SampleTableDataArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
             sample_size=10,
         )
 
@@ -281,8 +279,8 @@ class TestHandleSampleTableData:
 
         args = SampleTableDataArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_sample_table_data(args, mock_effect)
@@ -308,8 +306,8 @@ class TestHandleSampleTableData:
 
         args = SampleTableDataArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_sample_table_data(args, mock_effect)
@@ -331,8 +329,8 @@ class TestHandleSampleTableData:
 
         args = SampleTableDataArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_sample_table_data(args, mock_effect)
@@ -352,8 +350,8 @@ class TestHandleSampleTableData:
 
         args = SampleTableDataArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
             sample_size=5,
             columns=["col1", "col3"],
         )

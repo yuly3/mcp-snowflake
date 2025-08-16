@@ -54,8 +54,8 @@ class TestSuccessCases:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
@@ -146,8 +146,8 @@ class TestSuccessCases:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
@@ -220,8 +220,8 @@ class TestSuccessCases:
 
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)

@@ -3,7 +3,7 @@ import logging
 from typing import Protocol, TypedDict
 
 import mcp.types as types
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..kernel.table_metadata import TableInfo
 
@@ -39,8 +39,8 @@ class TableJsonResponse(TypedDict):
 
 class DescribeTableArgs(BaseModel):
     database: str
-    schema_name: str
-    table_name: str
+    schema_: str = Field(alias="schema")
+    table_: str = Field(alias="table")
 
 
 class EffectDescribeTable(Protocol):
@@ -48,7 +48,7 @@ class EffectDescribeTable(Protocol):
         self,
         database: str,
         schema: str,
-        table_name: str,
+        table: str,
     ) -> TableInfo: ...
 
 
@@ -60,8 +60,8 @@ async def handle_describe_table(
     try:
         table_data = await effect_handler.describe_table(
             args.database,
-            args.schema_name,
-            args.table_name,
+            args.schema_,
+            args.table_,
         )
     except Exception as e:
         logger.exception("Error describing table")

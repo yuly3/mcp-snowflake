@@ -1,4 +1,13 @@
-"""Public API models for table statistics analysis."""
+"""Public API models for t    async def analyz        schema : str
+        Schema name containing the table
+    table : str
+        Name of the table to analyzeble_statistics(
+    database: str,
+    schema: str,
+    table: str,
+    columns: list[StatisticsSupportColumn],
+    top_k_limit: int,
+) -> dict[str, Any]: ...tistics analysis."""
 
 from collections.abc import Iterable
 from typing import Any, Protocol
@@ -13,8 +22,8 @@ class AnalyzeTableStatisticsArgs(BaseModel):
     """Arguments for analyzing table statistics."""
 
     database: str
-    schema_name: str
-    table_name: str
+    schema_: str = Field(alias="schema")
+    table_: str = Field(alias="table")
     columns: list[str] = Field(default_factory=list)
     """Empty list means all columns"""
     top_k_limit: int = Field(default=10, ge=1, le=100)
@@ -27,8 +36,8 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
     async def analyze_table_statistics(
         self,
         database: str,
-        schema_name: str,
-        table_name: str,
+        schema: str,
+        table: str,
         columns_to_analyze: Iterable[StatisticsSupportColumn],
         top_k_limit: int,
     ) -> dict[str, Any]:
@@ -38,9 +47,9 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
         ----------
         database : str
             Database name
-        schema_name : str
+        schema : str
             Schema name
-        table_name : str
+        table : str
             Table name
         columns_to_analyze : Iterable[StatisticsSupportColumn]
             Column information objects with statistics support

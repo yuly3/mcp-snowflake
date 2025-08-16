@@ -33,8 +33,8 @@ class TestBuildResponse:
         """Test response building with a single numeric column."""
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result_row = {
@@ -98,8 +98,8 @@ class TestBuildResponse:
         """Test response building with mixed column types."""
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result_row = {
@@ -178,8 +178,8 @@ class TestBuildResponse:
         """Test response building with custom arguments."""
         args = AnalyzeTableStatisticsArgs(
             database="custom_db",
-            schema_name="custom_schema",
-            table_name="custom_table",
+            schema="custom_schema",
+            table="custom_table",
             columns=["specific_column"],
             top_k_limit=5,
         )
@@ -224,8 +224,8 @@ class TestBuildResponse:
         """Test response building with large numbers (formatting)."""
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result_row = {
@@ -262,8 +262,8 @@ class TestBuildResponse:
         """Test that JSON response is properly formatted."""
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result_row = {

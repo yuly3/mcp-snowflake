@@ -2,14 +2,14 @@ import logging
 from typing import Protocol
 
 import mcp.types as types
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 
 class ListTablesArgs(BaseModel):
     database: str
-    schema_name: str
+    schema_: str = Field(alias="schema")
 
 
 class EffectListTables(Protocol):
@@ -22,7 +22,7 @@ async def handle_list_tables(
 ) -> list[types.TextContent]:
     """Handle list_tables tool call."""
     try:
-        tables = await effect_handler.list_tables(args.database, args.schema_name)
+        tables = await effect_handler.list_tables(args.database, args.schema_)
     except Exception as e:
         logger.exception("Error listing tables")
         return [
@@ -36,6 +36,6 @@ async def handle_list_tables(
     return [
         types.TextContent(
             type="text",
-            text=f"Table list for schema '{args.database}.{args.schema_name}':\n{table_list}",
+            text=f"Table list for schema '{args.database}.{args.schema_}':\n{table_list}",
         )
     ]

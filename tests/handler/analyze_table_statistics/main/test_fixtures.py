@@ -28,7 +28,7 @@ class MockEffectHandler:
         self,
         database: str,  # noqa: ARG002
         schema: str,  # noqa: ARG002
-        table_name: str,  # noqa: ARG002
+        table: str,  # noqa: ARG002
     ) -> TableInfo:
         if self.should_raise:
             raise self.should_raise
@@ -37,8 +37,8 @@ class MockEffectHandler:
     async def analyze_table_statistics(
         self,
         database: str,  # noqa: ARG002
-        schema_name: str,  # noqa: ARG002
-        table_name: str,  # noqa: ARG002
+        schema: str,  # noqa: ARG002
+        table: str,  # noqa: ARG002
         columns_to_analyze: Any,  # noqa: ARG002
         top_k_limit: int,  # noqa: ARG002
     ) -> dict[str, Any]:

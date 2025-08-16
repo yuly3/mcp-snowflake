@@ -43,11 +43,11 @@ class ListTablesTool(Tool):
                         "type": "string",
                         "description": "Database name to retrieve tables from",
                     },
-                    "schema_name": {
+                    "schema": {
                         "type": "string",
                         "description": "Schema name to retrieve tables from",
                     },
                 },
-                "required": ["database", "schema_name"],
+                "required": ["database", "schema"],
             },
         )

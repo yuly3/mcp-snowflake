@@ -34,8 +34,8 @@ class SampleTableDataJsonResponse(TypedDict):
 
 class SampleTableDataArgs(BaseModel):
     database: str
-    schema_name: str
-    table_name: str
+    schema_: str = Field(alias="schema")
+    table_: str = Field(alias="table")
     sample_size: int = Field(default=10, ge=1)
     columns: list[str] = Field(default_factory=list)
 
@@ -45,7 +45,7 @@ class EffectSampleTableData(Protocol):
         self,
         database: str,
         schema: str,
-        table_name: str,
+        table: str,
         sample_size: int,
         columns: list[str],
     ) -> list[dict[str, Any]]: ...
@@ -118,8 +118,8 @@ async def handle_sample_table_data(
     try:
         raw_data = await effect_handler.sample_table_data(
             args.database,
-            args.schema_name,
-            args.table_name,
+            args.schema_,
+            args.table_,
             args.sample_size,
             args.columns,
         )
@@ -139,8 +139,8 @@ async def handle_sample_table_data(
         result.processed_rows,
         result.warnings,
         args.database,
-        args.schema_name,
-        args.table_name,
+        args.schema_,
+        args.table_,
         args.sample_size,
     )
 

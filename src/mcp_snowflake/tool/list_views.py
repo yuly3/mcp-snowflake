@@ -43,11 +43,11 @@ class ListViewsTool(Tool):
                         "type": "string",
                         "description": "Database name to retrieve views from",
                     },
-                    "schema_name": {
+                    "schema": {
                         "type": "string",
                         "description": "Schema name to retrieve views from",
                     },
                 },
-                "required": ["database", "schema_name"],
+                "required": ["database", "schema"],
             },
         )

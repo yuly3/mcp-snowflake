@@ -27,17 +27,17 @@ class TestListViewsArgs:
 
     def test_valid_args(self) -> None:
         """Test valid arguments."""
-        args = ListViewsArgs(database="test_db", schema_name="test_schema")
+        args = ListViewsArgs(database="test_db", schema="test_schema")
         assert args.database == "test_db"
-        assert args.schema_name == "test_schema"
+        assert args.schema_ == "test_schema"
 
     def test_missing_database(self) -> None:
         """Test missing database argument."""
         with pytest.raises(ValidationError):
-            _ = ListViewsArgs.model_validate({"schema_name": "test_schema"})
+            _ = ListViewsArgs.model_validate({"schema": "test_schema"})
 
-    def test_missing_schema_name(self) -> None:
-        """Test missing schema_name argument."""
+    def test_missing_schema(self) -> None:
+        """Test missing schema argument."""
         with pytest.raises(ValidationError):
             _ = ListViewsArgs.model_validate({"database": "test_db"})
 
@@ -48,15 +48,15 @@ class TestListViewsArgs:
 
     def test_empty_database(self) -> None:
         """Test empty database string."""
-        args = ListViewsArgs(database="", schema_name="test_schema")
+        args = ListViewsArgs(database="", schema="test_schema")
         assert args.database == ""
-        assert args.schema_name == "test_schema"
+        assert args.schema_ == "test_schema"
 
-    def test_empty_schema_name(self) -> None:
-        """Test empty schema_name string."""
-        args = ListViewsArgs(database="test_db", schema_name="")
+    def test_empty_schema(self) -> None:
+        """Test empty schema string."""
+        args = ListViewsArgs(database="test_db", schema="")
         assert args.database == "test_db"
-        assert args.schema_name == ""
+        assert args.schema_ == ""
 
 
 class TestHandleListViews:
@@ -66,7 +66,7 @@ class TestHandleListViews:
     async def test_successful_list_views(self) -> None:
         """Test successful view listing."""
         # Arrange
-        args = ListViewsArgs(database="test_db", schema_name="test_schema")
+        args = ListViewsArgs(database="test_db", schema="test_schema")
         mock_views = ["view1", "view2", "view3"]
         effect_handler = MockEffectHandler(views=mock_views)
 
@@ -86,7 +86,7 @@ class TestHandleListViews:
     async def test_empty_views_list(self) -> None:
         """Test when no views are returned."""
         # Arrange
-        args = ListViewsArgs(database="empty_db", schema_name="empty_schema")
+        args = ListViewsArgs(database="empty_db", schema="empty_schema")
         effect_handler = MockEffectHandler(views=[])
 
         # Act
@@ -104,7 +104,7 @@ class TestHandleListViews:
     async def test_effect_handler_exception(self) -> None:
         """Test exception handling from effect handler."""
         # Arrange
-        args = ListViewsArgs(database="error_db", schema_name="error_schema")
+        args = ListViewsArgs(database="error_db", schema="error_schema")
         error_message = "Connection failed"
         effect_handler = MockEffectHandler(should_raise=Exception(error_message))
 
@@ -122,7 +122,7 @@ class TestHandleListViews:
     async def test_with_standard_view_names(self) -> None:
         """Test with typical view names."""
         # Arrange
-        args = ListViewsArgs(database="production_db", schema_name="public")
+        args = ListViewsArgs(database="production_db", schema="public")
         effect_handler = MockEffectHandler(
             views=["user_summary", "order_analytics", "product_info"]
         )
@@ -142,7 +142,7 @@ class TestHandleListViews:
     async def test_single_view(self) -> None:
         """Test with single view result."""
         # Arrange
-        args = ListViewsArgs(database="single_db", schema_name="single_schema")
+        args = ListViewsArgs(database="single_db", schema="single_schema")
         effect_handler = MockEffectHandler(views=["ONLY_VIEW"])
 
         # Act
@@ -160,7 +160,7 @@ class TestHandleListViews:
     async def test_case_sensitive_view_names(self) -> None:
         """Test with case-sensitive view names."""
         # Arrange
-        args = ListViewsArgs(database="case_db", schema_name="case_schema")
+        args = ListViewsArgs(database="case_db", schema="case_schema")
         effect_handler = MockEffectHandler(views=["MyView", "my_view", "MY_VIEW"])
 
         # Act

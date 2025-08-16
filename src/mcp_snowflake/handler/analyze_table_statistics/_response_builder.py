@@ -46,8 +46,8 @@ def build_response(
         "table_statistics": {
             "table_info": {
                 "database": args.database,
-                "schema": args.schema_name,
-                "table": args.table_name,
+                "schema": args.schema_,
+                "table": args.table_,
                 "total_rows": result_row["TOTAL_ROWS"],  # Use uppercase for Snowflake
                 "analyzed_columns": len(columns_to_analyze),
             },
@@ -78,7 +78,7 @@ def build_response(
                 boolean_count += 1
 
     summary_lines = [
-        f"Table Statistics Analysis: {args.database}.{args.schema_name}.{args.table_name}",
+        f"Table Statistics Analysis: {args.database}.{args.schema_}.{args.table_}",
         "",
         f"Successfully analyzed {len(columns_to_analyze)} columns with {result_row['TOTAL_ROWS']:,} total rows.",
         "",

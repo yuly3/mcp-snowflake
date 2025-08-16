@@ -18,16 +18,16 @@ class DescribeTableEffectHandler:
         self,
         database: str,
         schema: str,
-        table_name: str,
+        table: str,
     ) -> TableInfo:
         """Get table structure information."""
-        query = f"DESCRIBE TABLE {fully_qualified(database, schema, table_name)}"
+        query = f"DESCRIBE TABLE {fully_qualified(database, schema, table)}"
 
         try:
             results = await self.client.execute_query(query, timedelta(seconds=10))
         except Exception as e:
             raise Exception(
-                f"Failed to describe table '{database}.{schema}.{table_name}': {e!s}"
+                f"Failed to describe table '{database}.{schema}.{table}': {e!s}"
             ) from e
 
         # Transform results into structured format
@@ -48,7 +48,7 @@ class DescribeTableEffectHandler:
         return TableInfo(
             database=database,
             schema=schema,
-            name=table_name,
+            name=table,
             column_count=len(columns),
             columns=columns,
         )

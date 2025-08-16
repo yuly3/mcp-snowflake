@@ -39,8 +39,8 @@ async def handle_analyze_table_statistics(
     try:
         table_info = await effect.describe_table(
             args.database,
-            args.schema_name,
-            args.table_name,
+            args.schema_,
+            args.table_,
         )
     except Exception as e:
         logger.exception("Error getting table information")
@@ -76,8 +76,8 @@ async def handle_analyze_table_statistics(
     try:
         result_row = await effect.analyze_table_statistics(
             args.database,
-            args.schema_name,
-            args.table_name,
+            args.schema_,
+            args.table_,
             supported_columns,
             args.top_k_limit,
         )

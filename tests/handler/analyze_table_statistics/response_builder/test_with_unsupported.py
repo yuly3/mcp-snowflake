@@ -33,8 +33,8 @@ class TestBuildResponseWithUnsupportedColumns:
         """Test response building with unsupported columns."""
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result_row = {
@@ -114,8 +114,8 @@ class TestBuildResponseWithUnsupportedColumns:
         """Test response building without unsupported columns (default behavior)."""
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result_row = {
@@ -164,8 +164,8 @@ class TestBuildResponseWithUnsupportedColumns:
         """Test response building with explicitly empty unsupported columns."""
         args = AnalyzeTableStatisticsArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
 
         result_row = {

@@ -24,7 +24,7 @@ class MockEffectHandler:
         self,
         database: str,  # noqa: ARG002
         schema: str,  # noqa: ARG002
-        table_name: str,  # noqa: ARG002
+        table: str,  # noqa: ARG002
     ) -> TableInfo:
         if self.should_raise:
             raise self.should_raise
@@ -43,36 +43,36 @@ class MockEffectHandler:
 class TestDescribeTableArgs:
     """Test DescribeTableArgs validation."""
 
-    def test_valid_args(self) -> None:
-        """Test valid arguments."""
+    def test_describe_table_args_validation(self) -> None:
+        """Test DescribeTableArgs validation."""
         args = DescribeTableArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
         assert args.database == "test_db"
-        assert args.schema_name == "test_schema"
-        assert args.table_name == "test_table"
+        assert args.schema_ == "test_schema"
+        assert args.table_ == "test_table"
 
     def test_missing_database(self) -> None:
         """Test missing database argument."""
         with pytest.raises(ValidationError):
             _ = DescribeTableArgs.model_validate(
-                {"schema_name": "test_schema", "table_name": "test_table"}
+                {"schema": "test_schema", "table": "test_table"}
             )
 
-    def test_missing_schema_name(self) -> None:
-        """Test missing schema_name argument."""
+    def test_missing_schema(self) -> None:
+        """Test missing schema argument."""
         with pytest.raises(ValidationError):
             _ = DescribeTableArgs.model_validate(
-                {"database": "test_db", "table_name": "test_table"}
+                {"database": "test_db", "table": "test_table"}
             )
 
-    def test_missing_table_name(self) -> None:
-        """Test missing table_name argument."""
+    def test_missing_table(self) -> None:
+        """Test missing table argument."""
         with pytest.raises(ValidationError):
             _ = DescribeTableArgs.model_validate(
-                {"database": "test_db", "schema_name": "test_schema"}
+                {"database": "test_db", "schema": "test_schema"}
             )
 
     def test_missing_all_args(self) -> None:
@@ -82,10 +82,10 @@ class TestDescribeTableArgs:
 
     def test_empty_strings(self) -> None:
         """Test empty string arguments."""
-        args = DescribeTableArgs(database="", schema_name="", table_name="")
+        args = DescribeTableArgs(database="", schema="", table="")
         assert args.database == ""
-        assert args.schema_name == ""
-        assert args.table_name == ""
+        assert args.schema_ == ""
+        assert args.table_ == ""
 
 
 class TestHandleDescribeTable:
@@ -106,8 +106,8 @@ class TestHandleDescribeTable:
         # Arrange
         args = DescribeTableArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
         mock_table_data = TableInfo(
             database="test_db",
@@ -175,8 +175,8 @@ class TestHandleDescribeTable:
         # Arrange
         args = DescribeTableArgs(
             database="empty_db",
-            schema_name="empty_schema",
-            table_name="empty_table",
+            schema="empty_schema",
+            table="empty_table",
         )
         mock_table_data = TableInfo(
             database="empty_db",
@@ -216,8 +216,8 @@ class TestHandleDescribeTable:
         # Arrange
         args = DescribeTableArgs(
             database="error_db",
-            schema_name="error_schema",
-            table_name="error_table",
+            schema="error_schema",
+            table="error_table",
         )
         error_message = "Table not found"
         effect_handler = MockEffectHandler(should_raise=Exception(error_message))
@@ -238,8 +238,8 @@ class TestHandleDescribeTable:
         # Arrange
         args = DescribeTableArgs(
             database="nullable_db",
-            schema_name="nullable_schema",
-            table_name="nullable_table",
+            schema="nullable_schema",
+            table="nullable_table",
         )
         mock_table_data = TableInfo(
             database="nullable_db",
@@ -307,8 +307,8 @@ class TestHandleDescribeTable:
         # Arrange
         args = DescribeTableArgs(
             database="required_db",
-            schema_name="required_schema",
-            table_name="required_table",
+            schema="required_schema",
+            table="required_table",
         )
         mock_table_data = TableInfo(
             database="required_db",
@@ -376,8 +376,8 @@ class TestHandleDescribeTable:
         # Arrange
         args = DescribeTableArgs(
             database="test_db",
-            schema_name="test_schema",
-            table_name="test_table",
+            schema="test_schema",
+            table="test_table",
         )
         mock_table_data = TableInfo(
             database="test_db",
@@ -446,8 +446,8 @@ class TestHandleDescribeTable:
         # Arrange
         args = DescribeTableArgs(
             database="empty_db",
-            schema_name="empty_schema",
-            table_name="empty_table",
+            schema="empty_schema",
+            table="empty_table",
         )
         mock_table_data = TableInfo(
             database="empty_db",

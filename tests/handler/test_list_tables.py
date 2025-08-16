@@ -27,17 +27,17 @@ class TestListTablesArgs:
 
     def test_valid_args(self) -> None:
         """Test valid arguments."""
-        args = ListTablesArgs(database="test_db", schema_name="test_schema")
+        args = ListTablesArgs(database="test_db", schema="test_schema")
         assert args.database == "test_db"
-        assert args.schema_name == "test_schema"
+        assert args.schema_ == "test_schema"
 
     def test_missing_database(self) -> None:
         """Test missing database argument."""
         with pytest.raises(ValidationError):
-            _ = ListTablesArgs.model_validate({"schema_name": "test_schema"})
+            _ = ListTablesArgs.model_validate({"schema": "test_schema"})
 
-    def test_missing_schema_name(self) -> None:
-        """Test missing schema_name argument."""
+    def test_missing_schema(self) -> None:
+        """Test missing schema argument."""
         with pytest.raises(ValidationError):
             _ = ListTablesArgs.model_validate({"database": "test_db"})
 
@@ -48,15 +48,15 @@ class TestListTablesArgs:
 
     def test_empty_database(self) -> None:
         """Test empty database string."""
-        args = ListTablesArgs(database="", schema_name="test_schema")
+        args = ListTablesArgs(database="", schema="test_schema")
         assert args.database == ""
-        assert args.schema_name == "test_schema"
+        assert args.schema_ == "test_schema"
 
-    def test_empty_schema_name(self) -> None:
-        """Test empty schema_name string."""
-        args = ListTablesArgs(database="test_db", schema_name="")
+    def test_empty_schema(self) -> None:
+        """Test empty schema string."""
+        args = ListTablesArgs(database="test_db", schema="")
         assert args.database == "test_db"
-        assert args.schema_name == ""
+        assert args.schema_ == ""
 
 
 class TestHandleListTables:
@@ -66,7 +66,7 @@ class TestHandleListTables:
     async def test_successful_list_tables(self) -> None:
         """Test successful table listing."""
         # Arrange
-        args = ListTablesArgs(database="test_db", schema_name="test_schema")
+        args = ListTablesArgs(database="test_db", schema="test_schema")
         mock_tables = ["table1", "table2", "table3"]
         effect_handler = MockEffectHandler(tables=mock_tables)
 
@@ -86,7 +86,7 @@ class TestHandleListTables:
     async def test_empty_tables_list(self) -> None:
         """Test when no tables are returned."""
         # Arrange
-        args = ListTablesArgs(database="empty_db", schema_name="empty_schema")
+        args = ListTablesArgs(database="empty_db", schema="empty_schema")
         effect_handler = MockEffectHandler(tables=[])
 
         # Act
@@ -104,7 +104,7 @@ class TestHandleListTables:
     async def test_effect_handler_exception(self) -> None:
         """Test exception handling from effect handler."""
         # Arrange
-        args = ListTablesArgs(database="error_db", schema_name="error_schema")
+        args = ListTablesArgs(database="error_db", schema="error_schema")
         error_message = "Connection failed"
         effect_handler = MockEffectHandler(should_raise=Exception(error_message))
 
@@ -122,7 +122,7 @@ class TestHandleListTables:
     async def test_with_standard_table_names(self) -> None:
         """Test with typical table names."""
         # Arrange
-        args = ListTablesArgs(database="production_db", schema_name="public")
+        args = ListTablesArgs(database="production_db", schema="public")
         effect_handler = MockEffectHandler(tables=["users", "orders", "products"])
 
         # Act
@@ -140,7 +140,7 @@ class TestHandleListTables:
     async def test_single_table(self) -> None:
         """Test with single table result."""
         # Arrange
-        args = ListTablesArgs(database="single_db", schema_name="single_schema")
+        args = ListTablesArgs(database="single_db", schema="single_schema")
         effect_handler = MockEffectHandler(tables=["ONLY_TABLE"])
 
         # Act
@@ -158,7 +158,7 @@ class TestHandleListTables:
     async def test_case_sensitive_table_names(self) -> None:
         """Test with case-sensitive table names."""
         # Arrange
-        args = ListTablesArgs(database="case_db", schema_name="case_schema")
+        args = ListTablesArgs(database="case_db", schema="case_schema")
         effect_handler = MockEffectHandler(tables=["MyTable", "my_table", "MY_TABLE"])
 
         # Act

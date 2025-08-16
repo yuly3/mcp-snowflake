@@ -47,11 +47,11 @@ class SampleTableDataTool(Tool):
                         "type": "string",
                         "description": "Database name containing the table",
                     },
-                    "schema_name": {
+                    "schema": {
                         "type": "string",
                         "description": "Schema name containing the table",
                     },
-                    "table_name": {
+                    "table": {
                         "type": "string",
                         "description": "Name of the table to sample",
                     },
@@ -67,6 +67,6 @@ class SampleTableDataTool(Tool):
                         "description": "List of column names to retrieve (if not specified, all columns will be retrieved)",
                     },
                 },
-                "required": ["database", "schema_name", "table_name"],
+                "required": ["database", "schema", "table"],
             },
         )
