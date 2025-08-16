@@ -7,7 +7,7 @@ from typing import Any, Protocol, TypedDict
 import mcp.types as types
 from pydantic import BaseModel, Field
 
-from cattrs_converter import Jsonable
+from cattrs_converter import Jsonable, JsonImmutableConverter
 from kernel import DataProcessingResult
 
 from ..sql_analyzer import SQLWriteDetector
@@ -79,6 +79,7 @@ def _format_query_response(
 
 
 async def handle_execute_query(
+    json_converter: JsonImmutableConverter,
     args: ExecuteQueryArgs,
     effect_handler: EffectExecuteQuery,
 ) -> list[types.TextContent]:
@@ -134,7 +135,7 @@ async def handle_execute_query(
 
     execution_time_ms = int(stopwatch.elapsed_ms())
 
-    result = DataProcessingResult.from_raw_rows(raw_data)
+    result = DataProcessingResult.from_raw_rows(json_converter, raw_data)
 
     response = _format_query_response(
         result.processed_rows,

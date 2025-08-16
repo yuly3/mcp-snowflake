@@ -4,12 +4,19 @@ from typing import Any
 import mcp.types as types
 from pydantic import ValidationError
 
+from cattrs_converter import JsonImmutableConverter
+
 from ..handler import EffectExecuteQuery, ExecuteQueryArgs, handle_execute_query
 from .base import Tool
 
 
 class ExecuteQueryTool(Tool):
-    def __init__(self, effect_handler: EffectExecuteQuery) -> None:
+    def __init__(
+        self,
+        json_converter: JsonImmutableConverter,
+        effect_handler: EffectExecuteQuery,
+    ) -> None:
+        self.json_converter = json_converter
         self.effect_handler = effect_handler
 
     @property
@@ -29,7 +36,11 @@ class ExecuteQueryTool(Tool):
                     text=f"Error: Invalid arguments for execute_query: {e}",
                 )
             ]
-        return await handle_execute_query(args, self.effect_handler)
+        return await handle_execute_query(
+            self.json_converter,
+            args,
+            self.effect_handler,
+        )
 
     @property
     def definition(self) -> types.Tool:

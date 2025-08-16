@@ -1,30 +1,40 @@
 """Tests for data processing module."""
 
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from cattrs_converter import JsonImmutableConverter
 from kernel import DataProcessingResult, RowProcessingResult
+
+
+@pytest.fixture(scope="module")
+def converter() -> JsonImmutableConverter:
+    return JsonImmutableConverter()
 
 
 class TestProcessRowData:
     """Test process_row_data function."""
 
-    def test_process_row_data_success(self) -> None:
+    def test_process_row_data_success(self, converter: JsonImmutableConverter) -> None:
         """Test processing a single row with serializable data."""
         raw_row = {"id": 1, "name": "Alice", "score": 95.5}
 
-        result = RowProcessingResult.from_raw_row(raw_row)
+        result = RowProcessingResult.from_raw_row(converter, raw_row)
 
         assert result.processed_row == {"id": 1, "name": "Alice", "score": 95.5}
         assert result.warnings == []
 
-    def test_process_row_data_with_unsupported_type(self) -> None:
+    def test_process_row_data_with_unsupported_type(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test processing a single row with unsupported data type."""
         from threading import Lock
 
         raw_row = {"id": 1, "name": "Alice", "lock": Lock()}
 
-        result = RowProcessingResult.from_raw_row(raw_row)
+        result = RowProcessingResult.from_raw_row(converter, raw_row)
 
         assert result.processed_row["id"] == 1
         assert result.processed_row["name"] == "Alice"
@@ -32,11 +42,11 @@ class TestProcessRowData:
         assert len(result.warnings) == 1
         assert "Column 'lock' contains unsupported data type" in result.warnings
 
-    def test_process_row_data_empty(self) -> None:
+    def test_process_row_data_empty(self, converter: JsonImmutableConverter) -> None:
         """Test processing an empty row."""
         raw_row: dict[str, object] = {}
 
-        result = RowProcessingResult.from_raw_row(raw_row)
+        result = RowProcessingResult.from_raw_row(converter, raw_row)
 
         assert result.processed_row == {}
         assert result.warnings == []
@@ -45,35 +55,44 @@ class TestProcessRowData:
 class TestProcessMultipleRowsData:
     """Test process_multiple_rows_data function."""
 
-    def test_process_multiple_rows_data_success(self) -> None:
+    def test_process_multiple_rows_data_success(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test processing multiple rows with serializable data."""
         raw_rows = [
             {"id": 1, "name": "Alice", "score": 95.5},
             {"id": 2, "name": "Bob", "score": 87.0},
         ]
 
-        result = DataProcessingResult.from_raw_rows(raw_rows)
+        result = DataProcessingResult.from_raw_rows(converter, raw_rows)
 
         assert len(result.processed_rows) == 2
         assert result.processed_rows[0] == {"id": 1, "name": "Alice", "score": 95.5}
         assert result.processed_rows[1] == {"id": 2, "name": "Bob", "score": 87.0}
         assert result.warnings == []
 
-    def test_process_multiple_rows_data_empty(self) -> None:
+    def test_process_multiple_rows_data_empty(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test processing empty data."""
-        result = DataProcessingResult.from_raw_rows([])
+        result = DataProcessingResult.from_raw_rows(converter, [])
 
         assert result.processed_rows == []
         assert result.warnings == []
 
-    def test_process_multiple_rows_data_with_warnings(self) -> None:
+    def test_process_multiple_rows_data_with_warnings(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test processing data with unsupported types."""
         raw_rows = [
             {"id": 1, "name": "Alice", "complex_num": 1 + 2j},
             {"id": 2, "name": "Bob", "complex_num": 3 + 4j},
         ]
 
-        result = DataProcessingResult.from_raw_rows(raw_rows)
+        result = DataProcessingResult.from_raw_rows(converter, raw_rows)
 
         assert len(result.processed_rows) == 2
         assert result.processed_rows[0]["id"] == 1
@@ -105,11 +124,12 @@ class TestDataProcessingProperties:
     )
     def test_process_row_data_with_json_compatible_types(
         self,
+        converter: JsonImmutableConverter,
         raw_row: dict[str, object],
     ) -> None:
         """Property test: process_row_data should handle any JSON-compatible data without errors."""
 
-        result = RowProcessingResult.from_raw_row(raw_row)
+        result = RowProcessingResult.from_raw_row(converter, raw_row)
 
         # All keys should be preserved
         assert set(result.processed_row.keys()) == set(raw_row.keys())
@@ -139,11 +159,12 @@ class TestDataProcessingProperties:
     )
     def test_process_multiple_rows_data_properties(
         self,
+        converter: JsonImmutableConverter,
         raw_rows: list[dict[str, object]],
     ) -> None:
         """Property test: process_multiple_rows_data should handle any list of JSON-compatible data."""
 
-        result = DataProcessingResult.from_raw_rows(raw_rows)
+        result = DataProcessingResult.from_raw_rows(converter, raw_rows)
 
         # Row count should be preserved
         assert len(result.processed_rows) == len(raw_rows)
@@ -156,11 +177,12 @@ class TestDataProcessingProperties:
     @given(st.dictionaries(st.text(), st.just(object())))
     def test_process_row_data_with_unsupported_types(
         self,
+        converter: JsonImmutableConverter,
         raw_row: dict[str, object],
     ) -> None:
         """Property test: process_row_data should handle unsupported types gracefully."""
 
-        result = RowProcessingResult.from_raw_row(raw_row)
+        result = RowProcessingResult.from_raw_row(converter, raw_row)
 
         # All keys should be preserved
         assert set(result.processed_row.keys()) == set(raw_row.keys())
@@ -183,10 +205,14 @@ class TestDataProcessingProperties:
             max_size=5,
         ),
     )
-    def test_warning_deduplication(self, raw_rows: list[dict[str, complex]]) -> None:
+    def test_warning_deduplication(
+        self,
+        converter: JsonImmutableConverter,
+        raw_rows: list[dict[str, complex]],
+    ) -> None:
         """Property test: warnings should be deduplicated across multiple rows."""
 
-        result = DataProcessingResult.from_raw_rows(raw_rows)
+        result = DataProcessingResult.from_raw_rows(converter, raw_rows)
 
         # Should have warnings (complex numbers are unsupported)
         assert len(result.warnings) > 0

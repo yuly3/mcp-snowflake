@@ -4,6 +4,7 @@ from typing import Any, ClassVar
 import pytest
 from pydantic import ValidationError
 
+from cattrs_converter import JsonImmutableConverter
 from kernel import DataProcessingResult
 from mcp_snowflake.handler.execute_query import (
     ExecuteQueryArgs,
@@ -12,6 +13,11 @@ from mcp_snowflake.handler.execute_query import (
 )
 
 from ._utils import assert_keys_exact, assert_single_text, parse_json_text
+
+
+@pytest.fixture(scope="module")
+def converter() -> JsonImmutableConverter:
+    return JsonImmutableConverter()
 
 
 class MockEffectHandler:
@@ -78,7 +84,10 @@ class TestExecuteQueryHandler:
     }
 
     @pytest.mark.asyncio
-    async def test_handle_execute_query_success(self) -> None:
+    async def test_handle_execute_query_success(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test successful query execution."""
         # Mock effect handler
         mock_data = [
@@ -91,7 +100,7 @@ class TestExecuteQueryHandler:
         args = ExecuteQueryArgs(sql="SELECT id, name, age FROM users LIMIT 2")
 
         # Execute handler
-        result = await handle_execute_query(args, effect_handler)
+        result = await handle_execute_query(converter, args, effect_handler)
 
         # Verify result using helper
         content = assert_single_text(result)
@@ -109,7 +118,10 @@ class TestExecuteQueryHandler:
         assert query_result["execution_time_ms"] >= 0
 
     @pytest.mark.asyncio
-    async def test_handle_execute_query_write_sql_blocked(self) -> None:
+    async def test_handle_execute_query_write_sql_blocked(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test that write SQL is blocked."""
         # Mock effect handler (should not be called for write operations)
         effect_handler = MockEffectHandler()
@@ -118,7 +130,7 @@ class TestExecuteQueryHandler:
         args = ExecuteQueryArgs(sql="INSERT INTO users (name) VALUES ('Charlie')")
 
         # Execute handler
-        result = await handle_execute_query(args, effect_handler)
+        result = await handle_execute_query(converter, args, effect_handler)
 
         # Verify write operation is blocked
         assert len(result) == 1
@@ -131,7 +143,10 @@ class TestExecuteQueryHandler:
         assert effect_handler.called_with_timeout is None
 
     @pytest.mark.asyncio
-    async def test_handle_execute_query_empty_result(self) -> None:
+    async def test_handle_execute_query_empty_result(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test query execution with empty result."""
         # Mock effect handler with empty result
         effect_handler = MockEffectHandler(query_result=[])
@@ -140,7 +155,7 @@ class TestExecuteQueryHandler:
         args = ExecuteQueryArgs(sql="SELECT * FROM empty_table")
 
         # Execute handler
-        result = await handle_execute_query(args, effect_handler)
+        result = await handle_execute_query(converter, args, effect_handler)
 
         # Verify result using helper
         content = assert_single_text(result)
@@ -152,7 +167,10 @@ class TestExecuteQueryHandler:
         assert query_result["rows"] == []
 
     @pytest.mark.asyncio
-    async def test_handle_execute_query_with_timeout(self) -> None:
+    async def test_handle_execute_query_with_timeout(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test query execution with custom timeout."""
         # Mock effect handler
         effect_handler = MockEffectHandler(query_result=[{"result": "success"}])
@@ -161,7 +179,7 @@ class TestExecuteQueryHandler:
         args = ExecuteQueryArgs(sql="SELECT 1", timeout_seconds=60)
 
         # Execute handler
-        result = await handle_execute_query(args, effect_handler)
+        result = await handle_execute_query(converter, args, effect_handler)
 
         # Verify result
         assert len(result) == 1
@@ -171,7 +189,10 @@ class TestExecuteQueryHandler:
         assert effect_handler.called_with_timeout == timedelta(seconds=60)
 
     @pytest.mark.asyncio
-    async def test_handle_execute_query_execution_error(self) -> None:
+    async def test_handle_execute_query_execution_error(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test error handling during query execution."""
         # Mock effect handler to raise exception
         error_message = "Database connection failed"
@@ -181,7 +202,7 @@ class TestExecuteQueryHandler:
         args = ExecuteQueryArgs(sql="SELECT 1")
 
         # Execute handler
-        result = await handle_execute_query(args, effect_handler)
+        result = await handle_execute_query(converter, args, effect_handler)
 
         # Verify error handling
         assert len(result) == 1
@@ -190,23 +211,29 @@ class TestExecuteQueryHandler:
         assert "Failed to execute query" in content.text
         assert "Database connection failed" in content.text
 
-    def test_process_multiple_rows_data_success(self) -> None:
+    def test_process_multiple_rows_data_success(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test processing of query result data."""
         raw_data = [
             {"id": 1, "name": "Alice", "score": 95.5},
             {"id": 2, "name": "Bob", "score": 87.0},
         ]
 
-        result = DataProcessingResult.from_raw_rows(raw_data)
+        result = DataProcessingResult.from_raw_rows(converter, raw_data)
 
         assert len(result.processed_rows) == 2
         assert result.processed_rows[0] == {"id": 1, "name": "Alice", "score": 95.5}
         assert result.processed_rows[1] == {"id": 2, "name": "Bob", "score": 87.0}
         assert result.warnings == []
 
-    def test_process_multiple_rows_data_empty(self) -> None:
+    def test_process_multiple_rows_data_empty(
+        self,
+        converter: JsonImmutableConverter,
+    ) -> None:
         """Test processing of empty query result."""
-        result = DataProcessingResult.from_raw_rows([])
+        result = DataProcessingResult.from_raw_rows(converter, [])
 
         assert result.processed_rows == []
         assert result.warnings == []

@@ -1,9 +1,9 @@
-from .json import Jsonable, convert_to_json_safe, is_json_compatible_type
-from .json import converter as json_converter
+from ._converter import ImmutableConverter
+from .json import Jsonable, JsonImmutableConverter, is_json_compatible_type
 
 __all__ = [
+    "ImmutableConverter",
+    "JsonImmutableConverter",
     "Jsonable",
-    "convert_to_json_safe",
     "is_json_compatible_type",
-    "json_converter",
 ]

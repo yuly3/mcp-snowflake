@@ -6,7 +6,7 @@ from typing import Any, Protocol, TypedDict
 import mcp.types as types
 from pydantic import BaseModel, Field
 
-from cattrs_converter import Jsonable
+from cattrs_converter import Jsonable, JsonImmutableConverter
 from kernel import DataProcessingResult
 
 logger = logging.getLogger(__name__)
@@ -96,6 +96,7 @@ def _format_response(
 
 
 async def handle_sample_table_data(
+    json_converter: JsonImmutableConverter,
     args: SampleTableDataArgs,
     effect_handler: EffectSampleTableData,
 ) -> list[types.TextContent]:
@@ -104,6 +105,8 @@ async def handle_sample_table_data(
 
     Parameters
     ----------
+    json_converter : JsonImmutableConverter
+        JSON converter for structuring and unstructuring data
     args : SampleTableDataArgs
         Arguments for the sample table data operation
     effect_handler : EffectSampleTableData
@@ -132,7 +135,7 @@ async def handle_sample_table_data(
             )
         ]
 
-    result = DataProcessingResult.from_raw_rows(raw_data)
+    result = DataProcessingResult.from_raw_rows(json_converter, raw_data)
 
     response = _format_response(
         result.processed_rows,

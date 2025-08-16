@@ -9,7 +9,7 @@ from typing import Any
 
 import attrs
 
-from cattrs_converter import Jsonable, is_json_compatible_type, json_converter
+from cattrs_converter import Jsonable, JsonImmutableConverter
 
 
 @attrs.define(frozen=True)
@@ -31,17 +31,20 @@ class RowProcessingResult:
     warnings: list[str]
 
     @classmethod
-    def from_raw_row(cls, raw_row: dict[str, Any]) -> "RowProcessingResult":
+    def from_raw_row(
+        cls, converter: JsonImmutableConverter, raw_row: dict[str, Any]
+    ) -> "RowProcessingResult":
         processed_row: dict[str, Jsonable] = {}
         warnings: list[str] = []
 
         for column, value in raw_row.items():
-            processed_value = json_converter.unstructure(value)
-            if is_json_compatible_type(processed_value):
-                processed_row[column] = processed_value
-            else:
+            try:
+                processed_value = converter.unstructure(value)
+            except ValueError:
                 processed_row[column] = f"<unsupported_type: {type(value).__name__}>"
                 warnings.append(f"Column '{column}' contains unsupported data type")
+            else:
+                processed_row[column] = processed_value
 
         return cls(processed_row=processed_row, warnings=warnings)
 
@@ -66,7 +69,11 @@ class DataProcessingResult:
     warnings: list[str]
 
     @classmethod
-    def from_raw_rows(cls, raw_rows: list[dict[str, Any]]) -> "DataProcessingResult":
+    def from_raw_rows(
+        cls,
+        converter: JsonImmutableConverter,
+        raw_rows: list[dict[str, Any]],
+    ) -> "DataProcessingResult":
         if not raw_rows:
             return cls(processed_rows=[], warnings=[])
 
@@ -74,7 +81,7 @@ class DataProcessingResult:
         warnings_set: set[str] = set()
 
         for row in raw_rows:
-            result = RowProcessingResult.from_raw_row(row)
+            result = RowProcessingResult.from_raw_row(converter, row)
             processed_rows.append(result.processed_row)
             warnings_set.update(result.warnings)
 

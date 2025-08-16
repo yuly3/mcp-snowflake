@@ -4,6 +4,8 @@ from typing import Any
 import mcp.types as types
 from pydantic import ValidationError
 
+from cattrs_converter import JsonImmutableConverter
+
 from ..handler import (
     EffectSampleTableData,
     SampleTableDataArgs,
@@ -13,7 +15,12 @@ from .base import Tool
 
 
 class SampleTableDataTool(Tool):
-    def __init__(self, effect_handler: EffectSampleTableData) -> None:
+    def __init__(
+        self,
+        json_converter: JsonImmutableConverter,
+        effect_handler: EffectSampleTableData,
+    ) -> None:
+        self.json_converter = json_converter
         self.effect_handler = effect_handler
 
     @property
@@ -33,7 +40,11 @@ class SampleTableDataTool(Tool):
                     text=f"Error: Invalid arguments for sample_table_data: {e}",
                 )
             ]
-        return await handle_sample_table_data(args, self.effect_handler)
+        return await handle_sample_table_data(
+            self.json_converter,
+            args,
+            self.effect_handler,
+        )
 
     @property
     def definition(self) -> types.Tool:

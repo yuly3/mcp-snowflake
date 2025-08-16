@@ -18,6 +18,8 @@ from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 from pydantic_settings import SettingsConfigDict
 
+from cattrs_converter import JsonImmutableConverter
+
 from .adapter import (
     AnalyzeTableStatisticsEffectHandler,
     DescribeTableEffectHandler,
@@ -54,6 +56,7 @@ class SnowflakeServerContext:
 
     def __init__(self) -> None:
         self.snowflake_client: SnowflakeClient | None = None
+        self.json_converter = JsonImmutableConverter()
         self.tools: Mapping[str, Tool] = {}
 
     def build_tools(self) -> None:
@@ -65,11 +68,17 @@ class SnowflakeServerContext:
                 AnalyzeTableStatisticsEffectHandler(self.snowflake_client)
             ),
             DescribeTableTool(DescribeTableEffectHandler(self.snowflake_client)),
-            ExecuteQueryTool(ExecuteQueryEffectHandler(self.snowflake_client)),
+            ExecuteQueryTool(
+                self.json_converter,
+                ExecuteQueryEffectHandler(self.snowflake_client),
+            ),
             ListSchemasTool(ListSchemasEffectHandler(self.snowflake_client)),
             ListTablesTool(ListTablesEffectHandler(self.snowflake_client)),
             ListViewsTool(ListViewsEffectHandler(self.snowflake_client)),
-            SampleTableDataTool(SampleTableDataEffectHandler(self.snowflake_client)),
+            SampleTableDataTool(
+                self.json_converter,
+                SampleTableDataEffectHandler(self.snowflake_client),
+            ),
         ]
         self.tools = {tool.name: tool for tool in tools}
 
