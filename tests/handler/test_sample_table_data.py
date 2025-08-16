@@ -15,11 +15,6 @@ from mcp_snowflake.handler.sample_table_data import (
 from ._utils import assert_single_text, parse_json_text
 
 
-@pytest.fixture(scope="module")
-def converter() -> JsonImmutableConverter:
-    return JsonImmutableConverter()
-
-
 class MockEffectSampleTableData:
     """Mock implementation of EffectSampleTableData protocol."""
 
@@ -133,20 +128,23 @@ class TestProcessSampleData:
     )
     def test_data_processing_simple_variants(
         self,
-        converter: JsonImmutableConverter,
+        json_converter: JsonImmutableConverter,
         case_id: str,
         raw_data: list[dict[str, Any]],
         expected: dict[str, Any],
     ) -> None:
         """Test processing simple data variants (empty and serializable)."""
-        result = DataProcessingResult.from_raw_rows(converter, raw_data)
+        result = DataProcessingResult.from_raw_rows(json_converter, raw_data)
 
         assert result.processed_rows == expected["processed_rows"], (
             f"[{case_id}] Processed rows mismatch"
         )
         assert result.warnings == expected["warnings"], f"[{case_id}] Warnings mismatch"
 
-    def test_non_serializable_data(self, converter: JsonImmutableConverter) -> None:
+    def test_non_serializable_data(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
         """Test processing data with non-JSON serializable types."""
         from threading import Lock
 
@@ -154,7 +152,7 @@ class TestProcessSampleData:
             {"col1": "value1", "col2": 1 + 2j},  # complex number
             {"col1": "value2", "col2": Lock()},  # lock object
         ]
-        result = DataProcessingResult.from_raw_rows(converter, raw_data)
+        result = DataProcessingResult.from_raw_rows(json_converter, raw_data)
 
         assert len(result.processed_rows) == 2
         assert result.processed_rows[0]["col1"] == "value1"
@@ -165,13 +163,13 @@ class TestProcessSampleData:
         assert len(result.warnings) == 1
         assert "Column 'col2' contains unsupported data type" in result.warnings
 
-    def test_mixed_data(self, converter: JsonImmutableConverter) -> None:
+    def test_mixed_data(self, json_converter: JsonImmutableConverter) -> None:
         """Test processing data with mixed serializable and non-serializable types."""
         raw_data = [
             {"col1": "value1", "col2": 123, "col3": 1 + 2j},
             {"col1": "value2", "col2": 456, "col3": 3 + 4j},
         ]
-        result = DataProcessingResult.from_raw_rows(converter, raw_data)
+        result = DataProcessingResult.from_raw_rows(json_converter, raw_data)
 
         assert len(result.processed_rows) == 2
         assert result.processed_rows[0]["col1"] == "value1"
@@ -331,7 +329,7 @@ class TestHandleSampleTableData:
     @pytest.mark.asyncio
     async def test_handle_sample_table_data_success_variants(
         self,
-        converter: JsonImmutableConverter,
+        json_converter: JsonImmutableConverter,
         case_id: str,
         sample_data: list[dict[str, Any]],
         columns_arg: list[str] | None,
@@ -350,7 +348,7 @@ class TestHandleSampleTableData:
         )
 
         # Act
-        result = await handle_sample_table_data(converter, args, mock_effect)
+        result = await handle_sample_table_data(json_converter, args, mock_effect)
 
         # Assert using helpers
         content = assert_single_text(result)
@@ -403,7 +401,7 @@ class TestHandleSampleTableData:
             )
 
     @pytest.mark.asyncio
-    async def test_error_handling(self, converter: JsonImmutableConverter) -> None:
+    async def test_error_handling(self, json_converter: JsonImmutableConverter) -> None:
         """Test error handling when effect handler raises exception."""
         mock_effect = MockEffectSampleTableData(
             should_raise=Exception("Database error"),
@@ -415,7 +413,7 @@ class TestHandleSampleTableData:
             table=Table("test_table"),
         )
 
-        result = await handle_sample_table_data(converter, args, mock_effect)
+        result = await handle_sample_table_data(json_converter, args, mock_effect)
 
         content = assert_single_text(result)
         assert "Error: Failed to sample table data: Database error" in content.text

@@ -2,11 +2,12 @@
 
 from typing import TYPE_CHECKING, cast
 
-from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import TableColumn
 from mcp_snowflake.handler.analyze_table_statistics._result_parser import (
     parse_statistics_result,
 )
+
+from ._utils import convert_to_statistics_support_columns
 
 if TYPE_CHECKING:
     from mcp_snowflake.handler.analyze_table_statistics._types import (
@@ -15,18 +16,6 @@ if TYPE_CHECKING:
         NumericStatsDict,
         StringStatsDict,
     )
-
-
-def _convert_to_statistics_support_columns(
-    columns: list[TableColumn],
-) -> list[StatisticsSupportColumn]:
-    """Convert TableColumns to StatisticsSupportColumns for testing."""
-    result = []
-    for col in columns:
-        stats_col = StatisticsSupportColumn.from_table_column(col)
-        if stats_col is not None:
-            result.append(stats_col)
-    return result
 
 
 class TestParseStatisticsResult:
@@ -58,7 +47,7 @@ class TestParseStatisticsResult:
 
         column_stats = parse_statistics_result(
             result_row,
-            _convert_to_statistics_support_columns(columns_info),
+            convert_to_statistics_support_columns(columns_info),
         )
 
         assert len(column_stats) == 1
@@ -98,7 +87,7 @@ class TestParseStatisticsResult:
 
         column_stats = parse_statistics_result(
             result_row,
-            _convert_to_statistics_support_columns(columns_info),
+            convert_to_statistics_support_columns(columns_info),
         )
 
         assert len(column_stats) == 1
@@ -139,7 +128,7 @@ class TestParseStatisticsResult:
 
         column_stats = parse_statistics_result(
             result_row,
-            _convert_to_statistics_support_columns(columns_info),
+            convert_to_statistics_support_columns(columns_info),
         )
 
         assert len(column_stats) == 1
@@ -206,7 +195,7 @@ class TestParseStatisticsResult:
 
         column_stats = parse_statistics_result(
             result_row,
-            _convert_to_statistics_support_columns(columns_info),
+            convert_to_statistics_support_columns(columns_info),
         )
 
         assert len(column_stats) == 3
@@ -252,7 +241,7 @@ class TestParseStatisticsResult:
 
         column_stats = parse_statistics_result(
             result_row,
-            _convert_to_statistics_support_columns(columns_info),
+            convert_to_statistics_support_columns(columns_info),
         )
 
         price_stats = cast("NumericStatsDict", column_stats["price"])
@@ -286,7 +275,7 @@ class TestParseStatisticsResult:
 
         column_stats = parse_statistics_result(
             result_row,
-            _convert_to_statistics_support_columns(columns_info),
+            convert_to_statistics_support_columns(columns_info),
         )
 
         status_stats = cast("StringStatsDict", column_stats["status"])
@@ -315,7 +304,7 @@ class TestParseStatisticsResult:
 
         column_stats = parse_statistics_result(
             result_row,
-            _convert_to_statistics_support_columns(columns_info),
+            convert_to_statistics_support_columns(columns_info),
         )
 
         status_stats = cast("StringStatsDict", column_stats["status"])
@@ -346,7 +335,7 @@ class TestParseStatisticsResult:
 
         column_stats = parse_statistics_result(
             result_row,
-            _convert_to_statistics_support_columns(columns_info),
+            convert_to_statistics_support_columns(columns_info),
         )
 
         assert len(column_stats) == 1
@@ -387,7 +376,7 @@ class TestParseStatisticsResult:
 
         column_stats = parse_statistics_result(
             result_row,
-            _convert_to_statistics_support_columns(columns_info),
+            convert_to_statistics_support_columns(columns_info),
         )
 
         boolean_stats = cast("BooleanStatsDict", column_stats["is_active"])

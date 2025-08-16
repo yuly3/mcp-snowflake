@@ -1,7 +1,6 @@
 import json
 from typing import TYPE_CHECKING, cast
 
-from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import DataBase, Schema, Table, TableColumn
 from mcp_snowflake.handler.analyze_table_statistics._response_builder import (
     build_response,
@@ -10,20 +9,10 @@ from mcp_snowflake.handler.analyze_table_statistics.models import (
     AnalyzeTableStatisticsArgs,
 )
 
+from .._utils import convert_to_statistics_support_columns
+
 if TYPE_CHECKING:
     from mcp import types
-
-
-def _convert_to_statistics_support_columns(
-    columns: list[TableColumn],
-) -> list[StatisticsSupportColumn]:
-    """Convert TableColumns to StatisticsSupportColumns for testing."""
-    result = []
-    for col in columns:
-        stats_col = StatisticsSupportColumn.from_table_column(col)
-        if stats_col is not None:
-            result.append(stats_col)
-    return result
 
 
 class TestBuildResponse:
@@ -62,7 +51,7 @@ class TestBuildResponse:
         response = build_response(
             args,
             result_row,
-            _convert_to_statistics_support_columns(columns_to_analyze),
+            convert_to_statistics_support_columns(columns_to_analyze),
         )
 
         assert len(response) == 2
@@ -156,7 +145,7 @@ class TestBuildResponse:
         response = build_response(
             args,
             result_row,
-            _convert_to_statistics_support_columns(columns_to_analyze),
+            convert_to_statistics_support_columns(columns_to_analyze),
         )
 
         # Check summary text
@@ -210,7 +199,7 @@ class TestBuildResponse:
         response = build_response(
             args,
             result_row,
-            _convert_to_statistics_support_columns(columns_to_analyze),
+            convert_to_statistics_support_columns(columns_to_analyze),
         )
 
         # Check summary reflects custom database/schema/table
@@ -259,7 +248,7 @@ class TestBuildResponse:
         response = build_response(
             args,
             result_row,
-            _convert_to_statistics_support_columns(columns_to_analyze),
+            convert_to_statistics_support_columns(columns_to_analyze),
         )
 
         # Check that large numbers are formatted with commas
@@ -299,7 +288,7 @@ class TestBuildResponse:
         response = build_response(
             args,
             result_row,
-            _convert_to_statistics_support_columns(columns_to_analyze),
+            convert_to_statistics_support_columns(columns_to_analyze),
         )
 
         # Check JSON is properly formatted (indented)
