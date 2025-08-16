@@ -110,7 +110,7 @@ Retrieve a list of tables from a specified database and schema.
 
 **Parameters:**
 - `database` (string, required): Database name to retrieve tables from
-- `schema_name` (string, required): Schema name to retrieve tables from
+- `schema` (string, required): Schema name to retrieve tables from
 
 **Example:**
 ```json
@@ -118,7 +118,7 @@ Retrieve a list of tables from a specified database and schema.
   "name": "list_tables",
   "arguments": {
     "database": "MY_DATABASE",
-    "schema_name": "PUBLIC"
+    "schema": "PUBLIC"
   }
 }
 ```
@@ -128,7 +128,7 @@ Retrieve a list of views from a specified database and schema.
 
 **Parameters:**
 - `database` (string, required): Database name to retrieve views from
-- `schema_name` (string, required): Schema name to retrieve views from
+- `schema` (string, required): Schema name to retrieve views from
 
 **Example:**
 ```json
@@ -136,7 +136,7 @@ Retrieve a list of views from a specified database and schema.
   "name": "list_views",
   "arguments": {
     "database": "MY_DATABASE",
-    "schema_name": "PUBLIC"
+    "schema": "PUBLIC"
   }
 }
 ```
@@ -146,8 +146,8 @@ Retrieve detailed structure information (columns, data types, etc.) for a specif
 
 **Parameters:**
 - `database` (string, required): Database name containing the table
-- `schema_name` (string, required): Schema name containing the table
-- `table_name` (string, required): Name of the table to describe
+- `schema` (string, required): Schema name containing the table
+- `table` (string, required): Name of the table to describe
 
 **Example:**
 ```json
@@ -155,8 +155,8 @@ Retrieve detailed structure information (columns, data types, etc.) for a specif
   "name": "describe_table",
   "arguments": {
     "database": "MY_DATABASE",
-    "schema_name": "PUBLIC",
-    "table_name": "CUSTOMERS"
+    "schema": "PUBLIC",
+    "table": "CUSTOMERS"
   }
 }
 ```
@@ -221,8 +221,8 @@ Retrieve sample data from a specified table using Snowflake's SAMPLE ROW clause 
 
 **Parameters:**
 - `database` (string, required): Database name containing the table
-- `schema_name` (string, required): Schema name containing the table
-- `table_name` (string, required): Name of the table to sample
+- `schema` (string, required): Schema name containing the table
+- `table` (string, required): Name of the table to sample
 - `sample_size` (integer, optional): Number of sample rows to retrieve (default: 10, minimum: 1)
 - `columns` (array of strings, optional): List of column names to retrieve (if not specified, all columns will be retrieved)
 
@@ -232,8 +232,8 @@ Retrieve sample data from a specified table using Snowflake's SAMPLE ROW clause 
   "name": "sample_table_data",
   "arguments": {
     "database": "MY_DATABASE",
-    "schema_name": "PUBLIC",
-    "table_name": "ORDERS",
+    "schema": "PUBLIC",
+    "table": "ORDERS",
     "sample_size": 5,
     "columns": ["order_id", "customer_id", "total"]
   }
@@ -245,8 +245,8 @@ Analyze table statistics using Snowflake's high-performance approximation functi
 
 **Parameters:**
 - `database` (string, required): Database name containing the table
-- `schema_name` (string, required): Schema name containing the table
-- `table_name` (string, required): Name of the table to analyze
+- `schema` (string, required): Schema name containing the table
+- `table` (string, required): Name of the table to analyze
 - `columns` (array of strings, optional): List of column names to analyze (if not specified, all columns will be analyzed)
 - `top_k_limit` (integer, optional): Number of top values to retrieve for string columns (default: 10, max: 100)
 
@@ -256,8 +256,8 @@ Analyze table statistics using Snowflake's high-performance approximation functi
   "name": "analyze_table_statistics",
   "arguments": {
     "database": "MY_DATABASE",
-    "schema_name": "PUBLIC",
-    "table_name": "SALES_DATA",
+    "schema": "PUBLIC",
+    "table": "SALES_DATA",
     "columns": ["amount", "region", "order_date"],
     "top_k_limit": 5
   }
