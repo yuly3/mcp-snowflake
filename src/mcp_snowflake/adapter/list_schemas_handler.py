@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 
+from ..kernel.sql_utils import quote_ident
 from ..snowflake_client import SnowflakeClient
 
 
@@ -14,7 +15,7 @@ class ListSchemasEffectHandler:
 
     async def list_schemas(self, database: str) -> list[str]:
         """Get list of schemas in a database."""
-        query = f"SHOW SCHEMAS IN DATABASE {database}"
+        query = f"SHOW SCHEMAS IN DATABASE {quote_ident(database)}"
 
         results = await self.client.execute_query(query, timedelta(seconds=10))
 

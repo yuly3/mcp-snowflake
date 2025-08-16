@@ -2,6 +2,7 @@
 
 from datetime import timedelta
 
+from ..kernel.sql_utils import fully_qualified
 from ..kernel.table_metadata import TableColumn, TableInfo
 from ..snowflake_client import SnowflakeClient
 
@@ -20,7 +21,7 @@ class DescribeTableEffectHandler:
         table_name: str,
     ) -> TableInfo:
         """Get table structure information."""
-        query = f"DESCRIBE TABLE {database}.{schema}.{table_name}"
+        query = f"DESCRIBE TABLE {fully_qualified(database, schema, table_name)}"
 
         try:
             results = await self.client.execute_query(query, timedelta(seconds=10))
