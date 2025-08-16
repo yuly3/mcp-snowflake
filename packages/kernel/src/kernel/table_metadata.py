@@ -9,6 +9,7 @@ from .data_types import SnowflakeDataType, StatisticsSupportDataType
 DataBase = NewType("DataBase", str)
 Schema = NewType("Schema", str)
 Table = NewType("Table", str)
+View = NewType("View", str)
 
 
 def _to_snowflake_data_type(value: str | SnowflakeDataType) -> SnowflakeDataType:

@@ -4,6 +4,8 @@ import logging
 from datetime import timedelta
 from typing import Any
 
+from kernel.table_metadata import DataBase, Schema, Table
+
 from ..snowflake_client import SnowflakeClient
 
 logger = logging.getLogger(__name__)
@@ -18,9 +20,9 @@ class SampleTableDataEffectHandler:
 
     async def sample_table_data(
         self,
-        database: str,
-        schema: str,
-        table: str,
+        database: DataBase,
+        schema: Schema,
+        table: Table,
         sample_size: int,
         columns: list[str],
     ) -> list[dict[str, Any]]:
@@ -28,11 +30,11 @@ class SampleTableDataEffectHandler:
 
         Parameters
         ----------
-        database : str
+        database : DataBase
             Database name
-        schema : str
+        schema : Schema
             Schema name
-        table : str
+        table : Table
             Table name
         sample_size : int
             Number of sample rows to retrieve

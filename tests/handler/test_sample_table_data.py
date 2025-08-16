@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from cattrs_converter import JsonImmutableConverter
 from kernel import DataProcessingResult
+from kernel.table_metadata import DataBase, Schema, Table
 from mcp_snowflake.handler.sample_table_data import (
     SampleTableDataArgs,
     _format_response,
@@ -32,9 +33,9 @@ class MockEffectSampleTableData:
 
     async def sample_table_data(
         self,
-        database: str,  # noqa: ARG002
-        schema: str,  # noqa: ARG002
-        table: str,  # noqa: ARG002
+        database: DataBase,  # noqa: ARG002
+        schema: Schema,  # noqa: ARG002
+        table: Table,  # noqa: ARG002
         sample_size: int,  # noqa: ARG002
         columns: list[str],  # noqa: ARG002
     ) -> list[dict[str, Any]]:
@@ -49,9 +50,9 @@ class TestSampleTableDataArgs:
     def test_valid_args(self) -> None:
         """Test valid arguments."""
         args = SampleTableDataArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
         assert args.database == "test_db"
         assert args.schema_ == "test_schema"
@@ -62,9 +63,9 @@ class TestSampleTableDataArgs:
     def test_valid_args_all_fields(self) -> None:
         """Test valid arguments with all fields specified."""
         args = SampleTableDataArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
             sample_size=20,
             columns=["col1", "col2"],
         )
@@ -238,9 +239,9 @@ class TestFormatResponse:
         response = _format_response(
             processed_rows,
             warnings,
-            "test_db",
-            "test_schema",
-            "test_table",
+            DataBase("test_db"),
+            Schema("test_schema"),
+            Table("test_table"),
             sample_size,
         )
 
@@ -341,9 +342,9 @@ class TestHandleSampleTableData:
         # Arrange
         mock_effect = MockEffectSampleTableData(sample_data=sample_data)
         args = SampleTableDataArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
             sample_size=sample_size,
             columns=columns_arg or [],
         )
@@ -409,9 +410,9 @@ class TestHandleSampleTableData:
         )
 
         args = SampleTableDataArgs(
-            database="test_db",
-            schema="test_schema",
-            table="test_table",
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
         )
 
         result = await handle_sample_table_data(converter, args, mock_effect)

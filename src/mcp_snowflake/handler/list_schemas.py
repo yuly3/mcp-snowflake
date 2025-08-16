@@ -5,15 +5,17 @@ from typing import Protocol
 import mcp.types as types
 from pydantic import BaseModel
 
+from kernel.table_metadata import DataBase, Schema
+
 logger = logging.getLogger(__name__)
 
 
 class ListSchemasArgs(BaseModel):
-    database: str
+    database: DataBase
 
 
 class EffectListSchemas(Protocol):
-    async def list_schemas(self, database: str) -> list[str]: ...
+    async def list_schemas(self, database: DataBase) -> list[Schema]: ...
 
 
 async def handle_list_schemas(

@@ -4,16 +4,18 @@ from typing import Protocol
 import mcp.types as types
 from pydantic import BaseModel, Field
 
+from kernel.table_metadata import DataBase, Schema, Table
+
 logger = logging.getLogger(__name__)
 
 
 class ListTablesArgs(BaseModel):
-    database: str
-    schema_: str = Field(alias="schema")
+    database: DataBase
+    schema_: Schema = Field(alias="schema")
 
 
 class EffectListTables(Protocol):
-    async def list_tables(self, database: str, schema: str) -> list[str]: ...
+    async def list_tables(self, database: DataBase, schema: Schema) -> list[Table]: ...
 
 
 async def handle_list_tables(

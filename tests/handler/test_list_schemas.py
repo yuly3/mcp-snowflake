@@ -1,6 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
+from kernel.table_metadata import DataBase, Schema
 from mcp_snowflake.handler import ListSchemasArgs, handle_list_schemas
 
 from ._utils import assert_list_output, assert_single_text
@@ -11,13 +12,13 @@ class MockEffectHandler:
 
     def __init__(
         self,
-        schemas: list[str] | None = None,
+        schemas: list[Schema] | None = None,
         should_raise: Exception | None = None,
     ) -> None:
         self.schemas = schemas or []
         self.should_raise = should_raise
 
-    async def list_schemas(self, database: str) -> list[str]:  # noqa: ARG002
+    async def list_schemas(self, database: DataBase) -> list[Schema]:  # noqa: ARG002
         if self.should_raise:
             raise self.should_raise
         return self.schemas
@@ -28,7 +29,7 @@ class TestListSchemasArgs:
 
     def test_valid_args(self) -> None:
         """Test valid arguments."""
-        args = ListSchemasArgs(database="test_db")
+        args = ListSchemasArgs(database=DataBase("test_db"))
         assert args.database == "test_db"
 
     def test_missing_database(self) -> None:
@@ -38,8 +39,8 @@ class TestListSchemasArgs:
 
     def test_empty_database(self) -> None:
         """Test empty database string."""
-        args = ListSchemasArgs(database="")
-        assert args.database == ""
+        args = ListSchemasArgs(database=DataBase(""))
+        assert args.database == DataBase("")
 
 
 class TestHandleListSchemas:
@@ -49,8 +50,8 @@ class TestHandleListSchemas:
     async def test_successful_list_schemas(self) -> None:
         """Test successful schema listing."""
         # Arrange
-        args = ListSchemasArgs(database="test_db")
-        mock_schemas = ["schema1", "schema2", "schema3"]
+        args = ListSchemasArgs(database=DataBase("test_db"))
+        mock_schemas = [Schema("schema1"), Schema("schema2"), Schema("schema3")]
         effect_handler = MockEffectHandler(schemas=mock_schemas)
 
         # Act
@@ -68,7 +69,7 @@ class TestHandleListSchemas:
     async def test_empty_schemas_list(self) -> None:
         """Test when no schemas are returned."""
         # Arrange
-        args = ListSchemasArgs(database="empty_db")
+        args = ListSchemasArgs(database=DataBase("empty_db"))
         effect_handler = MockEffectHandler(schemas=[])
 
         # Act
@@ -84,7 +85,7 @@ class TestHandleListSchemas:
     async def test_effect_handler_exception(self) -> None:
         """Test exception handling from effect handler."""
         # Arrange
-        args = ListSchemasArgs(database="error_db")
+        args = ListSchemasArgs(database=DataBase("error_db"))
         error_message = "Connection failed"
         effect_handler = MockEffectHandler(should_raise=Exception(error_message))
 
@@ -100,8 +101,10 @@ class TestHandleListSchemas:
     async def test_with_standard_snowflake_schemas(self) -> None:
         """Test with typical Snowflake schema names."""
         # Arrange
-        args = ListSchemasArgs(database="snowflake_db")
-        effect_handler = MockEffectHandler(schemas=["PUBLIC", "INFORMATION_SCHEMA"])
+        args = ListSchemasArgs(database=DataBase("snowflake_db"))
+        effect_handler = MockEffectHandler(
+            schemas=[Schema("PUBLIC"), Schema("INFORMATION_SCHEMA")],
+        )
 
         # Act
         result = await handle_list_schemas(args, effect_handler)
@@ -118,8 +121,8 @@ class TestHandleListSchemas:
     async def test_single_schema(self) -> None:
         """Test with single schema result."""
         # Arrange
-        args = ListSchemasArgs(database="single_db")
-        effect_handler = MockEffectHandler(schemas=["ONLY_SCHEMA"])
+        args = ListSchemasArgs(database=DataBase("single_db"))
+        effect_handler = MockEffectHandler(schemas=[Schema("ONLY_SCHEMA")])
 
         # Act
         result = await handle_list_schemas(args, effect_handler)

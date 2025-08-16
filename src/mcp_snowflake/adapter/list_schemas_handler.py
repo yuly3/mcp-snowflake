@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 from kernel.sql_utils import quote_ident
+from kernel.table_metadata import DataBase, Schema
 
 from ..snowflake_client import SnowflakeClient
 
@@ -14,21 +15,21 @@ class ListSchemasEffectHandler:
         """Initialize with SnowflakeClient."""
         self.client = client
 
-    async def list_schemas(self, database: str) -> list[str]:
+    async def list_schemas(self, database: DataBase) -> list[Schema]:
         """Get list of schemas in a database."""
         query = f"SHOW SCHEMAS IN DATABASE {quote_ident(database)}"
 
         results = await self.client.execute_query(query, timedelta(seconds=10))
 
-        schemas: list[str] = []
+        schemas: list[Schema] = []
         for row in results:
             # The schema name is typically in the 'name' field
             if "name" in row:
-                schemas.append(row["name"])
+                schemas.append(Schema(row["name"]))
             elif "schema_name" in row:
-                schemas.append(row["schema_name"])
+                schemas.append(Schema(row["schema_name"]))
             else:
                 # If we can't find a standard field, take the first value
-                schemas.append(next(iter(row.values())))
+                schemas.append(Schema(next(iter(row.values()))))
 
         return sorted(schemas)

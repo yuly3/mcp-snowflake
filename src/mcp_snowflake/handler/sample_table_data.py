@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from cattrs_converter import Jsonable, JsonImmutableConverter
 from kernel import DataProcessingResult
+from kernel.table_metadata import DataBase, Schema, Table
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +16,9 @@ logger = logging.getLogger(__name__)
 class SampleDataDict(TypedDict):
     """TypedDict for sample data in JSON response."""
 
-    database: str
-    schema: str
-    table: str
+    database: DataBase
+    schema: Schema
+    table: Table
     sample_size: int
     actual_rows: int
     columns: list[str]
@@ -32,9 +33,9 @@ class SampleTableDataJsonResponse(TypedDict):
 
 
 class SampleTableDataArgs(BaseModel):
-    database: str
-    schema_: str = Field(alias="schema")
-    table_: str = Field(alias="table")
+    database: DataBase
+    schema_: Schema = Field(alias="schema")
+    table_: Table = Field(alias="table")
     sample_size: int = Field(default=10, ge=1)
     columns: list[str] = Field(default_factory=list)
 
@@ -42,9 +43,9 @@ class SampleTableDataArgs(BaseModel):
 class EffectSampleTableData(Protocol):
     async def sample_table_data(
         self,
-        database: str,
-        schema: str,
-        table: str,
+        database: DataBase,
+        schema: Schema,
+        table: Table,
         sample_size: int,
         columns: list[str],
     ) -> list[dict[str, Any]]: ...
@@ -53,9 +54,9 @@ class EffectSampleTableData(Protocol):
 def _format_response(
     processed_rows: Sequence[Mapping[str, Jsonable]],
     warnings: list[str],
-    database: str,
-    schema: str,
-    table: str,
+    database: DataBase,
+    schema: Schema,
+    table: Table,
     sample_size: int,
 ) -> SampleTableDataJsonResponse:
     """
