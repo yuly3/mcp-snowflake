@@ -14,7 +14,8 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, Field
 
-from ...kernel.statistics_support_column import StatisticsSupportColumn
+from kernel.statistics_support_column import StatisticsSupportColumn
+
 from ..describe_table import EffectDescribeTable
 
 

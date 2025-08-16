@@ -5,8 +5,8 @@ import mcp.types as types
 import pytest
 from pydantic import ValidationError
 
+from kernel.table_metadata import TableColumn, TableInfo
 from mcp_snowflake.handler import DescribeTableArgs, handle_describe_table
-from mcp_snowflake.kernel.table_metadata import TableColumn, TableInfo
 
 
 class MockEffectHandler:

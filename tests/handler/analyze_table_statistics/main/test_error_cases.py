@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
+from kernel.table_metadata import TableInfo
 from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
     handle_analyze_table_statistics,
 )
-from mcp_snowflake.kernel.table_metadata import TableInfo
 
 from .test_fixtures import MockEffectHandler, create_test_table_info
 

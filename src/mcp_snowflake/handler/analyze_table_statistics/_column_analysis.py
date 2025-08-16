@@ -4,8 +4,8 @@ from collections.abc import Sequence
 
 import mcp.types as types
 
-from ...kernel.statistics_support_column import StatisticsSupportColumn
-from ...kernel.table_metadata import TableColumn
+from kernel.statistics_support_column import StatisticsSupportColumn
+from kernel.table_metadata import TableColumn
 
 # Type alias for unsupported column information (column, reason)
 UnsupportedInfo = tuple[TableColumn, str]

@@ -2,7 +2,8 @@
 
 from datetime import timedelta
 
-from ..kernel.sql_utils import quote_ident
+from kernel.sql_utils import quote_ident
+
 from ..snowflake_client import SnowflakeClient
 
 

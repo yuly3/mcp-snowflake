@@ -1,14 +1,14 @@
 import json
 from typing import TYPE_CHECKING, cast
 
+from kernel.statistics_support_column import StatisticsSupportColumn
+from kernel.table_metadata import TableColumn
 from mcp_snowflake.handler.analyze_table_statistics._response_builder import (
     build_response,
 )
 from mcp_snowflake.handler.analyze_table_statistics.models import (
     AnalyzeTableStatisticsArgs,
 )
-from mcp_snowflake.kernel.statistics_support_column import StatisticsSupportColumn
-from mcp_snowflake.kernel.table_metadata import TableColumn
 
 if TYPE_CHECKING:
     from mcp import types

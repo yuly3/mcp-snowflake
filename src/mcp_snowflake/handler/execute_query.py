@@ -8,8 +8,8 @@ import mcp.types as types
 from pydantic import BaseModel, Field
 
 from cattrs_converter import Jsonable
+from kernel import DataProcessingResult
 
-from ..kernel import DataProcessingResult
 from ..sql_analyzer import SQLWriteDetector
 from ..stopwatch import StopWatch
 

@@ -152,4 +152,5 @@ docstring-code-line-length = "dynamic"
 known-first-party = [
     "cattrs_converter",
     "expression",
+    "kernel",
 ]

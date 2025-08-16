@@ -3,7 +3,8 @@
 from collections.abc import Iterable
 from typing import Any
 
-from ..kernel.statistics_support_column import StatisticsSupportColumn
+from kernel.statistics_support_column import StatisticsSupportColumn
+
 from ..snowflake_client import SnowflakeClient
 from .describe_table_handler import DescribeTableEffectHandler
 

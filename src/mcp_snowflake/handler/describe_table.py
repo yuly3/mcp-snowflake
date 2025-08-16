@@ -5,7 +5,7 @@ from typing import Protocol, TypedDict
 import mcp.types as types
 from pydantic import BaseModel, Field
 
-from ..kernel.table_metadata import TableInfo
+from kernel.table_metadata import TableInfo
 
 logger = logging.getLogger(__name__)
 

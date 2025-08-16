@@ -2,7 +2,7 @@
 
 import pytest
 
-from mcp_snowflake.kernel.sql_utils import fully_qualified, quote_ident
+from kernel.sql_utils import fully_qualified, quote_ident
 
 
 class TestQuoteIdent:

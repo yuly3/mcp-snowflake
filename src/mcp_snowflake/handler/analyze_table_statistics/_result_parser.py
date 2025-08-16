@@ -6,8 +6,8 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 from expression import option
+from kernel.statistics_support_column import StatisticsSupportColumn
 
-from ...kernel.statistics_support_column import StatisticsSupportColumn
 from ._types import (
     BooleanStatsDict,
     DateStatsDict,

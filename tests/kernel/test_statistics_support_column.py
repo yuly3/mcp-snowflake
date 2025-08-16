@@ -3,8 +3,8 @@
 import attrs
 import pytest
 
-from mcp_snowflake.kernel.statistics_support_column import StatisticsSupportColumn
-from mcp_snowflake.kernel.table_metadata import TableColumn
+from kernel.statistics_support_column import StatisticsSupportColumn
+from kernel.table_metadata import TableColumn
 
 
 class TestStatisticsSupportColumn:

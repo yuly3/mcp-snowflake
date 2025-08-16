@@ -1,10 +1,10 @@
 """Tests for SQL generation functionality in adapter layer."""
 
+from kernel.statistics_support_column import StatisticsSupportColumn
+from kernel.table_metadata import TableColumn
 from mcp_snowflake.adapter.analyze_table_statistics_handler import (
     generate_statistics_sql,
 )
-from mcp_snowflake.kernel.statistics_support_column import StatisticsSupportColumn
-from mcp_snowflake.kernel.table_metadata import TableColumn
 
 
 def _convert_to_statistics_support_columns(

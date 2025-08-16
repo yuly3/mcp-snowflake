@@ -2,8 +2,8 @@
 
 import pytest
 
-from mcp_snowflake.kernel.data_types import SnowflakeDataType
-from mcp_snowflake.kernel.table_metadata import TableColumn, TableInfo
+from kernel.data_types import SnowflakeDataType
+from kernel.table_metadata import TableColumn, TableInfo
 
 
 class TestTableColumn:

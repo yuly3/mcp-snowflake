@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from mcp_snowflake.kernel.table_metadata import TableColumn, TableInfo
+from kernel.table_metadata import TableColumn, TableInfo
 
 
 class MockEffectHandler:

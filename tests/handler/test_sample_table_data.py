@@ -5,12 +5,12 @@ import mcp.types as types
 import pytest
 from pydantic import ValidationError
 
+from kernel import DataProcessingResult
 from mcp_snowflake.handler.sample_table_data import (
     SampleTableDataArgs,
     _format_response,
     handle_sample_table_data,
 )
-from mcp_snowflake.kernel import DataProcessingResult
 
 
 class MockEffectSampleTableData:

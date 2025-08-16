@@ -3,7 +3,7 @@
 from hypothesis import given
 from hypothesis import strategies as st
 
-from mcp_snowflake.kernel import DataProcessingResult, RowProcessingResult
+from kernel import DataProcessingResult, RowProcessingResult
 
 
 class TestProcessRowData:

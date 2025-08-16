@@ -5,12 +5,12 @@ from typing import Any, ClassVar
 import pytest
 from pydantic import ValidationError
 
+from kernel import DataProcessingResult
 from mcp_snowflake.handler.execute_query import (
     ExecuteQueryArgs,
     _format_query_response,
     handle_execute_query,
 )
-from mcp_snowflake.kernel import DataProcessingResult
 
 
 class MockEffectHandler:

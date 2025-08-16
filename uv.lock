@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 members = [
     "cattrs-converter",
     "expression",
+    "kernel",
     "mcp-snowflake",
 ]
 
@@ -347,6 +348,21 @@ wheels = [
 ]
 
 [[package]]
+name = "kernel"
+version = "0.1.0"
+source = { editable = "packages/kernel" }
+dependencies = [
+    { name = "attrs" },
+    { name = "cattrs-converter" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "attrs", specifier = ">=25.3.0" },
+    { name = "cattrs-converter", editable = "packages/cattrs-converter" },
+]
+
+[[package]]
 name = "mcp"
 version = "1.12.4"
 source = { registry = "https://pypi.org/simple" }
@@ -378,6 +394,7 @@ dependencies = [
     { name = "cattrs" },
     { name = "cattrs-converter" },
     { name = "expression" },
+    { name = "kernel" },
     { name = "mcp" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -400,6 +417,7 @@ requires-dist = [
     { name = "cattrs", specifier = ">=23.0.0" },
     { name = "cattrs-converter", editable = "packages/cattrs-converter" },
     { name = "expression", editable = "packages/expression" },
+    { name = "kernel", editable = "packages/kernel" },
     { name = "mcp", specifier = ">=1.0.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pydantic-settings", specifier = ">=2.9.1" },

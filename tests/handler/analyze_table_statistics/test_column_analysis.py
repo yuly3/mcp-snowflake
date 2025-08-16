@@ -2,11 +2,11 @@
 
 import mcp.types as types
 
+from kernel.statistics_support_column import StatisticsSupportColumn
+from kernel.table_metadata import TableColumn
 from mcp_snowflake.handler.analyze_table_statistics._column_analysis import (
     select_and_classify_columns,
 )
-from mcp_snowflake.kernel.statistics_support_column import StatisticsSupportColumn
-from mcp_snowflake.kernel.table_metadata import TableColumn
 
 
 class TestSelectAndClassifyColumns:

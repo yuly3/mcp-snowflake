@@ -5,6 +5,7 @@
     "Geospatial",
     "Jsonable",
     "SMALLINT",
+    "sqlparse",
     "TINYINT",
     "VARBINARY",
     "VARCHAR"

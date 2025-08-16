@@ -2,8 +2,9 @@
 
 from datetime import timedelta
 
-from ..kernel.sql_utils import fully_qualified
-from ..kernel.table_metadata import TableColumn, TableInfo
+from kernel.sql_utils import fully_qualified
+from kernel.table_metadata import TableColumn, TableInfo
+
 from ..snowflake_client import SnowflakeClient
 
 

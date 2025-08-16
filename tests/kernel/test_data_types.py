@@ -4,7 +4,7 @@ from typing import get_args
 
 import pytest
 
-from mcp_snowflake.kernel.data_types import (
+from kernel.data_types import (
     NormalizedSnowflakeDataType,
     SnowflakeDataType,
     StatisticsSupportDataType,
