@@ -26,7 +26,7 @@ class TestErrorHandling:
             [
                 ("metadata", "VARIANT", True, 1),  # All unsupported
                 ("config", "OBJECT", True, 2),  # All unsupported
-            ]
+            ],
         )
 
         mock_effect = MockEffectHandler(table_data=table_data)
@@ -51,7 +51,7 @@ class TestErrorHandling:
         table_data = create_test_table_info(
             [
                 ("id", "NUMBER(10,0)", False, 1),
-            ]
+            ],
         )
 
         mock_effect = MockEffectHandler(table_data=table_data)
@@ -73,7 +73,7 @@ class TestErrorHandling:
     async def test_describe_table_error(self) -> None:
         """Test error handling when describe_table fails."""
         mock_effect = MockEffectHandler(
-            should_raise=Exception("Database connection failed")
+            should_raise=Exception("Database connection failed"),
         )
 
         args = AnalyzeTableStatisticsArgs(
@@ -95,7 +95,7 @@ class TestErrorHandling:
         table_data = create_test_table_info(
             [
                 ("id", "NUMBER(10,0)", False, 1),
-            ]
+            ],
         )
 
         # Mock that returns table data but fails on query execution

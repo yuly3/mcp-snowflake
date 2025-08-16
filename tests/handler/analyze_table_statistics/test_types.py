@@ -83,7 +83,7 @@ class TestTableStatisticsDictWithUnsupported:
                     "percentile_25": 250.0,
                     "percentile_50": 500.0,
                     "percentile_75": 750.0,
-                }
+                },
             },
             "unsupported_columns": [
                 {"name": "metadata", "data_type": "VARIANT"},
@@ -122,7 +122,7 @@ class TestTableStatisticsDictWithUnsupported:
                     "percentile_25": 250.0,
                     "percentile_50": 500.0,
                     "percentile_75": 750.0,
-                }
+                },
             },
         }
 

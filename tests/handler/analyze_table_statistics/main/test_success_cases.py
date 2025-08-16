@@ -34,7 +34,7 @@ class TestSuccessCases:
                 ("price", "NUMBER(10,2)", True, 3),
                 ("status", "VARCHAR(10)", True, 4),
                 ("is_active", "BOOLEAN", True, 5),
-            ]
+            ],
         )
 
         # Create comprehensive query result with all column types
@@ -44,7 +44,7 @@ class TestSuccessCases:
                 string_columns=["name", "status"],
                 boolean_columns=["is_active"],
                 total_rows=1000,
-            )
+            ),
         ]
 
         mock_effect = MockEffectHandler(
@@ -125,7 +125,7 @@ class TestSuccessCases:
         table_data = create_test_table_info(
             [
                 ("is_active", "BOOLEAN", True, 1),
-            ]
+            ],
         )
 
         query_result = [
@@ -139,7 +139,7 @@ class TestSuccessCases:
                 "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE": 24.21,
                 "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE_WITH_NULLS": 72.0,
                 "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 23.0,
-            }
+            },
         ]
 
         mock_effect = MockEffectHandler(table_data, query_result)
@@ -189,7 +189,7 @@ class TestSuccessCases:
             [
                 ("id", "NUMBER(10,0)", False, 1),
                 ("name", "VARCHAR(50)", True, 2),
-            ]
+            ],
         )
 
         query_result = [
@@ -210,7 +210,7 @@ class TestSuccessCases:
                 "STRING_NAME_MAX_LENGTH": 20,
                 "STRING_NAME_DISTINCT": 95,
                 "STRING_NAME_TOP_VALUES": '[["John", 5], ["Jane", 3]]',
-            }
+            },
         ]
 
         mock_effect = MockEffectHandler(

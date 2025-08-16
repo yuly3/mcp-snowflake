@@ -33,7 +33,7 @@ class TestPartialResults:
                 ("name", "VARCHAR(50)", True, 2),
                 ("metadata", "VARIANT", True, 3),
                 ("config", "OBJECT", True, 4),
-            ]
+            ],
         )
 
         # Query result should only include supported columns
@@ -43,7 +43,7 @@ class TestPartialResults:
                 string_columns=["name"],
                 boolean_columns=[],
                 total_rows=1000,
-            )
+            ),
         ]
 
         mock_effect = MockEffectHandler(
@@ -114,7 +114,7 @@ class TestPartialResults:
                 ("metadata", "VARIANT", True, 1),
                 ("config", "OBJECT", True, 2),
                 ("data", "ARRAY", True, 3),
-            ]
+            ],
         )
 
         mock_effect = MockEffectHandler(
@@ -153,7 +153,7 @@ class TestPartialResults:
                 ("id", "NUMBER(10,0)", False, 1),
                 ("metadata", "VARIANT", True, 2),
                 ("name", "VARCHAR(50)", True, 3),
-            ]
+            ],
         )
 
         # Query result for only the supported requested column
@@ -163,7 +163,7 @@ class TestPartialResults:
                 string_columns=[],
                 boolean_columns=[],
                 total_rows=500,
-            )
+            ),
         ]
 
         mock_effect = MockEffectHandler(
@@ -213,7 +213,7 @@ class TestPartialResults:
                 ("id", "NUMBER(10,0)", False, 1),
                 ("name", "VARCHAR(50)", True, 2),
                 ("active", "BOOLEAN", True, 3),
-            ]
+            ],
         )
 
         query_result = [
@@ -222,7 +222,7 @@ class TestPartialResults:
                 string_columns=["name"],
                 boolean_columns=["active"],
                 total_rows=1000,
-            )
+            ),
         ]
 
         mock_effect = MockEffectHandler(

@@ -40,7 +40,7 @@ class TestParseStatisticsResult:
                 data_type="NUMBER(10,2)",
                 nullable=False,
                 ordinal_position=2,
-            )
+            ),
         ]
 
         result_row = {
@@ -57,7 +57,8 @@ class TestParseStatisticsResult:
         }
 
         column_stats = parse_statistics_result(
-            result_row, _convert_to_statistics_support_columns(columns_info)
+            result_row,
+            _convert_to_statistics_support_columns(columns_info),
         )
 
         assert len(column_stats) == 1
@@ -82,7 +83,7 @@ class TestParseStatisticsResult:
                 data_type="VARCHAR(10)",
                 nullable=False,
                 ordinal_position=1,
-            )
+            ),
         ]
 
         result_row = {
@@ -96,7 +97,8 @@ class TestParseStatisticsResult:
         }
 
         column_stats = parse_statistics_result(
-            result_row, _convert_to_statistics_support_columns(columns_info)
+            result_row,
+            _convert_to_statistics_support_columns(columns_info),
         )
 
         assert len(column_stats) == 1
@@ -122,7 +124,7 @@ class TestParseStatisticsResult:
                 data_type="DATE",
                 nullable=False,
                 ordinal_position=3,
-            )
+            ),
         ]
 
         result_row = {
@@ -136,7 +138,8 @@ class TestParseStatisticsResult:
         }
 
         column_stats = parse_statistics_result(
-            result_row, _convert_to_statistics_support_columns(columns_info)
+            result_row,
+            _convert_to_statistics_support_columns(columns_info),
         )
 
         assert len(column_stats) == 1
@@ -202,7 +205,8 @@ class TestParseStatisticsResult:
         }
 
         column_stats = parse_statistics_result(
-            result_row, _convert_to_statistics_support_columns(columns_info)
+            result_row,
+            _convert_to_statistics_support_columns(columns_info),
         )
 
         assert len(column_stats) == 3
@@ -247,7 +251,8 @@ class TestParseStatisticsResult:
         }
 
         column_stats = parse_statistics_result(
-            result_row, _convert_to_statistics_support_columns(columns_info)
+            result_row,
+            _convert_to_statistics_support_columns(columns_info),
         )
 
         price_stats = cast("NumericStatsDict", column_stats["price"])
@@ -280,7 +285,8 @@ class TestParseStatisticsResult:
         }
 
         column_stats = parse_statistics_result(
-            result_row, _convert_to_statistics_support_columns(columns_info)
+            result_row,
+            _convert_to_statistics_support_columns(columns_info),
         )
 
         status_stats = cast("StringStatsDict", column_stats["status"])
@@ -308,7 +314,8 @@ class TestParseStatisticsResult:
         }
 
         column_stats = parse_statistics_result(
-            result_row, _convert_to_statistics_support_columns(columns_info)
+            result_row,
+            _convert_to_statistics_support_columns(columns_info),
         )
 
         status_stats = cast("StringStatsDict", column_stats["status"])
@@ -338,7 +345,8 @@ class TestParseStatisticsResult:
         }
 
         column_stats = parse_statistics_result(
-            result_row, _convert_to_statistics_support_columns(columns_info)
+            result_row,
+            _convert_to_statistics_support_columns(columns_info),
         )
 
         assert len(column_stats) == 1
@@ -378,7 +386,8 @@ class TestParseStatisticsResult:
         }
 
         column_stats = parse_statistics_result(
-            result_row, _convert_to_statistics_support_columns(columns_info)
+            result_row,
+            _convert_to_statistics_support_columns(columns_info),
         )
 
         boolean_stats = cast("BooleanStatsDict", column_stats["is_active"])

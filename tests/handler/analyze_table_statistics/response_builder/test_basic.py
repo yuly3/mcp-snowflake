@@ -60,7 +60,9 @@ class TestBuildResponse:
         ]
 
         response = build_response(
-            args, result_row, _convert_to_statistics_support_columns(columns_to_analyze)
+            args,
+            result_row,
+            _convert_to_statistics_support_columns(columns_to_analyze),
         )
 
         assert len(response) == 2
@@ -152,7 +154,9 @@ class TestBuildResponse:
         ]
 
         response = build_response(
-            args, result_row, _convert_to_statistics_support_columns(columns_to_analyze)
+            args,
+            result_row,
+            _convert_to_statistics_support_columns(columns_to_analyze),
         )
 
         # Check summary text
@@ -204,7 +208,9 @@ class TestBuildResponse:
         ]
 
         response = build_response(
-            args, result_row, _convert_to_statistics_support_columns(columns_to_analyze)
+            args,
+            result_row,
+            _convert_to_statistics_support_columns(columns_to_analyze),
         )
 
         # Check summary reflects custom database/schema/table
@@ -251,7 +257,9 @@ class TestBuildResponse:
         ]
 
         response = build_response(
-            args, result_row, _convert_to_statistics_support_columns(columns_to_analyze)
+            args,
+            result_row,
+            _convert_to_statistics_support_columns(columns_to_analyze),
         )
 
         # Check that large numbers are formatted with commas
@@ -289,7 +297,9 @@ class TestBuildResponse:
         ]
 
         response = build_response(
-            args, result_row, _convert_to_statistics_support_columns(columns_to_analyze)
+            args,
+            result_row,
+            _convert_to_statistics_support_columns(columns_to_analyze),
         )
 
         # Check JSON is properly formatted (indented)

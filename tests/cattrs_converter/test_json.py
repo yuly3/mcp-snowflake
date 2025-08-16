@@ -121,7 +121,7 @@ class TestConvertToJsonSafe:
             st.none(),
             st.lists(st.integers(), max_size=5),
             st.dictionaries(st.text(), st.integers(), max_size=5),
-        )
+        ),
     )
     def test_json_dumps_compatibility_basic_types(self, value: Any) -> None:
         """Test that converted basic values can be serialized with json.dumps()."""
@@ -140,7 +140,7 @@ class TestConvertToJsonSafe:
             st.decimals(allow_nan=False, allow_infinity=False),
             st.uuids(),
             st.sets(st.integers(), max_size=5),
-        )
+        ),
     )
     def test_json_dumps_compatibility_cattrs_types(self, value: Any) -> None:
         """Test that converted cattrs values can be serialized with json.dumps()."""

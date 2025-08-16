@@ -213,7 +213,8 @@ class TestStatisticsSupportDataType:
         """Test constructor with unsupported SnowflakeDataType raises ValueError."""
         sf_type = SnowflakeDataType("VARIANT")
         with pytest.raises(
-            ValueError, match="Unsupported Snowflake data type for statistics"
+            ValueError,
+            match="Unsupported Snowflake data type for statistics",
         ):
             _ = StatisticsSupportDataType(sf_type)
 

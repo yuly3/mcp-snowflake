@@ -58,21 +58,21 @@ class TestDescribeTableArgs:
         """Test missing database argument."""
         with pytest.raises(ValidationError):
             _ = DescribeTableArgs.model_validate(
-                {"schema": "test_schema", "table": "test_table"}
+                {"schema": "test_schema", "table": "test_table"},
             )
 
     def test_missing_schema(self) -> None:
         """Test missing schema argument."""
         with pytest.raises(ValidationError):
             _ = DescribeTableArgs.model_validate(
-                {"database": "test_db", "table": "test_table"}
+                {"database": "test_db", "table": "test_table"},
             )
 
     def test_missing_table(self) -> None:
         """Test missing table argument."""
         with pytest.raises(ValidationError):
             _ = DescribeTableArgs.model_validate(
-                {"database": "test_db", "schema": "test_schema"}
+                {"database": "test_db", "schema": "test_schema"},
             )
 
     def test_missing_all_args(self) -> None:

@@ -1,8 +1,9 @@
-import mcp.types as types
 import pytest
 from pydantic import ValidationError
 
 from mcp_snowflake.handler import ListSchemasArgs, handle_list_schemas
+
+from ._utils import assert_list_output, assert_single_text
 
 
 class MockEffectHandler:
@@ -56,13 +57,12 @@ class TestHandleListSchemas:
         result = await handle_list_schemas(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
-        assert "Schema list for database 'test_db':" in result[0].text
-        assert "- schema1" in result[0].text
-        assert "- schema2" in result[0].text
-        assert "- schema3" in result[0].text
+        content = assert_single_text(result)
+        assert_list_output(
+            content.text,
+            "Schema list for database 'test_db':",
+            mock_schemas,
+        )
 
     @pytest.mark.asyncio
     async def test_empty_schemas_list(self) -> None:
@@ -75,12 +75,10 @@ class TestHandleListSchemas:
         result = await handle_list_schemas(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
-        assert "Schema list for database 'empty_db':" in result[0].text
+        content = assert_single_text(result)
+        assert "Schema list for database 'empty_db':" in content.text
         # Should not contain any schema entries
-        assert "- " not in result[0].text
+        assert "- " not in content.text
 
     @pytest.mark.asyncio
     async def test_effect_handler_exception(self) -> None:
@@ -94,11 +92,9 @@ class TestHandleListSchemas:
         result = await handle_list_schemas(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
-        assert "Error: Failed to retrieve schemas:" in result[0].text
-        assert error_message in result[0].text
+        content = assert_single_text(result)
+        assert "Error: Failed to retrieve schemas:" in content.text
+        assert error_message in content.text
 
     @pytest.mark.asyncio
     async def test_with_standard_snowflake_schemas(self) -> None:
@@ -111,11 +107,12 @@ class TestHandleListSchemas:
         result = await handle_list_schemas(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert "Schema list for database 'snowflake_db':" in result[0].text
-        assert "- PUBLIC" in result[0].text
-        assert "- INFORMATION_SCHEMA" in result[0].text
+        content = assert_single_text(result)
+        assert_list_output(
+            content.text,
+            "Schema list for database 'snowflake_db':",
+            ["PUBLIC", "INFORMATION_SCHEMA"],
+        )
 
     @pytest.mark.asyncio
     async def test_single_schema(self) -> None:
@@ -128,9 +125,11 @@ class TestHandleListSchemas:
         result = await handle_list_schemas(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert "Schema list for database 'single_db':" in result[0].text
-        assert "- ONLY_SCHEMA" in result[0].text
+        content = assert_single_text(result)
+        assert_list_output(
+            content.text,
+            "Schema list for database 'single_db':",
+            ["ONLY_SCHEMA"],
+        )
         # Should only contain one schema line
-        assert result[0].text.count("- ") == 1
+        assert content.text.count("- ") == 1

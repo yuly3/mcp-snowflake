@@ -1,8 +1,9 @@
-import mcp.types as types
 import pytest
 from pydantic import ValidationError
 
 from mcp_snowflake.handler import ListTablesArgs, handle_list_tables
+
+from ._utils import assert_list_output, assert_single_text
 
 
 class MockEffectHandler:
@@ -74,13 +75,12 @@ class TestHandleListTables:
         result = await handle_list_tables(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
-        assert "Table list for schema 'test_db.test_schema':" in result[0].text
-        assert "- table1" in result[0].text
-        assert "- table2" in result[0].text
-        assert "- table3" in result[0].text
+        content = assert_single_text(result)
+        assert_list_output(
+            content.text,
+            "Table list for schema 'test_db.test_schema':",
+            mock_tables,
+        )
 
     @pytest.mark.asyncio
     async def test_empty_tables_list(self) -> None:
@@ -93,12 +93,10 @@ class TestHandleListTables:
         result = await handle_list_tables(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
-        assert "Table list for schema 'empty_db.empty_schema':" in result[0].text
+        content = assert_single_text(result)
+        assert "Table list for schema 'empty_db.empty_schema':" in content.text
         # Should not contain any table entries
-        assert "- " not in result[0].text
+        assert "- " not in content.text
 
     @pytest.mark.asyncio
     async def test_effect_handler_exception(self) -> None:
@@ -112,11 +110,9 @@ class TestHandleListTables:
         result = await handle_list_tables(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
-        assert "Error: Failed to retrieve tables:" in result[0].text
-        assert error_message in result[0].text
+        content = assert_single_text(result)
+        assert "Error: Failed to retrieve tables:" in content.text
+        assert error_message in content.text
 
     @pytest.mark.asyncio
     async def test_with_standard_table_names(self) -> None:
@@ -129,12 +125,12 @@ class TestHandleListTables:
         result = await handle_list_tables(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert "Table list for schema 'production_db.public':" in result[0].text
-        assert "- users" in result[0].text
-        assert "- orders" in result[0].text
-        assert "- products" in result[0].text
+        content = assert_single_text(result)
+        assert_list_output(
+            content.text,
+            "Table list for schema 'production_db.public':",
+            ["users", "orders", "products"],
+        )
 
     @pytest.mark.asyncio
     async def test_single_table(self) -> None:
@@ -147,12 +143,14 @@ class TestHandleListTables:
         result = await handle_list_tables(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert "Table list for schema 'single_db.single_schema':" in result[0].text
-        assert "- ONLY_TABLE" in result[0].text
+        content = assert_single_text(result)
+        assert_list_output(
+            content.text,
+            "Table list for schema 'single_db.single_schema':",
+            ["ONLY_TABLE"],
+        )
         # Should only contain one table line
-        assert result[0].text.count("- ") == 1
+        assert content.text.count("- ") == 1
 
     @pytest.mark.asyncio
     async def test_case_sensitive_table_names(self) -> None:
@@ -165,9 +163,9 @@ class TestHandleListTables:
         result = await handle_list_tables(args, effect_handler)
 
         # Assert
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert "Table list for schema 'case_db.case_schema':" in result[0].text
-        assert "- MyTable" in result[0].text
-        assert "- my_table" in result[0].text
-        assert "- MY_TABLE" in result[0].text
+        content = assert_single_text(result)
+        assert_list_output(
+            content.text,
+            "Table list for schema 'case_db.case_schema':",
+            ["MyTable", "my_table", "MY_TABLE"],
+        )

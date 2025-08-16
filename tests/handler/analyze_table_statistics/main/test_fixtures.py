@@ -164,10 +164,12 @@ def create_boolean_stats(
         f"{prefix}_TRUE_PERCENTAGE": round((true_count / non_null_count) * 100, 2),
         f"{prefix}_FALSE_PERCENTAGE": round((false_count / non_null_count) * 100, 2),
         f"{prefix}_TRUE_PERCENTAGE_WITH_NULLS": round(
-            (true_count / total_rows) * 100, 2
+            (true_count / total_rows) * 100,
+            2,
         ),
         f"{prefix}_FALSE_PERCENTAGE_WITH_NULLS": round(
-            (false_count / total_rows) * 100, 2
+            (false_count / total_rows) * 100,
+            2,
         ),
     }
 

@@ -1,4 +1,3 @@
-import json
 from datetime import timedelta
 from typing import Any, ClassVar
 
@@ -11,6 +10,8 @@ from mcp_snowflake.handler.execute_query import (
     _format_query_response,
     handle_execute_query,
 )
+
+from ._utils import assert_keys_exact, assert_single_text, parse_json_text
 
 
 class MockEffectHandler:
@@ -92,17 +93,13 @@ class TestExecuteQueryHandler:
         # Execute handler
         result = await handle_execute_query(args, effect_handler)
 
-        # Verify result
-        assert len(result) == 1
-        content = result[0]
-        assert content.type == "text"
-
-        # Parse JSON response
-        response_data = json.loads(content.text)
+        # Verify result using helper
+        content = assert_single_text(result)
+        response_data = parse_json_text(content)
         assert "query_result" in response_data
 
         query_result = response_data["query_result"]
-        assert set(query_result.keys()) == self.EXPECTED_RESPONSE_KEYS
+        assert_keys_exact(query_result, self.EXPECTED_RESPONSE_KEYS)
         assert query_result["row_count"] == 2
         assert query_result["columns"] == ["id", "name", "age"]
         assert len(query_result["rows"]) == 2
@@ -145,15 +142,11 @@ class TestExecuteQueryHandler:
         # Execute handler
         result = await handle_execute_query(args, effect_handler)
 
-        # Verify result
-        assert len(result) == 1
-        content = result[0]
-        assert content.type == "text"
-
-        # Parse JSON response
-        response_data = json.loads(content.text)
+        # Verify result using helper
+        content = assert_single_text(result)
+        response_data = parse_json_text(content)
         query_result = response_data["query_result"]
-        assert set(query_result.keys()) == self.EXPECTED_RESPONSE_KEYS
+        assert_keys_exact(query_result, self.EXPECTED_RESPONSE_KEYS)
         assert query_result["row_count"] == 0
         assert query_result["columns"] == []
         assert query_result["rows"] == []

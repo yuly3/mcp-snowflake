@@ -1,4 +1,3 @@
-import json
 from typing import Any
 
 import mcp.types as types
@@ -11,6 +10,8 @@ from mcp_snowflake.handler.sample_table_data import (
     _format_response,
     handle_sample_table_data,
 )
+
+from ._utils import assert_single_text, parse_json_text
 
 
 class MockEffectSampleTableData:
@@ -70,21 +71,21 @@ class TestSampleTableDataArgs:
         """Test missing database argument."""
         with pytest.raises(ValidationError):
             _ = SampleTableDataArgs.model_validate(
-                {"schema": "test_schema", "table": "test_table"}
+                {"schema": "test_schema", "table": "test_table"},
             )
 
     def test_missing_schema(self) -> None:
         """Test missing schema argument."""
         with pytest.raises(ValidationError):
             _ = SampleTableDataArgs.model_validate(
-                {"database": "test_db", "table": "test_table"}
+                {"database": "test_db", "table": "test_table"},
             )
 
     def test_missing_table(self) -> None:
         """Test missing table argument."""
         with pytest.raises(ValidationError):
             _ = SampleTableDataArgs.model_validate(
-                {"database": "test_db", "schema": "test_schema"}
+                {"database": "test_db", "schema": "test_schema"},
             )
 
     def test_invalid_sample_size(self) -> None:
@@ -96,7 +97,7 @@ class TestSampleTableDataArgs:
                     "schema": "test_schema",
                     "table": "test_table",
                     "sample_size": "invalid",
-                }
+                },
             )
 
 
@@ -258,10 +259,8 @@ class TestHandleSampleTableData:
 
         result = await handle_sample_table_data(args, mock_effect)
 
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-
-        response_data = json.loads(result[0].text)
+        content = assert_single_text(result)
+        response_data = parse_json_text(content)
         assert response_data["sample_data"]["database"] == "test_db"
         assert response_data["sample_data"]["schema"] == "test_schema"
         assert response_data["sample_data"]["table"] == "test_table"
@@ -285,10 +284,8 @@ class TestHandleSampleTableData:
 
         result = await handle_sample_table_data(args, mock_effect)
 
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-
-        response_data = json.loads(result[0].text)
+        content = assert_single_text(result)
+        response_data = parse_json_text(content)
         assert len(response_data["sample_data"]["warnings"]) == 1
         assert (
             "Column 'col2' contains unsupported data type"
@@ -312,10 +309,8 @@ class TestHandleSampleTableData:
 
         result = await handle_sample_table_data(args, mock_effect)
 
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-
-        response_data = json.loads(result[0].text)
+        content = assert_single_text(result)
+        response_data = parse_json_text(content)
         assert response_data["sample_data"]["actual_rows"] == 0
         assert response_data["sample_data"]["rows"] == []
         assert response_data["sample_data"]["columns"] == []
@@ -324,7 +319,7 @@ class TestHandleSampleTableData:
     async def test_error_handling(self) -> None:
         """Test error handling when effect handler raises exception."""
         mock_effect = MockEffectSampleTableData(
-            should_raise=Exception("Database error")
+            should_raise=Exception("Database error"),
         )
 
         args = SampleTableDataArgs(
@@ -358,10 +353,8 @@ class TestHandleSampleTableData:
 
         result = await handle_sample_table_data(args, mock_effect)
 
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-
-        response_data = json.loads(result[0].text)
+        content = assert_single_text(result)
+        response_data = parse_json_text(content)
         assert response_data["sample_data"]["sample_size"] == 5
         assert response_data["sample_data"]["columns"] == ["col1", "col3"]
         assert response_data["sample_data"]["rows"] == sample_data

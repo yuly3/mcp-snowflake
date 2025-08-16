@@ -31,7 +31,7 @@ class TestColumnSelection:
                 ("id", "NUMBER(10,0)", False, 1),
                 ("name", "VARCHAR(50)", True, 2),
                 ("date", "DATE", True, 3),
-            ]
+            ],
         )
 
         query_result = [
@@ -46,7 +46,7 @@ class TestColumnSelection:
                 "NUMERIC_ID_MEDIAN": 50.0,
                 "NUMERIC_ID_Q3": 75.0,
                 "NUMERIC_ID_DISTINCT": 100,
-            }
+            },
         ]
 
         mock_effect = MockEffectHandler(
@@ -86,7 +86,7 @@ class TestColumnSelection:
         table_data = create_test_table_info(
             [
                 ("status", "VARCHAR(10)", True, 1),
-            ]
+            ],
         )
 
         query_result = [
@@ -98,7 +98,7 @@ class TestColumnSelection:
                 "STRING_STATUS_MAX_LENGTH": 8,
                 "STRING_STATUS_DISTINCT": 3,
                 "STRING_STATUS_TOP_VALUES": '[["active", 50], ["pending", 30], ["inactive", 20]]',
-            }
+            },
         ]
 
         # Track what query was executed
@@ -165,7 +165,7 @@ class TestColumnSelection:
                 ("price", "NUMBER(10,2)", True, 3),
                 ("date", "DATE", True, 4),
                 ("status", "VARCHAR(20)", True, 5),
-            ]
+            ],
         )
 
         query_result = [
@@ -189,7 +189,7 @@ class TestColumnSelection:
                 "NUMERIC_PRICE_MEDIAN": 500.0,
                 "NUMERIC_PRICE_Q3": 750.0,
                 "NUMERIC_PRICE_DISTINCT": 90,
-            }
+            },
         ]
 
         mock_effect = MockEffectHandler(
@@ -235,7 +235,7 @@ class TestColumnSelection:
         table_data = create_test_table_info(
             [
                 ("single_col", "VARCHAR(100)", True, 1),
-            ]
+            ],
         )
 
         query_result = [
@@ -247,7 +247,7 @@ class TestColumnSelection:
                 "STRING_SINGLE_COL_MAX_LENGTH": 50,
                 "STRING_SINGLE_COL_DISTINCT": 40,
                 "STRING_SINGLE_COL_TOP_VALUES": '[["value1", 3], ["value2", 2]]',
-            }
+            },
         ]
 
         mock_effect = MockEffectHandler(

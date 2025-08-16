@@ -101,7 +101,7 @@ class TestDataProcessingProperties:
                 st.booleans(),
                 st.none(),
             ),
-        )
+        ),
     )
     def test_process_row_data_with_json_compatible_types(
         self,
@@ -135,7 +135,7 @@ class TestDataProcessingProperties:
                 ),
             ),
             max_size=10,
-        )
+        ),
     )
     def test_process_multiple_rows_data_properties(
         self,
@@ -181,7 +181,7 @@ class TestDataProcessingProperties:
             st.dictionaries(st.text(min_size=1), st.just(1 + 2j), min_size=1),
             min_size=1,
             max_size=5,
-        )
+        ),
     )
     def test_warning_deduplication(self, raw_rows: list[dict[str, complex]]) -> None:
         """Property test: warnings should be deduplicated across multiple rows."""

@@ -142,7 +142,9 @@ class TestBuildResponseWithUnsupportedColumns:
 
         # Test with default empty unsupported_columns
         response = build_response(
-            args, result_row, _convert_to_statistics_support_columns(supported_columns)
+            args,
+            result_row,
+            _convert_to_statistics_support_columns(supported_columns),
         )
 
         assert len(response) == 2
