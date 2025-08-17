@@ -36,3 +36,16 @@ class ClassifiedColumns:
 
     supported_columns: list[StatisticsSupportColumn]
     unsupported_columns: list[TableColumn]
+
+
+@attrs.define(frozen=True, slots=True)
+class NoSupportedColumns:
+    """Result when no columns support statistics analysis.
+
+    Attributes
+    ----------
+    unsupported_columns : list[TableColumn]
+        All columns that don't support statistics analysis.
+    """
+
+    unsupported_columns: list[TableColumn]

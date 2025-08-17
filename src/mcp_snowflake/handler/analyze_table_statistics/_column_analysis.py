@@ -5,13 +5,13 @@ from collections.abc import Sequence
 from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import TableColumn
 
-from ._types import ClassifiedColumns, ColumnDoesNotExist
+from ._types import ClassifiedColumns, ColumnDoesNotExist, NoSupportedColumns
 
 
 def select_and_classify_columns(
     all_columns: list[TableColumn],
     requested_columns: Sequence[str],
-) -> ClassifiedColumns | ColumnDoesNotExist:
+) -> ClassifiedColumns | ColumnDoesNotExist | NoSupportedColumns:
     """Select and classify columns into supported and unsupported for analysis.
 
     Parameters
@@ -23,9 +23,10 @@ def select_and_classify_columns(
 
     Returns
     -------
-    ClassifiedColumns | ColumnDoesNotExist
+    ClassifiedColumns | ColumnDoesNotExist | NoSupportedColumns
         ClassifiedColumns containing supported and unsupported columns,
-        or ColumnDoesNotExist if any requested columns don't exist in the table.
+        ColumnDoesNotExist if any requested columns don't exist in the table,
+        or NoSupportedColumns if no columns support statistics analysis.
     """
     # Filter columns if specified
     if requested_columns:
@@ -45,16 +46,20 @@ def select_and_classify_columns(
 
     # Classify columns into supported and unsupported
     supported_columns: list[StatisticsSupportColumn] = []
-    unsupported_info: list[TableColumn] = []
+    unsupported_columns: list[TableColumn] = []
 
     for col in columns_to_analyze:
         stats_col = StatisticsSupportColumn.from_table_column(col)
         if stats_col is None:
-            unsupported_info.append(col)
+            unsupported_columns.append(col)
         else:
             supported_columns.append(stats_col)
 
+    # Check if no supported columns
+    if not supported_columns:
+        return NoSupportedColumns(unsupported_columns=unsupported_columns)
+
     return ClassifiedColumns(
         supported_columns=supported_columns,
-        unsupported_columns=unsupported_info,
+        unsupported_columns=unsupported_columns,
     )

@@ -19,7 +19,10 @@ from ..handler import (
     EffectAnalyzeTableStatistics,
     handle_analyze_table_statistics,
 )
-from ..handler.analyze_table_statistics._types import ColumnDoesNotExist
+from ..handler.analyze_table_statistics._types import (
+    ColumnDoesNotExist,
+    NoSupportedColumns,
+)
 from ..handler.analyze_table_statistics.models import AnalyzeTableStatisticsJsonResponse
 from .base import Tool
 
@@ -65,12 +68,10 @@ class AnalyzeTableStatisticsTool(Tool):
         else:
             # Handle structured response or error cases
             match result:
-                case ColumnDoesNotExist(not_existed_columns=not_existed_columns) if (
-                    not_existed_columns
-                ):
+                case ColumnDoesNotExist(not_existed_columns=not_existed_columns):
                     text = f"Error: Columns not found in table: {', '.join(not_existed_columns)}"
-                case ColumnDoesNotExist(existed_columns=unsupported_columns):
-                    # This means no supported columns case
+                case NoSupportedColumns(unsupported_columns=unsupported_columns):
+                    # No supported columns case
                     unsupported_list = [
                         f"{col.name}({col.data_type.raw_type})"
                         for col in unsupported_columns

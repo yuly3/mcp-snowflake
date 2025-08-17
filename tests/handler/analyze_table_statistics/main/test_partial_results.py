@@ -7,7 +7,7 @@ from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
     handle_analyze_table_statistics,
 )
-from mcp_snowflake.handler.analyze_table_statistics._types import ColumnDoesNotExist
+from mcp_snowflake.handler.analyze_table_statistics._types import NoSupportedColumns
 
 from ....mock_effect_handler import MockAnalyzeTableStatistics
 from .test_fixtures import create_mixed_analysis_result, create_test_table_info
@@ -107,11 +107,12 @@ class TestPartialResults:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return ColumnDoesNotExist error for no supported columns
-        assert isinstance(result, ColumnDoesNotExist)
-        assert not result.not_existed_columns  # No missing columns
-        # Should have unsupported columns
-        unsupported_names = [col.name for col in result.existed_columns]
+        # Should return NoSupportedColumns for no supported columns
+        assert isinstance(result, NoSupportedColumns)
+
+        # Should contain all unsupported columns
+        assert len(result.unsupported_columns) == 3
+        unsupported_names = [col.name for col in result.unsupported_columns]
         assert "metadata" in unsupported_names
         assert "config" in unsupported_names
         assert "data" in unsupported_names

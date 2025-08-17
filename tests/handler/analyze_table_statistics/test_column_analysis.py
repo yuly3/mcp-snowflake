@@ -6,7 +6,9 @@ from mcp_snowflake.handler.analyze_table_statistics._column_analysis import (
     select_and_classify_columns,
 )
 from mcp_snowflake.handler.analyze_table_statistics._types import (
+    ClassifiedColumns,
     ColumnDoesNotExist,
+    NoSupportedColumns,
 )
 
 
@@ -53,7 +55,7 @@ class TestSelectAndClassifyColumns:
 
         result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert not isinstance(result, ColumnDoesNotExist)
+        assert isinstance(result, ClassifiedColumns)
         supported_columns = result.supported_columns
         unsupported_columns = result.unsupported_columns
 
@@ -97,7 +99,7 @@ class TestSelectAndClassifyColumns:
 
         result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert not isinstance(result, ColumnDoesNotExist)
+        assert isinstance(result, ClassifiedColumns)
         supported_columns = result.supported_columns
         unsupported_columns = result.unsupported_columns
 
@@ -131,7 +133,7 @@ class TestSelectAndClassifyColumns:
 
         result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert not isinstance(result, ColumnDoesNotExist)
+        assert isinstance(result, ClassifiedColumns)
         supported_columns = result.supported_columns
         unsupported_columns = result.unsupported_columns
 
@@ -159,3 +161,64 @@ class TestSelectAndClassifyColumns:
 
         assert isinstance(result, ColumnDoesNotExist)
         assert "nonexistent" in result.not_existed_columns
+
+    def test_no_supported_columns(self) -> None:
+        """Test that only unsupported columns return NoSupportedColumns."""
+        # Create columns with unsupported data types
+        unsupported_columns = [
+            TableColumn(
+                name="JSON_DATA",
+                data_type="VARIANT",
+                nullable=True,
+                default_value=None,
+                comment="JSON data",
+                ordinal_position=1,
+            ),
+            TableColumn(
+                name="BINARY_DATA",
+                data_type="BINARY",
+                nullable=True,
+                default_value=None,
+                comment="Binary data",
+                ordinal_position=2,
+            ),
+            TableColumn(
+                name="OBJECT_DATA",
+                data_type="OBJECT",
+                nullable=True,
+                default_value=None,
+                comment="Object data",
+                ordinal_position=3,
+            ),
+        ]
+
+        # Test with empty requested_columns (analyze all)
+        result = select_and_classify_columns(unsupported_columns, [])
+
+        # Should return NoSupportedColumns with all unsupported columns
+        assert isinstance(result, NoSupportedColumns)
+        assert len(result.unsupported_columns) == 3
+        assert result.unsupported_columns == unsupported_columns
+
+    def test_missing_columns_priority_over_unsupported(self) -> None:
+        """Test that missing columns take priority over unsupported columns."""
+        available_columns = [
+            TableColumn(
+                name="BINARY_DATA",
+                data_type="BINARY",  # Unsupported
+                nullable=True,
+                default_value=None,
+                comment="Binary data",
+                ordinal_position=1,
+            ),
+        ]
+
+        # Request both existing (unsupported) and missing columns
+        requested_columns = ["BINARY_DATA", "NONEXISTENT"]
+        result = select_and_classify_columns(available_columns, requested_columns)
+
+        # Should return ColumnDoesNotExist (missing takes priority)
+        assert isinstance(result, ColumnDoesNotExist)
+        assert "NONEXISTENT" in result.not_existed_columns
+        assert len(result.existed_columns) == 1
+        assert result.existed_columns[0].name == "BINARY_DATA"

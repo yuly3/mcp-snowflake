@@ -137,7 +137,8 @@ class TestAnalyzeTableStatisticsToolSuccess:
         }
 
         mock_effect = MockAnalyzeTableStatistics(
-            table_info=table_info, statistics_result=statistics_result
+            table_info=table_info,
+            statistics_result=statistics_result,
         )
         tool = AnalyzeTableStatisticsTool(mock_effect)
 
@@ -225,7 +226,8 @@ class TestAnalyzeTableStatisticsToolSuccess:
         }
 
         mock_effect = MockAnalyzeTableStatistics(
-            table_info=table_info, statistics_result=statistics_result
+            table_info=table_info,
+            statistics_result=statistics_result,
         )
         tool = AnalyzeTableStatisticsTool(mock_effect)
 
@@ -279,7 +281,8 @@ class TestAnalyzeTableStatisticsToolSuccess:
         }
 
         mock_effect = MockAnalyzeTableStatistics(
-            table_info=table_info, statistics_result=statistics_result
+            table_info=table_info,
+            statistics_result=statistics_result,
         )
         tool = AnalyzeTableStatisticsTool(mock_effect)
 
@@ -371,7 +374,8 @@ class TestAnalyzeTableStatisticsToolSuccess:
         }
 
         mock_effect = MockAnalyzeTableStatistics(
-            table_info=table_info, statistics_result=statistics_result
+            table_info=table_info,
+            statistics_result=statistics_result,
         )
         tool = AnalyzeTableStatisticsTool(mock_effect)
 

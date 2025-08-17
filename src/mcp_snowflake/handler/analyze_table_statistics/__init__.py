@@ -4,7 +4,7 @@ import logging
 
 from ._column_analysis import select_and_classify_columns
 from ._result_parser import parse_statistics_result
-from ._types import ClassifiedColumns, ColumnDoesNotExist
+from ._types import ClassifiedColumns, ColumnDoesNotExist, NoSupportedColumns
 from .models import (
     AnalyzeTableStatisticsArgs,
     AnalyzeTableStatisticsJsonResponse,
@@ -24,7 +24,7 @@ __all__ = [
 async def handle_analyze_table_statistics(
     args: AnalyzeTableStatisticsArgs,
     effect: EffectAnalyzeTableStatistics,
-) -> AnalyzeTableStatisticsJsonResponse | ColumnDoesNotExist:
+) -> AnalyzeTableStatisticsJsonResponse | ColumnDoesNotExist | NoSupportedColumns:
     """Handle table statistics analysis request.
 
     Parameters
@@ -36,9 +36,10 @@ async def handle_analyze_table_statistics(
 
     Returns
     -------
-    AnalyzeTableStatisticsJsonResponse | ColumnDoesNotExist
-        The structured response containing table statistics, or error information
-        if requested columns don't exist.
+    AnalyzeTableStatisticsJsonResponse | ColumnDoesNotExist | NoSupportedColumns
+        The structured response containing table statistics, error information
+        if requested columns don't exist, or NoSupportedColumns if no columns
+        support statistics analysis.
 
     Raises
     ------
@@ -68,18 +69,15 @@ async def handle_analyze_table_statistics(
     match classified_columns:
         case ColumnDoesNotExist() as column_error:
             return column_error
+        case NoSupportedColumns() as no_supported:
+            return no_supported
         case ClassifiedColumns(
             supported_columns=supported_columns,
             unsupported_columns=unsupported_columns,
         ):
             pass
 
-    # If no supported columns, return error as ColumnDoesNotExist
-    if not supported_columns:
-        return ColumnDoesNotExist(
-            existed_columns=list(unsupported_columns),
-            not_existed_columns=[],
-        )
+    # Continue with supported columns processing
 
     result_row = await effect.analyze_table_statistics(
         args.database,
