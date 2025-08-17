@@ -1,8 +1,7 @@
 import logging
-from collections.abc import Sequence
-from typing import Protocol
+from collections.abc import Awaitable
+from typing import Protocol, TypedDict
 
-import mcp.types as types
 from pydantic import BaseModel
 
 from kernel.table_metadata import DataBase, Schema
@@ -14,30 +13,89 @@ class ListSchemasArgs(BaseModel):
     database: DataBase
 
 
+class SchemasInfoDict(TypedDict):
+    """TypedDict for schemas information in JSON response."""
+
+    database: str
+    schemas: list[str]
+
+
+class ListSchemasJsonResponse(TypedDict):
+    """TypedDict for the complete list schemas JSON response structure."""
+
+    schemas_info: SchemasInfoDict
+
+
 class EffectListSchemas(Protocol):
-    async def list_schemas(self, database: DataBase) -> list[Schema]: ...
+    def list_schemas(self, database: DataBase) -> Awaitable[list[Schema]]:
+        """List schemas in a database.
+
+        Parameters
+        ----------
+        database : DataBase
+            The database name to list schemas from.
+
+        Returns
+        -------
+        Awaitable[list[Schema]]
+            The list of schemas in the database.
+
+        Raises
+        ------
+        TimeoutError
+            If query execution times out
+        ProgrammingError
+            SQL syntax errors or other programming errors
+        OperationalError
+            Database operation related errors
+        DataError
+            Data processing related errors
+        IntegrityError
+            Referential integrity constraint violations
+        NotSupportedError
+            When an unsupported database feature is used
+        """
+        ...
 
 
 async def handle_list_schemas(
     args: ListSchemasArgs,
     effect_handler: EffectListSchemas,
-) -> Sequence[types.TextContent]:
-    """Handle list_schemas tool call."""
-    try:
-        schemas = await effect_handler.list_schemas(args.database)
-    except Exception as e:
-        logger.exception("Error listing schemas")
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Error: Failed to retrieve schemas: {e!s}",
-            )
-        ]
+) -> ListSchemasJsonResponse:
+    """Handle list_schemas tool call.
 
-    schema_list = "\n".join([f"- {schema}" for schema in schemas])
-    return [
-        types.TextContent(
-            type="text",
-            text=f"Schema list for database '{args.database}':\n{schema_list}",
-        )
-    ]
+    Parameters
+    ----------
+    args : ListSchemasArgs
+        The arguments for the list schemas operation.
+    effect_handler : EffectListSchemas
+        The effect handler for the list schemas operation.
+
+    Returns
+    -------
+    ListSchemasJsonResponse
+        The structured response containing the schemas information.
+
+    Raises
+    ------
+    TimeoutError
+        If query execution times out
+    ProgrammingError
+        SQL syntax errors or other programming errors
+    OperationalError
+        Database operation related errors
+    DataError
+        Data processing related errors
+    IntegrityError
+        Referential integrity constraint violations
+    NotSupportedError
+        When an unsupported database feature is used
+    """
+    schemas = await effect_handler.list_schemas(args.database)
+
+    return ListSchemasJsonResponse(
+        schemas_info={
+            "database": str(args.database),
+            "schemas": [str(schema) for schema in schemas],
+        }
+    )

@@ -215,33 +215,23 @@ class XyzTool(Tool):
 
         try:
             result = await handle_xyz(args, self.effect_handler)
-        except (
-            TimeoutError,
-            ProgrammingError,
-            OperationalError,
-            DataError,
-            IntegrityError,
-            NotSupportedError,
-            ContractViolationError,
-        ) as e:
-            match e:
-                case TimeoutError():
-                    text = f"Error: Query timed out: {e}"
-                case ProgrammingError():
-                    text = f"Error: SQL syntax error or other programming error: {e}"
-                case OperationalError():
-                    text = f"Error: Database operation related error: {e}"
-                case DataError():
-                    text = f"Error: Data processing related error: {e}"
-                case IntegrityError():
-                    text = f"Error: Referential integrity constraint violation: {e}"
-                case NotSupportedError():
-                    text = f"Error: Unsupported database feature used: {e}"
-                case ContractViolationError():
-                    text = f"Error: Unexpected error: {e}"
-            return [types.TextContent(type="text", text=text)]
-
-        return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
+        except TimeoutError as e:
+            text = f"Error: Query timed out: {e}"
+        except ProgrammingError as e:
+            text = f"Error: SQL syntax error or other programming error: {e}"
+        except OperationalError as e:
+            text = f"Error: Database operation related error: {e}"
+        except DataError as e:
+            text = f"Error: Data processing related error: {e}"
+        except IntegrityError as e:
+            text = f"Error: Referential integrity constraint violation: {e}"
+        except NotSupportedError as e:
+            text = f"Error: Unsupported database feature used: {e}"
+        except ContractViolationError as e:
+            text = f"Error: Unexpected error: {e}"
+        else:
+            text = json.dumps(result, indent=2)
+        return [types.TextContent(type="text", text=text)]
 ```
 
 ## Phase 4: Mock Infrastructure Creation
@@ -436,11 +426,13 @@ async def test_perform_with_exceptions(
     assert str(exception) in result[0].text
 ```
 
-## Phase 6: Adapter Layer Enhancement (Optional)
+## Phase 6: Adapter Layer Logging Enhancement (Mandatory)
 
 ### 6.1 Logging Enhancement
 
-If the tool has an associated adapter, enhance logging:
+**Important**: All adapters must have enhanced logging with structured extra fields for debugging and monitoring.
+
+For tools with associated adapters, implement comprehensive logging:
 
 ```python
 import logging
@@ -465,11 +457,74 @@ class XyzEffectHandler:
             raise
 
         return self._process_results(results)
+
+### 6.2 Exception Count Summary
+
+The comprehensive error handling should cover:
+- **7 Snowflake-specific exceptions**: TimeoutError, ProgrammingError, OperationalError, DataError, IntegrityError, NotSupportedError
+- **1 Application exception**: ContractViolationError
+- **1 Validation exception**: ValidationError (Pydantic)
+- **Total**: 9 exception types for robust error coverage
 ```
 
-## Phase 7: Validation and Testing
+## Phase 7: Handler Test Updates and Validation
 
-### 7.1 Run Tests
+## Phase 7: Handler Test Updates and Validation
+
+### 7.1 Handler Test Updates
+
+**Critical**: After refactoring handlers to return structured data, existing handler tests must be updated to use the new mock infrastructure.
+
+**Pattern**: Update handler tests to use new mock classes instead of old MockEffectHandler:
+
+**Before (Old Pattern)**:
+```python
+@pytest.fixture
+def mock_effect_handler() -> MockEffectHandler:
+    return MockEffectHandler()
+
+async def test_handle_xyz(mock_effect_handler):
+    # Old test pattern
+    pass
+```
+
+**After (New Pattern)**:
+```python
+@pytest.fixture
+def mock_effect_handler() -> MockXyz:
+    return MockXyz()
+
+async def test_handle_xyz_success(mock_effect_handler):
+    # Test the structured response directly
+    args = XyzArgs(param1="test", param2="value")
+    result = await handle_xyz(args, mock_effect_handler)
+
+    assert isinstance(result, XyzJsonResponse)
+    assert result["xyz_info"]["param1"] == expected_value
+```
+
+**Parameter Alias Issues**: Watch for field alias mismatches in test files:
+- Pydantic models may use `Field(alias="...")` for parameter names
+- Test arguments must use the **alias** name, not the field name
+- Example: If model has `schema_: str = Field(alias="schema")`, use `"schema"` in test arguments
+
+### 7.2 Mock Infrastructure Naming
+
+**Pattern**: Use consistent naming for mock classes:
+
+```python
+# Recommended naming convention
+MockDescribeTable  # ✅ Consistent with handler name
+MockListSchemas    # ✅ Consistent pattern
+MockListTables     # ✅ Clear and descriptive
+MockExecuteQuery   # ✅ Follows pattern
+
+# Avoid inconsistent naming
+MockEffectHandler  # ❌ Too generic
+MockXyzHandler     # ❌ Handler suffix not needed
+```
+
+### 7.3 Test Execution and Validation
 
 ```bash
 # Test specific tool
@@ -482,7 +537,26 @@ uv run pytest tests/tool/ -v
 uv run pytest . -v
 ```
 
-### 7.2 Code Quality Checks
+### 7.3 Test Execution and Validation
+
+```bash
+# Test specific tool (recommended during development)
+uv run pytest tests/tool/test_{tool_name}.py -v
+
+# Test specific handler (after handler updates)
+uv run pytest tests/handler/test_{tool_name}.py -v
+
+# Test all tools (final validation)
+uv run pytest tests/tool/ -v
+
+# Test all handlers (final validation)
+uv run pytest tests/handler/ -v
+
+# Run full test suite
+uv run pytest . -v
+```
+
+### 7.4 Code Quality Checks
 
 ```bash
 # Run linting
@@ -492,11 +566,90 @@ uv run ruff format src/mcp_snowflake/tool/{tool_name}.py
 # Check tests
 uv run ruff check --fix --unsafe-fixes tests/tool/test_{tool_name}.py
 uv run ruff format tests/tool/test_{tool_name}.py
+
+# Check handler tests
+uv run ruff check --fix --unsafe-fixes tests/handler/test_{tool_name}.py
+uv run ruff format tests/handler/test_{tool_name}.py
 ```
 
-## Phase 8: Documentation
+### 7.5 Expected Test Coverage
 
-### 8.1 Implementation Notes
+After successful refactoring, expect the following test coverage:
+
+**Tool Tests** (per tool):
+- **2 Property tests**: name, definition
+- **3-5 Success tests**: basic, minimal, complex, edge cases
+- **3-4 Error tests**: empty args, invalid args, validation errors
+- **7 Exception tests**: Parametrized Snowflake + ContractViolation exceptions
+- **Total per tool**: ~15-17 test cases
+
+**Handler Tests** (per handler):
+- **1-3 Success tests**: basic functionality with structured response validation
+- **2-4 Edge case tests**: empty data, complex data scenarios
+- **Total per handler**: ~3-7 test cases
+
+**Overall Numbers** (for 3-tool refactoring):
+- Tool tests: ~45-50 test cases
+- Handler tests: ~10-20 test cases
+- **Total**: ~55-70 comprehensive tests
+
+## Phase 8: Troubleshooting Common Issues
+
+### 8.1 Parameter Alias Problems
+
+**Issue**: Tests fail with parameter validation errors.
+
+**Cause**: Pydantic model field names differ from argument aliases.
+
+**Solution**:
+```python
+# In Pydantic model
+class XyzArgs(BaseModel):
+    schema_: str = Field(alias="schema")  # Field name vs alias
+
+# In tests - use ALIAS name
+arguments = {
+    "schema": "test_schema"  # ✅ Use alias name
+    # "schema_": "test_schema"  # ❌ Don't use field name
+}
+```
+
+### 8.2 Mock Infrastructure Issues
+
+**Issue**: Tests can't find mock classes.
+
+**Cause**: Mock not properly exported from `__init__.py`.
+
+**Solution**:
+```python
+# In tests/mock_effect_handler/__init__.py
+from .xyz import MockXyz
+
+__all__ = [
+    "MockDescribeTable",
+    "MockXyz",  # ✅ Add new mock to exports
+]
+```
+
+### 8.3 Handler Test Update Issues
+
+**Issue**: Handler tests still expect MCP types.
+
+**Cause**: Handler tests not updated after handler refactoring.
+
+**Solution**: Update handler tests to expect structured TypedDict responses:
+```python
+# Before
+assert isinstance(result[0], types.TextContent)
+
+# After
+assert isinstance(result, XyzJsonResponse)
+assert "xyz_info" in result
+```
+
+## Phase 9: Documentation
+
+### 9.1 Implementation Notes
 
 Create implementation notes in `docs/dev-notes/2025-08-17/implement-{tool-name}-refactoring.md`:
 
@@ -516,9 +669,16 @@ Refactor {ToolName} following the DescribeTableTool pattern with comprehensive e
 - [List specific changes]
 
 ## Test Results
-- X test cases implemented
-- Full coverage of error scenarios
-- All tests passing
+- Tool Tests: X/X passed (comprehensive error coverage)
+- Handler Tests: X/X passed (structured response validation)
+- Quality Checks: Linting clean, formatting applied
+- Total Test Cases: X implemented with full coverage
+
+## Key Implementation Insights
+- Parameter alias mapping challenges resolved
+- Mock infrastructure naming standardized
+- Logging enhancement implemented as mandatory
+- Handler test updates required for new architecture
 ```
 
 ## Checklist Template
@@ -526,57 +686,98 @@ Refactor {ToolName} following the DescribeTableTool pattern with comprehensive e
 For each tool refactoring, use this checklist:
 
 ### Handler Layer
-- [ ] Handler returns structured data (not MCP types)
-- [ ] Error handling delegated to tool layer
+- [ ] Handler returns structured data (TypedDict, not MCP types)
+- [ ] Error handling fully delegated to tool layer
 - [ ] Proper TypedDict response definitions
-- [ ] Comprehensive protocol docstrings
-- [ ] Proper type annotations
+- [ ] Comprehensive protocol docstrings with all 7 exceptions listed
+- [ ] Proper type annotations throughout
 
 ### Tool Layer
-- [ ] Comprehensive exception handling (7 types + ValidationError)
+- [ ] Comprehensive exception handling (8 types: 7 Snowflake + ContractViolationError)
+- [ ] ValidationError handling for Pydantic arguments
 - [ ] JSON serialization of structured response
-- [ ] Proper import organization
-- [ ] Match-case exception handling
+- [ ] Proper import organization (grouped by type)
+- [ ] Match-case exception handling with specific error messages
+
+### Adapter Layer
+- [ ] Mandatory logging enhancement implemented
+- [ ] try-catch blocks with logger.exception()
+- [ ] Structured extra fields for debugging
+- [ ] Exception re-raising to tool layer
 
 ### Mock Infrastructure
-- [ ] Mock effect handler created
-- [ ] Mock added to __init__.py exports
-- [ ] Mock supports error injection
-- [ ] Mock provides sensible defaults
+- [ ] Mock class created with consistent naming (MockXxxTool pattern)
+- [ ] Mock added to tests/mock_effect_handler/__init__.py exports
+- [ ] Mock supports error injection via should_raise parameter
+- [ ] Mock provides sensible default return values
+- [ ] Mock follows Protocol interface exactly
 
-### Testing
-- [ ] Property tests (name, definition)
-- [ ] Success scenarios (basic, minimal, complex)
-- [ ] Error handling tests (arguments, exceptions)
-- [ ] Parametrized exception tests
-- [ ] Edge case coverage
-- [ ] All tests passing
+### Testing - Tool Layer
+- [ ] Property tests (name, definition with schema validation)
+- [ ] Success scenarios (basic, minimal, complex data)
+- [ ] Error handling tests (empty args, invalid args, validation)
+- [ ] Parametrized exception tests (8 exception types)
+- [ ] Edge case coverage (tool-specific scenarios)
+- [ ] Expected ~15-17 test cases per tool
 
-### Quality
-- [ ] Linting passes
-- [ ] No unused imports
-- [ ] Consistent formatting
-- [ ] Documentation updated
+### Testing - Handler Layer
+- [ ] Handler tests updated to expect structured responses
+- [ ] Success tests with TypedDict response validation
+- [ ] Edge case tests (empty data, complex scenarios)
+- [ ] Parameter alias issues resolved (schema_ vs schema)
+- [ ] Expected ~3-7 test cases per handler
+
+### Quality Assurance
+- [ ] All tool tests passing (target: ~45-50 for 3 tools)
+- [ ] All handler tests passing (target: ~10-20 for 3 handlers)
+- [ ] Linting passes with no warnings
+- [ ] No unused imports or dead code
+- [ ] Consistent formatting applied
+- [ ] Documentation updated with implementation notes
 
 ## Expected Outcomes
 
 After applying this refactoring guide to all tools:
 
 1. **Consistent Architecture**: All tools follow the same error handling and response patterns
-2. **Comprehensive Testing**: Each tool has 10-15 test cases covering all scenarios
-3. **Better Error Messages**: Users receive clear, specific error messages
+2. **Comprehensive Testing**: Each tool has 15-17 test cases, handlers have 3-7 test cases
+3. **Better Error Messages**: Users receive clear, specific error messages for 8 exception types
 4. **Maintainability**: Standardized mock infrastructure and testing patterns
-5. **Type Safety**: Proper type annotations and structured responses
+5. **Type Safety**: Proper type annotations and structured TypedDict responses
+6. **Production Readiness**: Mandatory logging with structured extra fields for debugging
+7. **Quality Assurance**: ~55-70 comprehensive tests with full error coverage
+
+## Implementation Results (ListSchemas/Tables/Views Example)
+
+**Successfully completed example shows**:
+- **47 Tool Tests**: Full coverage of 3 tools with all error scenarios
+- **32 Handler Tests**: Updated to new architecture with structured response validation
+- **Logging Enhancement**: Implemented across all 3 adapter files
+- **Quality Metrics**: All tests passing, clean linting, consistent formatting
 
 ## Tools Priority Order
 
-Recommended order for refactoring (based on complexity and usage):
+Recommended order for refactoring (based on implementation experience):
 
-1. `ListSchemasTool` - Simple, good starting point
-2. `ListTablesTool` - Similar to schemas
-3. `ListViewsTool` - Similar pattern to tables
-4. `ExecuteQueryTool` - More complex, important functionality
-5. `SampleTableDataTool` - Moderate complexity
-6. `AnalyzeTableStatisticsTool` - Most complex, do last
+### Tier 1: Simple List Tools (Good starting point)
+1. **`ListSchemasTool`** ✅ - Simple structure, single parameter
+2. **`ListTablesTool`** ✅ - Two parameters, similar pattern
+3. **`ListViewsTool`** ✅ - Similar to tables, establishes pattern
 
-This systematic approach ensures consistency across all tools while maintaining code quality and comprehensive test coverage.
+*Status: Completed with 47 tool tests + 32 handler tests passing*
+
+### Tier 2: Data Operations (Moderate complexity)
+4. **`SampleTableDataTool`** - Data retrieval, response formatting
+5. **`ExecuteQueryTool`** - SQL execution, dynamic responses
+
+### Tier 3: Complex Analysis (Advanced features)
+6. **`AnalyzeTableStatisticsTool`** - Statistical calculations, complex data processing
+
+**Lessons from Tier 1 Implementation**:
+- Parameter alias issues (schema_ vs schema) are common - watch for Field(alias="...")
+- Handler test updates are mandatory, not optional
+- Mock naming should be consistent (MockListSchemas, not MockEffectHandler)
+- Logging enhancement is required for production readiness
+- Expected 15-17 tests per tool, 3-7 per handler for comprehensive coverage
+
+This systematic approach ensures consistency across all tools while building complexity gradually. Each tier builds upon lessons learned from the previous tier.

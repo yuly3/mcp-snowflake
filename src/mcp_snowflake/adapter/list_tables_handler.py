@@ -1,11 +1,14 @@
 """ListTables EffectHandler implementation."""
 
+import logging
 from datetime import timedelta
 
 from kernel.sql_utils import quote_ident
 from kernel.table_metadata import DataBase, Schema, Table
 
 from ..snowflake_client import SnowflakeClient
+
+logger = logging.getLogger(__name__)
 
 
 class ListTablesEffectHandler:
@@ -19,7 +22,18 @@ class ListTablesEffectHandler:
         """Get list of tables in a database schema."""
         query = f"SHOW TABLES IN SCHEMA {quote_ident(database)}.{quote_ident(schema)}"
 
-        results = await self.client.execute_query(query, timedelta(seconds=10))
+        try:
+            results = await self.client.execute_query(query, timedelta(seconds=10))
+        except Exception:
+            logger.exception(
+                "failed to execute list tables operation",
+                extra={
+                    "database": str(database),
+                    "schema": str(schema),
+                    "query": query,
+                },
+            )
+            raise
 
         tables: list[Table] = []
         for row in results:

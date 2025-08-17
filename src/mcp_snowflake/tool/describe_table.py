@@ -42,32 +42,23 @@ class DescribeTableTool(Tool):
 
         try:
             result = await handle_describe_table(args, self.effect_handler)
-        except (
-            TimeoutError,
-            ProgrammingError,
-            OperationalError,
-            DataError,
-            IntegrityError,
-            NotSupportedError,
-            ContractViolationError,
-        ) as e:
-            match e:
-                case TimeoutError():
-                    text = f"Error: Query timed out: {e}"
-                case ProgrammingError():
-                    text = f"Error: SQL syntax error or other programming error: {e}"
-                case OperationalError():
-                    text = f"Error: Database operation related error: {e}"
-                case DataError():
-                    text = f"Error: Data processing related error: {e}"
-                case IntegrityError():
-                    text = f"Error: Referential integrity constraint violation: {e}"
-                case NotSupportedError():
-                    text = f"Error: Unsupported database feature used: {e}"
-                case ContractViolationError():
-                    text = f"Error: Unexpected error: {e}"
-            return [types.TextContent(type="text", text=text)]
-        return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
+        except TimeoutError as e:
+            text = f"Error: Query timed out: {e}"
+        except ProgrammingError as e:
+            text = f"Error: SQL syntax error or other programming error: {e}"
+        except OperationalError as e:
+            text = f"Error: Database operation related error: {e}"
+        except DataError as e:
+            text = f"Error: Data processing related error: {e}"
+        except IntegrityError as e:
+            text = f"Error: Referential integrity constraint violation: {e}"
+        except NotSupportedError as e:
+            text = f"Error: Unsupported database feature used: {e}"
+        except ContractViolationError as e:
+            text = f"Error: Unexpected error: {e}"
+        else:
+            text = json.dumps(result, indent=2)
+        return [types.TextContent(type="text", text=text)]
 
     @property
     def definition(self) -> types.Tool:

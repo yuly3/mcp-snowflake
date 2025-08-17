@@ -1,7 +1,7 @@
 import logging
-from typing import Protocol
+from collections.abc import Awaitable
+from typing import Protocol, TypedDict
 
-import mcp.types as types
 from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, Table
@@ -14,30 +14,93 @@ class ListTablesArgs(BaseModel):
     schema_: Schema = Field(alias="schema")
 
 
+class TablesInfoDict(TypedDict):
+    """TypedDict for tables information in JSON response."""
+
+    database: str
+    schema: str
+    tables: list[str]
+
+
+class ListTablesJsonResponse(TypedDict):
+    """TypedDict for the complete list tables JSON response structure."""
+
+    tables_info: TablesInfoDict
+
+
 class EffectListTables(Protocol):
-    async def list_tables(self, database: DataBase, schema: Schema) -> list[Table]: ...
+    def list_tables(self, database: DataBase, schema: Schema) -> Awaitable[list[Table]]:
+        """List tables in a database schema.
+
+        Parameters
+        ----------
+        database : DataBase
+            The database name to list tables from.
+        schema : Schema
+            The schema name to list tables from.
+
+        Returns
+        -------
+        Awaitable[list[Table]]
+            The list of tables in the schema.
+
+        Raises
+        ------
+        TimeoutError
+            If query execution times out
+        ProgrammingError
+            SQL syntax errors or other programming errors
+        OperationalError
+            Database operation related errors
+        DataError
+            Data processing related errors
+        IntegrityError
+            Referential integrity constraint violations
+        NotSupportedError
+            When an unsupported database feature is used
+        """
+        ...
 
 
 async def handle_list_tables(
     args: ListTablesArgs,
     effect_handler: EffectListTables,
-) -> list[types.TextContent]:
-    """Handle list_tables tool call."""
-    try:
-        tables = await effect_handler.list_tables(args.database, args.schema_)
-    except Exception as e:
-        logger.exception("Error listing tables")
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Error: Failed to retrieve tables: {e!s}",
-            )
-        ]
+) -> ListTablesJsonResponse:
+    """Handle list_tables tool call.
 
-    table_list = "\n".join([f"- {table}" for table in tables])
-    return [
-        types.TextContent(
-            type="text",
-            text=f"Table list for schema '{args.database}.{args.schema_}':\n{table_list}",
-        )
-    ]
+    Parameters
+    ----------
+    args : ListTablesArgs
+        The arguments for the list tables operation.
+    effect_handler : EffectListTables
+        The effect handler for the list tables operation.
+
+    Returns
+    -------
+    ListTablesJsonResponse
+        The structured response containing the tables information.
+
+    Raises
+    ------
+    TimeoutError
+        If query execution times out
+    ProgrammingError
+        SQL syntax errors or other programming errors
+    OperationalError
+        Database operation related errors
+    DataError
+        Data processing related errors
+    IntegrityError
+        Referential integrity constraint violations
+    NotSupportedError
+        When an unsupported database feature is used
+    """
+    tables = await effect_handler.list_tables(args.database, args.schema_)
+
+    return ListTablesJsonResponse(
+        tables_info={
+            "database": str(args.database),
+            "schema": str(args.schema_),
+            "tables": [str(table) for table in tables],
+        }
+    )

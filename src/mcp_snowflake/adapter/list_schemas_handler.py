@@ -1,11 +1,14 @@
 """ListSchemas EffectHandler implementation."""
 
+import logging
 from datetime import timedelta
 
 from kernel.sql_utils import quote_ident
 from kernel.table_metadata import DataBase, Schema
 
 from ..snowflake_client import SnowflakeClient
+
+logger = logging.getLogger(__name__)
 
 
 class ListSchemasEffectHandler:
@@ -19,7 +22,17 @@ class ListSchemasEffectHandler:
         """Get list of schemas in a database."""
         query = f"SHOW SCHEMAS IN DATABASE {quote_ident(database)}"
 
-        results = await self.client.execute_query(query, timedelta(seconds=10))
+        try:
+            results = await self.client.execute_query(query, timedelta(seconds=10))
+        except Exception:
+            logger.exception(
+                "failed to execute list schemas operation",
+                extra={
+                    "database": str(database),
+                    "query": query,
+                },
+            )
+            raise
 
         schemas: list[Schema] = []
         for row in results:

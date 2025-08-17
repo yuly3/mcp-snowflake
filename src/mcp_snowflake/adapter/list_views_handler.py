@@ -1,11 +1,14 @@
 """ListViews EffectHandler implementation."""
 
+import logging
 from datetime import timedelta
 
 from kernel.sql_utils import quote_ident
 from kernel.table_metadata import DataBase, Schema, View
 
 from ..snowflake_client import SnowflakeClient
+
+logger = logging.getLogger(__name__)
 
 
 class ListViewsEffectHandler:
@@ -19,7 +22,18 @@ class ListViewsEffectHandler:
         """Get list of views in a database schema."""
         query = f"SHOW VIEWS IN SCHEMA {quote_ident(database)}.{quote_ident(schema)}"
 
-        results = await self.client.execute_query(query, timedelta(seconds=10))
+        try:
+            results = await self.client.execute_query(query, timedelta(seconds=10))
+        except Exception:
+            logger.exception(
+                "failed to execute list views operation",
+                extra={
+                    "database": str(database),
+                    "schema": str(schema),
+                    "query": query,
+                },
+            )
+            raise
 
         views: list[View] = []
         for row in results:

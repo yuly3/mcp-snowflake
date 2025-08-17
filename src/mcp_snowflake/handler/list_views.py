@@ -1,7 +1,7 @@
 import logging
-from typing import Protocol
+from collections.abc import Awaitable
+from typing import Protocol, TypedDict
 
-import mcp.types as types
 from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, View
@@ -14,30 +14,93 @@ class ListViewsArgs(BaseModel):
     schema_: Schema = Field(alias="schema")
 
 
+class ViewsInfoDict(TypedDict):
+    """TypedDict for views information in JSON response."""
+
+    database: str
+    schema: str
+    views: list[str]
+
+
+class ListViewsJsonResponse(TypedDict):
+    """TypedDict for the complete list views JSON response structure."""
+
+    views_info: ViewsInfoDict
+
+
 class EffectListViews(Protocol):
-    async def list_views(self, database: DataBase, schema: Schema) -> list[View]: ...
+    def list_views(self, database: DataBase, schema: Schema) -> Awaitable[list[View]]:
+        """List views in a database schema.
+
+        Parameters
+        ----------
+        database : DataBase
+            The database name to list views from.
+        schema : Schema
+            The schema name to list views from.
+
+        Returns
+        -------
+        Awaitable[list[View]]
+            The list of views in the schema.
+
+        Raises
+        ------
+        TimeoutError
+            If query execution times out
+        ProgrammingError
+            SQL syntax errors or other programming errors
+        OperationalError
+            Database operation related errors
+        DataError
+            Data processing related errors
+        IntegrityError
+            Referential integrity constraint violations
+        NotSupportedError
+            When an unsupported database feature is used
+        """
+        ...
 
 
 async def handle_list_views(
     args: ListViewsArgs,
     effect_handler: EffectListViews,
-) -> list[types.TextContent]:
-    """Handle list_views tool call."""
-    try:
-        views = await effect_handler.list_views(args.database, args.schema_)
-    except Exception as e:
-        logger.exception("Error listing views")
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Error: Failed to retrieve views: {e!s}",
-            )
-        ]
+) -> ListViewsJsonResponse:
+    """Handle list_views tool call.
 
-    view_list = "\n".join([f"- {view}" for view in views])
-    return [
-        types.TextContent(
-            type="text",
-            text=f"View list for schema '{args.database}.{args.schema_}':\n{view_list}",
-        )
-    ]
+    Parameters
+    ----------
+    args : ListViewsArgs
+        The arguments for the list views operation.
+    effect_handler : EffectListViews
+        The effect handler for the list views operation.
+
+    Returns
+    -------
+    ListViewsJsonResponse
+        The structured response containing the views information.
+
+    Raises
+    ------
+    TimeoutError
+        If query execution times out
+    ProgrammingError
+        SQL syntax errors or other programming errors
+    OperationalError
+        Database operation related errors
+    DataError
+        Data processing related errors
+    IntegrityError
+        Referential integrity constraint violations
+    NotSupportedError
+        When an unsupported database feature is used
+    """
+    views = await effect_handler.list_views(args.database, args.schema_)
+
+    return ListViewsJsonResponse(
+        views_info={
+            "database": str(args.database),
+            "schema": str(args.schema_),
+            "views": [str(view) for view in views],
+        }
+    )
