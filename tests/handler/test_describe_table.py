@@ -1,43 +1,10 @@
-from typing import ClassVar
-
 import pytest
 from pydantic import ValidationError
 
 from kernel.table_metadata import DataBase, Schema, Table, TableColumn, TableInfo
 from mcp_snowflake.handler import DescribeTableArgs, handle_describe_table
 
-from ._utils import assert_keys_exact, assert_single_text, parse_json_text
-
-
-class MockEffectHandler:
-    """Mock implementation of EffectDescribeTable protocol."""
-
-    def __init__(
-        self,
-        table_info: TableInfo | None = None,
-        should_raise: Exception | None = None,
-    ) -> None:
-        self.table_info = table_info
-        self.should_raise = should_raise
-
-    async def describe_table(
-        self,
-        database: str,  # noqa: ARG002
-        schema: str,  # noqa: ARG002
-        table: str,  # noqa: ARG002
-    ) -> TableInfo:
-        if self.should_raise:
-            raise self.should_raise
-        if self.table_info is None:
-            # Return minimal default
-            return TableInfo(
-                database=DataBase("default_db"),
-                schema=Schema("default_schema"),
-                name="default_table",
-                column_count=0,
-                columns=[],
-            )
-        return self.table_info
+from ..mock_effect_handler import MockDescribeTable
 
 
 class TestDescribeTableArgs:
@@ -92,15 +59,6 @@ class TestDescribeTableArgs:
 
 class TestHandleDescribeTable:
     """Test handle_describe_table function."""
-
-    # Expected keys in describe_table response table_info object
-    EXPECTED_RESPONSE_KEYS: ClassVar[set[str]] = {
-        "database",
-        "schema",
-        "name",
-        "column_count",
-        "columns",
-    }
 
     @pytest.mark.parametrize(
         ("label", "database", "schema", "table", "columns_spec", "expectations"),
@@ -213,18 +171,12 @@ class TestHandleDescribeTable:
             column_count=len(columns_spec),
             columns=columns_spec,
         )
-        effect_handler = MockEffectHandler(table_info=mock_table_data)
+        effect_handler = MockDescribeTable(table_info=mock_table_data)
 
         # Act
         result = await handle_describe_table(args, effect_handler)
 
-        # Assert using helpers
-        content = assert_single_text(result)
-        json_data = parse_json_text(content)
-        table_info = json_data["table_info"]
-
-        # Strict key validation - ensure response contains exactly expected keys
-        assert_keys_exact(table_info, self.EXPECTED_RESPONSE_KEYS)
+        table_info = result["table_info"]
 
         # Basic table info validation
         assert table_info["database"] == database, f"[{label}] Database mismatch"
@@ -265,23 +217,3 @@ class TestHandleDescribeTable:
             assert len(required_cols) > 0, (
                 f"[{label}] Expected at least one required column"
             )
-
-    @pytest.mark.asyncio
-    async def test_effect_handler_exception(self) -> None:
-        """Test exception handling from effect handler."""
-        # Arrange
-        args = DescribeTableArgs(
-            database=DataBase("error_db"),
-            schema=Schema("error_schema"),
-            table=Table("error_table"),
-        )
-        error_message = "Table not found"
-        effect_handler = MockEffectHandler(should_raise=Exception(error_message))
-
-        # Act
-        result = await handle_describe_table(args, effect_handler)
-
-        # Assert using helpers
-        content = assert_single_text(result)
-        assert "Error: Failed to describe table:" in content.text
-        assert error_message in content.text

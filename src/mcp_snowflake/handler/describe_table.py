@@ -1,8 +1,7 @@
-import json
 import logging
+from collections.abc import Awaitable
 from typing import Protocol, TypedDict
 
-import mcp.types as types
 from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, Table, TableInfo
@@ -44,33 +43,84 @@ class DescribeTableArgs(BaseModel):
 
 
 class EffectDescribeTable(Protocol):
-    async def describe_table(
+    def describe_table(
         self,
         database: DataBase,
         schema: Schema,
         table: Table,
-    ) -> TableInfo: ...
+    ) -> Awaitable[TableInfo]:
+        """Describe a table in the database.
+
+        Parameters
+        ----------
+        database : DataBase
+            The database containing the table.
+        schema : Schema
+            The schema containing the table.
+        table : Table
+            The table to describe.
+
+        Returns
+        -------
+        Awaitable[TableInfo]
+            The information about the table.
+
+        Raises
+        ------
+        TimeoutError
+            If query execution times out
+        ProgrammingError
+            SQL syntax errors or other programming errors
+        OperationalError
+            Database operation related errors
+        DataError
+            Data processing related errors
+        IntegrityError
+            Referential integrity constraint violations
+        NotSupportedError
+            When an unsupported database feature is used
+        """
+        ...
 
 
 async def handle_describe_table(
     args: DescribeTableArgs,
     effect_handler: EffectDescribeTable,
-) -> list[types.TextContent]:
-    """Handle describe_table tool call."""
-    try:
-        table_data = await effect_handler.describe_table(
-            args.database,
-            args.schema_,
-            args.table_,
-        )
-    except Exception as e:
-        logger.exception("Error describing table")
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Error: Failed to describe table: {e!s}",
-            )
-        ]
+) -> TableJsonResponse:
+    """Handle describe_table tool call.
+
+    Parameters
+    ----------
+    args : DescribeTableArgs
+        The arguments for describing the table.
+    effect_handler : EffectDescribeTable
+        The effect handler for describing the table.
+
+    Returns
+    -------
+    TableJsonResponse
+        The JSON response containing the table information.
+
+    Raises
+    ------
+    TimeoutError
+        If query execution times out
+    ProgrammingError
+        SQL syntax errors or other programming errors
+    OperationalError
+        Database operation related errors
+    DataError
+        Data processing related errors
+    IntegrityError
+        Referential integrity constraint violations
+    NotSupportedError
+        When an unsupported database feature is used
+    """
+    table_data = await effect_handler.describe_table(
+        args.database,
+        args.schema_,
+        args.table_,
+    )
 
     columns_dict: list[ColumnDict] = [
         {
@@ -84,19 +134,12 @@ async def handle_describe_table(
         for col in table_data.columns
     ]
 
-    table_json: TableJsonResponse = {
-        "table_info": {
+    return TableJsonResponse(
+        table_info={
             "database": table_data.database,
             "schema": table_data.schema,
             "name": table_data.name,
             "column_count": table_data.column_count,
             "columns": columns_dict,
         }
-    }
-
-    return [
-        types.TextContent(
-            type="text",
-            text=json.dumps(table_json, indent=2),
-        )
-    ]
+    )

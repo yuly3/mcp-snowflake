@@ -1,11 +1,14 @@
 """DescribeTable EffectHandler implementation."""
 
+import logging
 from datetime import timedelta
 
 from kernel.sql_utils import fully_qualified
 from kernel.table_metadata import DataBase, Schema, Table, TableColumn, TableInfo
 
 from ..snowflake_client import SnowflakeClient
+
+logger = logging.getLogger(__name__)
 
 
 class DescribeTableEffectHandler:
@@ -26,10 +29,16 @@ class DescribeTableEffectHandler:
 
         try:
             results = await self.client.execute_query(query, timedelta(seconds=10))
-        except Exception as e:
-            raise Exception(
-                f"Failed to describe table '{database}.{schema}.{table}': {e!s}"
-            ) from e
+        except Exception:
+            logger.exception(
+                "failed to describe table",
+                extra={
+                    "database": database,
+                    "schema": schema,
+                    "table": table,
+                },
+            )
+            raise
 
         # Transform results into structured format
         columns = [
