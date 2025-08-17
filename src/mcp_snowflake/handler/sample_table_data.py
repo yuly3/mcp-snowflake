@@ -1,9 +1,8 @@
-import json
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Mapping, Sequence
 from typing import Any, Protocol, TypedDict
 
-import mcp.types as types
+from more_itertools import first
 from pydantic import BaseModel, Field
 
 from cattrs_converter import Jsonable, JsonImmutableConverter
@@ -41,115 +40,108 @@ class SampleTableDataArgs(BaseModel):
 
 
 class EffectSampleTableData(Protocol):
-    async def sample_table_data(
+    def sample_table_data(
         self,
         database: DataBase,
         schema: Schema,
         table: Table,
         sample_size: int,
         columns: list[str],
-    ) -> list[dict[str, Any]]: ...
+    ) -> Awaitable[list[dict[str, Any]]]:
+        """Execute sample table data operation.
 
+        Parameters
+        ----------
+        database : DataBase
+            Database name containing the table.
+        schema : Schema
+            Schema name containing the table.
+        table : Table
+            Name of the table to sample.
+        sample_size : int
+            Number of sample rows to retrieve.
+        columns : list[str]
+            List of column names to retrieve (empty list for all columns).
 
-def _format_response(
-    processed_rows: Sequence[Mapping[str, Jsonable]],
-    warnings: list[str],
-    database: DataBase,
-    schema: Schema,
-    table: Table,
-    sample_size: int,
-) -> SampleTableDataJsonResponse:
-    """
-    Format the final response structure.
+        Returns
+        -------
+        Awaitable[list[dict[str, Any]]]
+            Raw sample data rows from Snowflake.
 
-    Parameters
-    ----------
-    processed_rows : Sequence[Mapping[str, Jsonable]]
-        Processed sample data rows
-    warnings : list[str]
-        List of warning messages
-    database : str
-        Database name
-    schema : str
-        Schema name
-    table : str
-        Table name
-    sample_size : int
-        Requested sample size
-
-    Returns
-    -------
-    SampleTableDataJsonResponse
-        Formatted response structure
-    """
-    return {
-        "sample_data": {
-            "database": database,
-            "schema": schema,
-            "table": table,
-            "sample_size": sample_size,
-            "actual_rows": len(processed_rows),
-            "columns": list(processed_rows[0].keys()) if processed_rows else [],
-            "rows": processed_rows,
-            "warnings": warnings,
-        }
-    }
+        Raises
+        ------
+        TimeoutError
+            If query execution times out
+        ProgrammingError
+            SQL syntax errors or other programming errors
+        OperationalError
+            Database operation related errors
+        DataError
+            Data processing related errors
+        IntegrityError
+            Referential integrity constraint violations
+        NotSupportedError
+            When an unsupported database feature is used
+        """
+        ...
 
 
 async def handle_sample_table_data(
     json_converter: JsonImmutableConverter,
     args: SampleTableDataArgs,
     effect_handler: EffectSampleTableData,
-) -> list[types.TextContent]:
-    """
-    Handle sample_table_data tool call.
+) -> SampleTableDataJsonResponse:
+    """Handle sample_table_data tool call.
 
     Parameters
     ----------
     json_converter : JsonImmutableConverter
-        JSON converter for structuring and unstructuring data
+        JSON converter for structuring and unstructuring data.
     args : SampleTableDataArgs
-        Arguments for the sample table data operation
+        Arguments for the sample table data operation.
     effect_handler : EffectSampleTableData
-        Handler for Snowflake operations
+        Handler for Snowflake operations.
 
     Returns
     -------
-    list[types.TextContent]
-        Response content with sample data or error message
+    SampleTableDataJsonResponse
+        The structured response containing sample data information.
+
+    Raises
+    ------
+    TimeoutError
+        If query execution times out
+    ProgrammingError
+        SQL syntax errors or other programming errors
+    OperationalError
+        Database operation related errors
+    DataError
+        Data processing related errors
+    IntegrityError
+        Referential integrity constraint violations
+    NotSupportedError
+        When an unsupported database feature is used
     """
-    try:
-        raw_data = await effect_handler.sample_table_data(
-            args.database,
-            args.schema_,
-            args.table_,
-            args.sample_size,
-            args.columns,
-        )
-
-    except Exception as e:
-        logger.exception("Error handling sample_table_data")
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Error: Failed to sample table data: {e}",
-            )
-        ]
-
-    result = DataProcessingResult.from_raw_rows(json_converter, raw_data)
-
-    response = _format_response(
-        result.processed_rows,
-        result.warnings,
+    raw_data = await effect_handler.sample_table_data(
         args.database,
         args.schema_,
         args.table_,
         args.sample_size,
+        args.columns,
     )
 
-    return [
-        types.TextContent(
-            type="text",
-            text=json.dumps(response, indent=2, ensure_ascii=False),
-        )
-    ]
+    result = DataProcessingResult.from_raw_rows(json_converter, raw_data)
+
+    columns = list(first(result.processed_rows, {}).keys())
+    return SampleTableDataJsonResponse(
+        sample_data={
+            "database": args.database,
+            "schema": args.schema_,
+            "table": args.table_,
+            "sample_size": args.sample_size,
+            "actual_rows": len(result.processed_rows),
+            "columns": columns,
+            "rows": result.processed_rows,
+            "warnings": result.warnings,
+        }
+    )

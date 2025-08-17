@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any, ClassVar
+from typing import ClassVar
 
 import pytest
 from pydantic import ValidationError
@@ -8,36 +8,10 @@ from cattrs_converter import JsonImmutableConverter
 from kernel import DataProcessingResult
 from mcp_snowflake.handler.execute_query import (
     ExecuteQueryArgs,
-    _format_query_response,
     handle_execute_query,
 )
 
-from ._utils import assert_keys_exact, assert_single_text, parse_json_text
-
-
-class MockEffectHandler:
-    """Mock implementation of EffectExecuteQuery protocol."""
-
-    def __init__(
-        self,
-        query_result: list[dict[str, Any]] | None = None,
-        should_raise: Exception | None = None,
-    ) -> None:
-        self.query_result = query_result or []
-        self.should_raise = should_raise
-        self.called_with_sql: str | None = None
-        self.called_with_timeout: timedelta | None = None
-
-    async def execute_query(
-        self,
-        query: str,
-        query_timeout: timedelta | None = None,
-    ) -> list[dict[str, Any]]:
-        self.called_with_sql = query
-        self.called_with_timeout = query_timeout
-        if self.should_raise:
-            raise self.should_raise
-        return self.query_result
+from ..mock_effect_handler import MockExecuteQuery
 
 
 class TestExecuteQueryArgs:
@@ -89,7 +63,7 @@ class TestExecuteQueryHandler:
             {"id": 1, "name": "Alice", "age": 30},
             {"id": 2, "name": "Bob", "age": 25},
         ]
-        effect_handler = MockEffectHandler(query_result=mock_data)
+        effect_handler = MockExecuteQuery(result_data=mock_data)
 
         # Test args
         args = ExecuteQueryArgs(sql="SELECT id, name, age FROM users LIMIT 2")
@@ -97,13 +71,11 @@ class TestExecuteQueryHandler:
         # Execute handler
         result = await handle_execute_query(json_converter, args, effect_handler)
 
-        # Verify result using helper
-        content = assert_single_text(result)
-        response_data = parse_json_text(content)
-        assert "query_result" in response_data
+        # Verify result - should be ExecuteQueryJsonResponse directly
+        assert isinstance(result, dict)
+        assert "query_result" in result
 
-        query_result = response_data["query_result"]
-        assert_keys_exact(query_result, self.EXPECTED_RESPONSE_KEYS)
+        query_result = result["query_result"]
         assert query_result["row_count"] == 2
         assert query_result["columns"] == ["id", "name", "age"]
         assert len(query_result["rows"]) == 2
@@ -119,19 +91,14 @@ class TestExecuteQueryHandler:
     ) -> None:
         """Test that write SQL is blocked."""
         # Mock effect handler (should not be called for write operations)
-        effect_handler = MockEffectHandler()
+        effect_handler = MockExecuteQuery()
 
         # Test args with write SQL
         args = ExecuteQueryArgs(sql="INSERT INTO users (name) VALUES ('Charlie')")
 
-        # Execute handler
-        result = await handle_execute_query(json_converter, args, effect_handler)
-
-        # Verify write operation is blocked
-        assert len(result) == 1
-        content = result[0]
-        assert content.type == "text"
-        assert "Write operations are not allowed" in content.text
+        # Execute handler - should raise ValueError for write operations
+        with pytest.raises(ValueError, match="Write operations are not allowed"):
+            _ = await handle_execute_query(json_converter, args, effect_handler)
 
         # Verify effect handler was not called
         assert effect_handler.called_with_sql is None
@@ -144,7 +111,7 @@ class TestExecuteQueryHandler:
     ) -> None:
         """Test query execution with empty result."""
         # Mock effect handler with empty result
-        effect_handler = MockEffectHandler(query_result=[])
+        effect_handler = MockExecuteQuery(result_data=[])
 
         # Test args
         args = ExecuteQueryArgs(sql="SELECT * FROM empty_table")
@@ -152,11 +119,10 @@ class TestExecuteQueryHandler:
         # Execute handler
         result = await handle_execute_query(json_converter, args, effect_handler)
 
-        # Verify result using helper
-        content = assert_single_text(result)
-        response_data = parse_json_text(content)
-        query_result = response_data["query_result"]
-        assert_keys_exact(query_result, self.EXPECTED_RESPONSE_KEYS)
+        # Verify result - should be ExecuteQueryJsonResponse directly
+        assert isinstance(result, dict)
+        assert "query_result" in result
+        query_result = result["query_result"]
         assert query_result["row_count"] == 0
         assert query_result["columns"] == []
         assert query_result["rows"] == []
@@ -168,7 +134,7 @@ class TestExecuteQueryHandler:
     ) -> None:
         """Test query execution with custom timeout."""
         # Mock effect handler
-        effect_handler = MockEffectHandler(query_result=[{"result": "success"}])
+        effect_handler = MockExecuteQuery(result_data=[{"result": "success"}])
 
         # Test args with custom timeout
         args = ExecuteQueryArgs(sql="SELECT 1", timeout_seconds=60)
@@ -191,20 +157,14 @@ class TestExecuteQueryHandler:
         """Test error handling during query execution."""
         # Mock effect handler to raise exception
         error_message = "Database connection failed"
-        effect_handler = MockEffectHandler(should_raise=Exception(error_message))
+        effect_handler = MockExecuteQuery(should_raise=Exception(error_message))
 
         # Test args
         args = ExecuteQueryArgs(sql="SELECT 1")
 
-        # Execute handler
-        result = await handle_execute_query(json_converter, args, effect_handler)
-
-        # Verify error handling
-        assert len(result) == 1
-        content = result[0]
-        assert content.type == "text"
-        assert "Failed to execute query" in content.text
-        assert "Database connection failed" in content.text
+        # Execute handler - should raise exception directly
+        with pytest.raises(Exception, match="Database connection failed"):
+            _ = await handle_execute_query(json_converter, args, effect_handler)
 
     def test_process_multiple_rows_data_success(
         self,
@@ -232,27 +192,3 @@ class TestExecuteQueryHandler:
 
         assert result.processed_rows == []
         assert result.warnings == []
-
-    def test_format_query_response(self) -> None:
-        """Test query response formatting."""
-        processed_rows = [
-            {"col1": "value1", "col2": "value2"},
-            {"col1": "value3", "col2": "value4"},
-        ]
-        warnings = ["Warning message"]
-        execution_time_ms = 150
-
-        response = _format_query_response(
-            processed_rows,
-            warnings,
-            execution_time_ms,
-        )
-
-        assert "query_result" in response
-        query_result = response["query_result"]
-        assert set(query_result.keys()) == self.EXPECTED_RESPONSE_KEYS
-        assert query_result["execution_time_ms"] == execution_time_ms
-        assert query_result["row_count"] == 2
-        assert query_result["columns"] == ["col1", "col2"]
-        assert query_result["rows"] == processed_rows
-        assert query_result["warnings"] == warnings

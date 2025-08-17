@@ -9,8 +9,6 @@ from mcp_snowflake.handler.sample_table_data import (
     handle_sample_table_data,
 )
 
-from .._utils import assert_single_text, parse_json_text
-
 
 class MockEffectSampleTableData:
     """Mock implementation of EffectSampleTableData protocol."""
@@ -117,10 +115,10 @@ class TestHandleSampleTableData:
         # Act
         result = await handle_sample_table_data(json_converter, args, mock_effect)
 
-        # Assert using helpers
-        content = assert_single_text(result)
-        response_data = parse_json_text(content)
-        sample_data_obj = response_data["sample_data"]
+        # Assert - result should be SampleTableDataJsonResponse directly
+        assert isinstance(result, dict)
+        assert "sample_data" in result
+        sample_data_obj = result["sample_data"]
 
         # Common assertions
         assert sample_data_obj["database"] == "test_db", (
@@ -180,7 +178,7 @@ class TestHandleSampleTableData:
             table=Table("test_table"),
         )
 
-        result = await handle_sample_table_data(json_converter, args, mock_effect)
-
-        content = assert_single_text(result)
-        assert "Error: Failed to sample table data: Database error" in content.text
+        # Since we refactored the handler to not handle exceptions,
+        # the exception should be raised directly
+        with pytest.raises(Exception, match="Database error"):
+            _ = await handle_sample_table_data(json_converter, args, mock_effect)

@@ -1,10 +1,9 @@
-import json
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Mapping, Sequence
 from datetime import timedelta
 from typing import Any, Protocol, TypedDict
 
-import mcp.types as types
+from more_itertools import first
 from pydantic import BaseModel, Field
 
 from cattrs_converter import Jsonable, JsonImmutableConverter
@@ -38,114 +37,103 @@ class ExecuteQueryArgs(BaseModel):
 
 
 class EffectExecuteQuery(Protocol):
-    async def execute_query(
+    def execute_query(
         self,
         query: str,
         query_timeout: timedelta | None = None,
-    ) -> list[dict[str, Any]]: ...
+    ) -> Awaitable[list[dict[str, Any]]]:
+        """Execute SQL query operation.
 
+        Parameters
+        ----------
+        query : str
+            SQL query to execute (read operations only).
+        query_timeout : timedelta | None
+            Query timeout duration, by default None.
 
-def _format_query_response(
-    processed_rows: Sequence[Mapping[str, Jsonable]],
-    warnings: list[str],
-    execution_time_ms: int,
-) -> ExecuteQueryJsonResponse:
-    """
-    Format the final query response structure.
+        Returns
+        -------
+        Awaitable[list[dict[str, Any]]]
+            Raw query result rows from Snowflake.
 
-    Parameters
-    ----------
-    processed_rows : Sequence[Mapping[str, Jsonable]]
-        Processed query result rows
-    warnings : list[str]
-        List of warning messages
-    execution_time_ms : int
-        Query execution time in milliseconds
-
-    Returns
-    -------
-    ExecuteQueryJsonResponse
-        Formatted response structure
-    """
-    return {
-        "query_result": {
-            "execution_time_ms": execution_time_ms,
-            "row_count": len(processed_rows),
-            "columns": list(processed_rows[0].keys()) if processed_rows else [],
-            "rows": processed_rows,
-            "warnings": warnings,
-        }
-    }
+        Raises
+        ------
+        TimeoutError
+            If query execution times out
+        ProgrammingError
+            SQL syntax errors or other programming errors
+        OperationalError
+            Database operation related errors
+        DataError
+            Data processing related errors
+        IntegrityError
+            Referential integrity constraint violations
+        NotSupportedError
+            When an unsupported database feature is used
+        """
+        ...
 
 
 async def handle_execute_query(
     json_converter: JsonImmutableConverter,
     args: ExecuteQueryArgs,
     effect_handler: EffectExecuteQuery,
-) -> list[types.TextContent]:
-    """
-    Handle execute_query tool call.
+) -> ExecuteQueryJsonResponse:
+    """Handle execute_query tool call.
 
     Parameters
     ----------
+    json_converter : JsonImmutableConverter
+        JSON converter for structuring and unstructuring data.
     args : ExecuteQueryArgs
-        Arguments for the query execution
+        Arguments for the query execution.
     effect_handler : EffectExecuteQuery
-        Handler for Snowflake operations
+        Handler for Snowflake operations.
 
     Returns
     -------
-    list[types.TextContent]
-        Response content with query results or error message
+    ExecuteQueryJsonResponse
+        The structured response containing query results.
+
+    Raises
+    ------
+    TimeoutError
+        If query execution times out
+    ProgrammingError
+        SQL syntax errors or other programming errors
+    OperationalError
+        Database operation related errors
+    DataError
+        Data processing related errors
+    IntegrityError
+        Referential integrity constraint violations
+    NotSupportedError
+        When an unsupported database feature is used
     """
     # SQL safety check
     detector = SQLWriteDetector()
-    try:
-        if detector.is_write_sql(args.sql):
-            return [
-                types.TextContent(
-                    type="text",
-                    text="Error: Write operations are not allowed. Only read operations (SELECT, SHOW, DESCRIBE, etc.) are permitted.",
-                )
-            ]
-    except Exception as e:
-        logger.exception("Error analyzing SQL")
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Error: Failed to analyze SQL: {e}",
-            )
-        ]
+    if detector.is_write_sql(args.sql):
+        msg = "Write operations are not allowed. Only read operations (SELECT, SHOW, DESCRIBE, etc.) are permitted."
+        raise ValueError(msg)
 
     stopwatch = StopWatch.start()
 
-    try:
-        raw_data = await effect_handler.execute_query(
-            args.sql,
-            timedelta(seconds=args.timeout_seconds),
-        )
-    except Exception as e:
-        logger.exception("Error executing query")
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Error: Failed to execute query: {e}",
-            )
-        ]
+    raw_data = await effect_handler.execute_query(
+        args.sql,
+        timedelta(seconds=args.timeout_seconds),
+    )
 
     execution_time_ms = int(stopwatch.elapsed_ms())
 
     result = DataProcessingResult.from_raw_rows(json_converter, raw_data)
 
-    response = _format_query_response(
-        result.processed_rows,
-        result.warnings,
-        execution_time_ms,
+    columns = list(first(result.processed_rows, {}).keys())
+    return ExecuteQueryJsonResponse(
+        query_result={
+            "execution_time_ms": execution_time_ms,
+            "row_count": len(result.processed_rows),
+            "columns": columns,
+            "rows": result.processed_rows,
+            "warnings": result.warnings,
+        }
     )
-
-    return [
-        types.TextContent(
-            type="text",
-            text=json.dumps(response, indent=2, ensure_ascii=False),
-        )
-    ]
