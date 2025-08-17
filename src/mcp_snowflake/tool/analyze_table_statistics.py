@@ -3,6 +3,15 @@ from typing import Any
 
 import mcp.types as types
 from pydantic import ValidationError
+from snowflake.connector import (
+    DataError,
+    IntegrityError,
+    NotSupportedError,
+    OperationalError,
+    ProgrammingError,
+)
+
+from expression.contract import ContractViolationError
 
 from ..handler import (
     AnalyzeTableStatisticsArgs,
@@ -33,7 +42,31 @@ class AnalyzeTableStatisticsTool(Tool):
                     text=f"Error: Invalid arguments for analyze_table_statistics: {e}",
                 )
             ]
-        return await handle_analyze_table_statistics(args, self.effect_handler)
+
+        try:
+            result = await handle_analyze_table_statistics(args, self.effect_handler)
+        except TimeoutError as e:
+            text = f"Error: Query timed out: {e}"
+            result = [types.TextContent(type="text", text=text)]
+        except ProgrammingError as e:
+            text = f"Error: SQL syntax error or other programming error: {e}"
+            result = [types.TextContent(type="text", text=text)]
+        except OperationalError as e:
+            text = f"Error: Database operation related error: {e}"
+            result = [types.TextContent(type="text", text=text)]
+        except DataError as e:
+            text = f"Error: Data processing related error: {e}"
+            result = [types.TextContent(type="text", text=text)]
+        except IntegrityError as e:
+            text = f"Error: Referential integrity constraint violation: {e}"
+            result = [types.TextContent(type="text", text=text)]
+        except NotSupportedError as e:
+            text = f"Error: Unsupported database feature used: {e}"
+            result = [types.TextContent(type="text", text=text)]
+        except ContractViolationError as e:
+            text = f"Error: Unexpected error: {e}"
+            result = [types.TextContent(type="text", text=text)]
+        return result
 
     @property
     def definition(self) -> types.Tool:

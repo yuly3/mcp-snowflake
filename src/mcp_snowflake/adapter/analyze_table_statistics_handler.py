@@ -1,6 +1,7 @@
 """AnalyzeTableStatistics EffectHandler implementation."""
 
-from collections.abc import Iterable
+import logging
+from collections.abc import Iterable, Sequence
 from typing import Any
 
 from kernel.statistics_support_column import StatisticsSupportColumn
@@ -8,6 +9,8 @@ from kernel.table_metadata import DataBase, Schema, Table
 
 from ..snowflake_client import SnowflakeClient
 from .describe_table_handler import DescribeTableEffectHandler
+
+logger = logging.getLogger(__name__)
 
 
 class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
@@ -26,7 +29,7 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
         database: DataBase,
         schema: Schema,
         table: Table,
-        columns_to_analyze: Iterable[StatisticsSupportColumn],
+        columns_to_analyze: Sequence[StatisticsSupportColumn],
         top_k_limit: int,
     ) -> dict[str, Any]:
         """Execute statistics query and return the single result row.
@@ -39,7 +42,7 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
             Schema name
         table : Table
             Table name
-        columns_to_analyze : Iterable[StatisticsSupportColumn]
+        columns_to_analyze : Sequence[StatisticsSupportColumn]
             Column information objects with statistics support
         top_k_limit : int
             Limit for APPROX_TOP_K function
@@ -51,8 +54,18 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
 
         Raises
         ------
-        ValueError
-            If query execution fails or returns no data
+        TimeoutError
+            If query execution times out
+        ProgrammingError
+            SQL syntax errors or other programming errors
+        OperationalError
+            Database operation related errors
+        DataError
+            Data processing related errors
+        IntegrityError
+            Referential integrity constraint violations
+        NotSupportedError
+            When an unsupported database feature is used
         """
         stats_sql = generate_statistics_sql(
             database,
@@ -62,10 +75,23 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
             top_k_limit,
         )
 
-        query_result = await self.client.execute_query(stats_sql)
-
-        if not query_result:
-            raise ValueError("No data returned from statistics query")
+        try:
+            query_result = await self.client.execute_query(stats_sql)
+        except Exception:
+            column_properties = [
+                {"name": col.base.name, "type": col.statistics_type.type_name}
+                for col in columns_to_analyze
+            ]
+            logger.exception(
+                "failed to describe table",
+                extra={
+                    "database": database,
+                    "schema": schema,
+                    "table": table,
+                    "columns": column_properties,
+                },
+            )
+            raise
 
         return query_result[0]
 

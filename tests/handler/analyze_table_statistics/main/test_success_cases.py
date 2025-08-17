@@ -11,8 +11,8 @@ from mcp_snowflake.handler.analyze_table_statistics import (
     handle_analyze_table_statistics,
 )
 
+from ....mock_effect_handler import MockAnalyzeTableStatistics
 from .test_fixtures import (
-    MockEffectHandler,
     create_mixed_analysis_result,
     create_test_table_info,
 )
@@ -39,18 +39,16 @@ class TestSuccessCases:
         )
 
         # Create comprehensive query result with all column types
-        query_result = [
-            create_mixed_analysis_result(
-                numeric_columns=["id", "price"],
-                string_columns=["name", "status"],
-                boolean_columns=["is_active"],
-                total_rows=1000,
-            ),
-        ]
+        query_result = create_mixed_analysis_result(
+            numeric_columns=["id", "price"],
+            string_columns=["name", "status"],
+            boolean_columns=["is_active"],
+            total_rows=1000,
+        )
 
-        mock_effect = MockEffectHandler(
-            table_data=table_data,
-            query_result=query_result,
+        mock_effect = MockAnalyzeTableStatistics(
+            table_info=table_data,
+            statistics_result=query_result,
         )
 
         args = AnalyzeTableStatisticsArgs(
@@ -129,21 +127,19 @@ class TestSuccessCases:
             ],
         )
 
-        query_result = [
-            {
-                "TOTAL_ROWS": 1000,
-                "BOOLEAN_IS_ACTIVE_COUNT": 950,
-                "BOOLEAN_IS_ACTIVE_NULL_COUNT": 50,
-                "BOOLEAN_IS_ACTIVE_TRUE_COUNT": 720,
-                "BOOLEAN_IS_ACTIVE_FALSE_COUNT": 230,
-                "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE": 75.79,
-                "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE": 24.21,
-                "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE_WITH_NULLS": 72.0,
-                "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 23.0,
-            },
-        ]
+        query_result = {
+            "TOTAL_ROWS": 1000,
+            "BOOLEAN_IS_ACTIVE_COUNT": 950,
+            "BOOLEAN_IS_ACTIVE_NULL_COUNT": 50,
+            "BOOLEAN_IS_ACTIVE_TRUE_COUNT": 720,
+            "BOOLEAN_IS_ACTIVE_FALSE_COUNT": 230,
+            "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE": 75.79,
+            "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE": 24.21,
+            "BOOLEAN_IS_ACTIVE_TRUE_PERCENTAGE_WITH_NULLS": 72.0,
+            "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 23.0,
+        }
 
-        mock_effect = MockEffectHandler(table_data, query_result)
+        mock_effect = MockAnalyzeTableStatistics(table_data, query_result)
 
         args = AnalyzeTableStatisticsArgs(
             database=DataBase("test_db"),
@@ -193,30 +189,28 @@ class TestSuccessCases:
             ],
         )
 
-        query_result = [
-            {
-                "TOTAL_ROWS": 100,
-                "NUMERIC_ID_COUNT": 100,
-                "NUMERIC_ID_NULL_COUNT": 0,
-                "NUMERIC_ID_MIN": 1.0,
-                "NUMERIC_ID_MAX": 100.0,
-                "NUMERIC_ID_AVG": 50.5,
-                "NUMERIC_ID_Q1": 25.0,
-                "NUMERIC_ID_MEDIAN": 50.0,
-                "NUMERIC_ID_Q3": 75.0,
-                "NUMERIC_ID_DISTINCT": 100,
-                "STRING_NAME_COUNT": 100,
-                "STRING_NAME_NULL_COUNT": 0,
-                "STRING_NAME_MIN_LENGTH": 3,
-                "STRING_NAME_MAX_LENGTH": 20,
-                "STRING_NAME_DISTINCT": 95,
-                "STRING_NAME_TOP_VALUES": '[["John", 5], ["Jane", 3]]',
-            },
-        ]
+        query_result = {
+            "TOTAL_ROWS": 100,
+            "NUMERIC_ID_COUNT": 100,
+            "NUMERIC_ID_NULL_COUNT": 0,
+            "NUMERIC_ID_MIN": 1.0,
+            "NUMERIC_ID_MAX": 100.0,
+            "NUMERIC_ID_AVG": 50.5,
+            "NUMERIC_ID_Q1": 25.0,
+            "NUMERIC_ID_MEDIAN": 50.0,
+            "NUMERIC_ID_Q3": 75.0,
+            "NUMERIC_ID_DISTINCT": 100,
+            "STRING_NAME_COUNT": 100,
+            "STRING_NAME_NULL_COUNT": 0,
+            "STRING_NAME_MIN_LENGTH": 3,
+            "STRING_NAME_MAX_LENGTH": 20,
+            "STRING_NAME_DISTINCT": 95,
+            "STRING_NAME_TOP_VALUES": '[["John", 5], ["Jane", 3]]',
+        }
 
-        mock_effect = MockEffectHandler(
-            table_data=table_data,
-            query_result=query_result,
+        mock_effect = MockAnalyzeTableStatistics(
+            table_data,
+            query_result,
         )
 
         args = AnalyzeTableStatisticsArgs(

@@ -5,50 +5,6 @@ from typing import Any
 from kernel.table_metadata import DataBase, Schema, TableColumn, TableInfo
 
 
-class MockEffectHandler:
-    """Mock implementation of EffectAnalyzeTableStatistics protocol."""
-
-    def __init__(
-        self,
-        table_data: TableInfo | None = None,
-        query_result: list[dict[str, Any]] | None = None,
-        should_raise: Exception | None = None,
-    ) -> None:
-        self.table_data = table_data or TableInfo(
-            database=DataBase("default_db"),
-            schema=Schema("default_schema"),
-            name="default_table",
-            column_count=0,
-            columns=[],
-        )
-        self.query_result = query_result or []
-        self.should_raise = should_raise
-
-    async def describe_table(
-        self,
-        database: str,  # noqa: ARG002
-        schema: str,  # noqa: ARG002
-        table: str,  # noqa: ARG002
-    ) -> TableInfo:
-        if self.should_raise:
-            raise self.should_raise
-        return self.table_data
-
-    async def analyze_table_statistics(
-        self,
-        database: str,  # noqa: ARG002
-        schema: str,  # noqa: ARG002
-        table: str,  # noqa: ARG002
-        columns_to_analyze: Any,  # noqa: ARG002
-        top_k_limit: int,  # noqa: ARG002
-    ) -> dict[str, Any]:
-        if self.should_raise:
-            raise self.should_raise
-        if not self.query_result:
-            raise ValueError("No data returned from statistics query")
-        return self.query_result[0]
-
-
 def create_test_table_info(
     columns: list[tuple[str, str, bool, int | None]] | None = None,
     database: str = "test_db",

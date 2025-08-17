@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Awaitable, Sequence
 from typing import Any, Literal, NotRequired, Protocol, TypedDict
 
 from pydantic import BaseModel, Field
@@ -24,14 +24,14 @@ class AnalyzeTableStatisticsArgs(BaseModel):
 class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
     """Protocol for dependencies required by table statistics analysis."""
 
-    async def analyze_table_statistics(
+    def analyze_table_statistics(
         self,
         database: DataBase,
         schema: Schema,
         table: Table,
-        columns_to_analyze: Iterable[StatisticsSupportColumn],
+        columns_to_analyze: Sequence[StatisticsSupportColumn],
         top_k_limit: int,
-    ) -> dict[str, Any]:
+    ) -> Awaitable[dict[str, Any]]:
         """Execute statistics query and return the single result row.
 
         Parameters
@@ -42,20 +42,30 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
             Schema name
         table : Table
             Table name
-        columns_to_analyze : Iterable[StatisticsSupportColumn]
+        columns_to_analyze : Sequence[StatisticsSupportColumn]
             Column information objects with statistics support
         top_k_limit : int
             Limit for APPROX_TOP_K function
 
         Returns
         -------
-        dict[str, Any]
+        Awaitable[dict[str, Any]]
             Single row of statistics query results
 
         Raises
         ------
-        Exception
-            If query execution fails or returns no data
+        TimeoutError
+            If query execution times out
+        ProgrammingError
+            SQL syntax errors or other programming errors
+        OperationalError
+            Database operation related errors
+        DataError
+            Data processing related errors
+        IntegrityError
+            Referential integrity constraint violations
+        NotSupportedError
+            When an unsupported database feature is used
         """
         ...
 

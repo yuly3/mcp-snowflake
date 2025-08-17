@@ -14,7 +14,8 @@ from mcp_snowflake.handler.analyze_table_statistics import (
     handle_analyze_table_statistics,
 )
 
-from .test_fixtures import MockEffectHandler, create_test_table_info
+from ....mock_effect_handler import MockAnalyzeTableStatistics
+from .test_fixtures import create_test_table_info
 
 if TYPE_CHECKING:
     import mcp.types as types
@@ -34,24 +35,22 @@ class TestColumnSelection:
             ],
         )
 
-        query_result = [
-            {
-                "TOTAL_ROWS": 100,
-                "NUMERIC_ID_COUNT": 100,
-                "NUMERIC_ID_NULL_COUNT": 0,
-                "NUMERIC_ID_MIN": 1.0,
-                "NUMERIC_ID_MAX": 100.0,
-                "NUMERIC_ID_AVG": 50.5,
-                "NUMERIC_ID_Q1": 25.0,
-                "NUMERIC_ID_MEDIAN": 50.0,
-                "NUMERIC_ID_Q3": 75.0,
-                "NUMERIC_ID_DISTINCT": 100,
-            },
-        ]
+        query_result = {
+            "TOTAL_ROWS": 100,
+            "NUMERIC_ID_COUNT": 100,
+            "NUMERIC_ID_NULL_COUNT": 0,
+            "NUMERIC_ID_MIN": 1.0,
+            "NUMERIC_ID_MAX": 100.0,
+            "NUMERIC_ID_AVG": 50.5,
+            "NUMERIC_ID_Q1": 25.0,
+            "NUMERIC_ID_MEDIAN": 50.0,
+            "NUMERIC_ID_Q3": 75.0,
+            "NUMERIC_ID_DISTINCT": 100,
+        }
 
-        mock_effect = MockEffectHandler(
-            table_data=table_data,
-            query_result=query_result,
+        mock_effect = MockAnalyzeTableStatistics(
+            table_info=table_data,
+            statistics_result=query_result,
         )
 
         args = AnalyzeTableStatisticsArgs(
@@ -168,33 +167,31 @@ class TestColumnSelection:
             ],
         )
 
-        query_result = [
-            {
-                "TOTAL_ROWS": 100,
-                "NUMERIC_ID_COUNT": 100,
-                "NUMERIC_ID_NULL_COUNT": 0,
-                "NUMERIC_ID_MIN": 1.0,
-                "NUMERIC_ID_MAX": 100.0,
-                "NUMERIC_ID_AVG": 50.5,
-                "NUMERIC_ID_Q1": 25.0,
-                "NUMERIC_ID_MEDIAN": 50.0,
-                "NUMERIC_ID_Q3": 75.0,
-                "NUMERIC_ID_DISTINCT": 100,
-                "NUMERIC_PRICE_COUNT": 100,
-                "NUMERIC_PRICE_NULL_COUNT": 10,
-                "NUMERIC_PRICE_MIN": 10.5,
-                "NUMERIC_PRICE_MAX": 999.99,
-                "NUMERIC_PRICE_AVG": 505.25,
-                "NUMERIC_PRICE_Q1": 250.0,
-                "NUMERIC_PRICE_MEDIAN": 500.0,
-                "NUMERIC_PRICE_Q3": 750.0,
-                "NUMERIC_PRICE_DISTINCT": 90,
-            },
-        ]
+        query_result = {
+            "TOTAL_ROWS": 100,
+            "NUMERIC_ID_COUNT": 100,
+            "NUMERIC_ID_NULL_COUNT": 0,
+            "NUMERIC_ID_MIN": 1.0,
+            "NUMERIC_ID_MAX": 100.0,
+            "NUMERIC_ID_AVG": 50.5,
+            "NUMERIC_ID_Q1": 25.0,
+            "NUMERIC_ID_MEDIAN": 50.0,
+            "NUMERIC_ID_Q3": 75.0,
+            "NUMERIC_ID_DISTINCT": 100,
+            "NUMERIC_PRICE_COUNT": 100,
+            "NUMERIC_PRICE_NULL_COUNT": 10,
+            "NUMERIC_PRICE_MIN": 10.5,
+            "NUMERIC_PRICE_MAX": 999.99,
+            "NUMERIC_PRICE_AVG": 505.25,
+            "NUMERIC_PRICE_Q1": 250.0,
+            "NUMERIC_PRICE_MEDIAN": 500.0,
+            "NUMERIC_PRICE_Q3": 750.0,
+            "NUMERIC_PRICE_DISTINCT": 90,
+        }
 
-        mock_effect = MockEffectHandler(
-            table_data=table_data,
-            query_result=query_result,
+        mock_effect = MockAnalyzeTableStatistics(
+            table_info=table_data,
+            statistics_result=query_result,
         )
 
         args = AnalyzeTableStatisticsArgs(
@@ -238,21 +235,19 @@ class TestColumnSelection:
             ],
         )
 
-        query_result = [
-            {
-                "TOTAL_ROWS": 50,
-                "STRING_SINGLE_COL_COUNT": 45,
-                "STRING_SINGLE_COL_NULL_COUNT": 5,
-                "STRING_SINGLE_COL_MIN_LENGTH": 1,
-                "STRING_SINGLE_COL_MAX_LENGTH": 50,
-                "STRING_SINGLE_COL_DISTINCT": 40,
-                "STRING_SINGLE_COL_TOP_VALUES": '[["value1", 3], ["value2", 2]]',
-            },
-        ]
+        query_result = {
+            "TOTAL_ROWS": 50,
+            "STRING_SINGLE_COL_COUNT": 45,
+            "STRING_SINGLE_COL_NULL_COUNT": 5,
+            "STRING_SINGLE_COL_MIN_LENGTH": 1,
+            "STRING_SINGLE_COL_MAX_LENGTH": 50,
+            "STRING_SINGLE_COL_DISTINCT": 40,
+            "STRING_SINGLE_COL_TOP_VALUES": '[["value1", 3], ["value2", 2]]',
+        }
 
-        mock_effect = MockEffectHandler(
-            table_data=table_data,
-            query_result=query_result,
+        mock_effect = MockAnalyzeTableStatistics(
+            table_info=table_data,
+            statistics_result=query_result,
         )
 
         args = AnalyzeTableStatisticsArgs(

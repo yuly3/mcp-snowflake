@@ -14,11 +14,8 @@ from mcp_snowflake.handler.analyze_table_statistics import (
     handle_analyze_table_statistics,
 )
 
-from .test_fixtures import (
-    MockEffectHandler,
-    create_mixed_analysis_result,
-    create_test_table_info,
-)
+from ....mock_effect_handler import MockAnalyzeTableStatistics
+from .test_fixtures import create_mixed_analysis_result, create_test_table_info
 
 
 class TestPartialResults:
@@ -38,18 +35,16 @@ class TestPartialResults:
         )
 
         # Query result should only include supported columns
-        query_result = [
-            create_mixed_analysis_result(
-                numeric_columns=["id"],
-                string_columns=["name"],
-                boolean_columns=[],
-                total_rows=1000,
-            ),
-        ]
+        query_result = create_mixed_analysis_result(
+            numeric_columns=["id"],
+            string_columns=["name"],
+            boolean_columns=[],
+            total_rows=1000,
+        )
 
-        mock_effect = MockEffectHandler(
-            table_data=table_data,
-            query_result=query_result,
+        mock_effect = MockAnalyzeTableStatistics(
+            table_info=table_data,
+            statistics_result=query_result,
         )
 
         args = AnalyzeTableStatisticsArgs(
@@ -118,10 +113,7 @@ class TestPartialResults:
             ],
         )
 
-        mock_effect = MockEffectHandler(
-            table_data=table_data,
-            query_result=[],  # No query should be executed
-        )
+        mock_effect = MockAnalyzeTableStatistics(table_info=table_data)
 
         args = AnalyzeTableStatisticsArgs(
             database=DataBase("test_db"),
@@ -158,18 +150,16 @@ class TestPartialResults:
         )
 
         # Query result for only the supported requested column
-        query_result = [
-            create_mixed_analysis_result(
-                numeric_columns=["id"],
-                string_columns=[],
-                boolean_columns=[],
-                total_rows=500,
-            ),
-        ]
+        query_result = create_mixed_analysis_result(
+            numeric_columns=["id"],
+            string_columns=[],
+            boolean_columns=[],
+            total_rows=500,
+        )
 
-        mock_effect = MockEffectHandler(
-            table_data=table_data,
-            query_result=query_result,
+        mock_effect = MockAnalyzeTableStatistics(
+            table_info=table_data,
+            statistics_result=query_result,
         )
 
         args = AnalyzeTableStatisticsArgs(
@@ -217,18 +207,16 @@ class TestPartialResults:
             ],
         )
 
-        query_result = [
-            create_mixed_analysis_result(
-                numeric_columns=["id"],
-                string_columns=["name"],
-                boolean_columns=["active"],
-                total_rows=1000,
-            ),
-        ]
+        query_result = create_mixed_analysis_result(
+            numeric_columns=["id"],
+            string_columns=["name"],
+            boolean_columns=["active"],
+            total_rows=1000,
+        )
 
-        mock_effect = MockEffectHandler(
-            table_data=table_data,
-            query_result=query_result,
+        mock_effect = MockAnalyzeTableStatistics(
+            table_info=table_data,
+            statistics_result=query_result,
         )
 
         args = AnalyzeTableStatisticsArgs(
