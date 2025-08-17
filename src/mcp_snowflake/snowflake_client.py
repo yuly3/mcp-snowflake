@@ -8,7 +8,17 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from typing import Any, cast
 
-from snowflake.connector import DictCursor, ProgrammingError, SnowflakeConnection
+from snowflake.connector import (
+    DataError,
+    DictCursor,
+    IntegrityError,
+    NotSupportedError,
+    OperationalError,
+    ProgrammingError,
+    SnowflakeConnection,
+)
+
+from expression.contract import contract_async
 
 from .settings import SnowflakeSettings
 
@@ -70,6 +80,16 @@ class SnowflakeClient:
                 logger.exception("Query execution error")
                 raise
 
+    @contract_async(
+        known_err=(
+            TimeoutError,
+            ProgrammingError,
+            OperationalError,
+            DataError,
+            IntegrityError,
+            NotSupportedError,
+        )
+    )
     async def execute_query(
         self,
         query: str,
@@ -93,21 +113,24 @@ class SnowflakeClient:
         ------
         TimeoutError
             If query execution times out
-        Exception
-            If query execution fails
+        ProgrammingError
+            SQL syntax errors or other programming errors
+        OperationalError
+            Database operation related errors
+        DataError
+            Data processing related errors
+        IntegrityError
+            Referential integrity constraint violations
+        NotSupportedError
+            When an unsupported database feature is used
         """
         if query_timeout is None:
             query_timeout = timedelta(seconds=30)
 
         loop = asyncio.get_event_loop()
-        try:
-            return await loop.run_in_executor(
-                self.thread_pool_executor,
-                self._execute_query_sync,
-                query,
-                query_timeout,
-            )
-        except TimeoutError:
-            raise
-        except Exception as e:
-            raise Exception(f"Failed to execute query: {e!s}") from e
+        return await loop.run_in_executor(
+            self.thread_pool_executor,
+            self._execute_query_sync,
+            query,
+            query_timeout,
+        )
