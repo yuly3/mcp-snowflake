@@ -5,7 +5,8 @@ from collections.abc import Sequence
 from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import TableColumn
 
-from ._types import ClassifiedColumns, ColumnDoesNotExist, NoSupportedColumns
+from ._types import ClassifiedColumns
+from .models import ColumnDoesNotExist, NoSupportedColumns
 
 
 def select_and_classify_columns(

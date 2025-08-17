@@ -4,11 +4,13 @@ import logging
 
 from ._column_analysis import select_and_classify_columns
 from ._result_parser import parse_statistics_result
-from ._types import ClassifiedColumns, ColumnDoesNotExist, NoSupportedColumns
+from ._types import ClassifiedColumns
 from .models import (
     AnalyzeTableStatisticsArgs,
     AnalyzeTableStatisticsJsonResponse,
+    ColumnDoesNotExist,
     EffectAnalyzeTableStatistics,
+    NoSupportedColumns,
 )
 
 logger = logging.getLogger(__name__)
@@ -16,7 +18,10 @@ logger = logging.getLogger(__name__)
 # Public API exports
 __all__ = [
     "AnalyzeTableStatisticsArgs",
+    "AnalyzeTableStatisticsJsonResponse",
+    "ColumnDoesNotExist",
     "EffectAnalyzeTableStatistics",
+    "NoSupportedColumns",
     "handle_analyze_table_statistics",
 ]
 

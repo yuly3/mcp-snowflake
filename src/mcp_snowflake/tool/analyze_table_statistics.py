@@ -19,11 +19,11 @@ from ..handler import (
     EffectAnalyzeTableStatistics,
     handle_analyze_table_statistics,
 )
-from ..handler.analyze_table_statistics._types import (
+from ..handler.analyze_table_statistics import (
+    AnalyzeTableStatisticsJsonResponse,
     ColumnDoesNotExist,
     NoSupportedColumns,
 )
-from ..handler.analyze_table_statistics.models import AnalyzeTableStatisticsJsonResponse
 from .base import Tool
 
 

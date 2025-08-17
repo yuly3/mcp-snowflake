@@ -1,10 +1,11 @@
 from collections.abc import Awaitable, Sequence
 from typing import Any, Literal, NotRequired, Protocol, TypedDict
 
+import attrs
 from pydantic import BaseModel, Field
 
 from kernel.statistics_support_column import StatisticsSupportColumn
-from kernel.table_metadata import DataBase, Schema, Table
+from kernel.table_metadata import DataBase, Schema, Table, TableColumn
 
 from ..describe_table import EffectDescribeTable
 
@@ -164,3 +165,32 @@ class AnalyzeTableStatisticsJsonResponse(TypedDict):
     """TypedDict for the complete JSON response structure."""
 
     table_statistics: TableStatisticsDict
+
+
+@attrs.define(frozen=True, slots=True)
+class ColumnDoesNotExist:
+    """Error result when some requested columns don't exist in the table.
+
+    Attributes
+    ----------
+    existed_columns : list[TableColumn]
+        Columns that exist in the table among the requested ones.
+    not_existed_columns : list[str]
+        Column names that don't exist in the table.
+    """
+
+    existed_columns: list[TableColumn]
+    not_existed_columns: list[str]
+
+
+@attrs.define(frozen=True, slots=True)
+class NoSupportedColumns:
+    """Result when no columns support statistics analysis.
+
+    Attributes
+    ----------
+    unsupported_columns : list[TableColumn]
+        All columns that don't support statistics analysis.
+    """
+
+    unsupported_columns: list[TableColumn]

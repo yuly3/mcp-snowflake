@@ -5,9 +5,9 @@ import pytest
 from kernel.table_metadata import DataBase, Schema, Table
 from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
+    NoSupportedColumns,
     handle_analyze_table_statistics,
 )
-from mcp_snowflake.handler.analyze_table_statistics._types import NoSupportedColumns
 
 from ....mock_effect_handler import MockAnalyzeTableStatistics
 from .test_fixtures import create_mixed_analysis_result, create_test_table_info
