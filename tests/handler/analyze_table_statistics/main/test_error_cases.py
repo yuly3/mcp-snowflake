@@ -1,7 +1,5 @@
 """Error handling tests for analyze_table_statistics handler."""
 
-from typing import TYPE_CHECKING, cast
-
 import pytest
 
 from kernel.table_metadata import DataBase, Schema, Table
@@ -9,12 +7,10 @@ from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
     handle_analyze_table_statistics,
 )
+from mcp_snowflake.handler.analyze_table_statistics._types import ColumnDoesNotExist
 
 from ....mock_effect_handler import MockAnalyzeTableStatistics
 from .test_fixtures import create_test_table_info
-
-if TYPE_CHECKING:
-    import mcp.types as types
 
 
 class TestErrorHandling:
@@ -40,11 +36,13 @@ class TestErrorHandling:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        assert len(result) == 1
-        error_content = cast("types.TextContent", result[0])
-        assert "Error: No supported columns for statistics" in error_content.text
-        assert "metadata(VARIANT)" in error_content.text
-        assert "config(OBJECT)" in error_content.text
+        # Should return ColumnDoesNotExist error for no supported columns
+        assert isinstance(result, ColumnDoesNotExist)
+        assert not result.not_existed_columns  # No missing columns
+        # Should have unsupported columns
+        unsupported_names = [col.name for col in result.existed_columns]
+        assert "metadata" in unsupported_names
+        assert "config" in unsupported_names
 
     @pytest.mark.asyncio
     async def test_missing_columns_error(self) -> None:
@@ -66,6 +64,6 @@ class TestErrorHandling:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        assert len(result) == 1
-        error_content = cast("types.TextContent", result[0])
-        assert "Error: Columns not found in table: nonexistent" in error_content.text
+        # Should return ColumnDoesNotExist error for missing columns
+        assert isinstance(result, ColumnDoesNotExist)
+        assert "nonexistent" in result.not_existed_columns

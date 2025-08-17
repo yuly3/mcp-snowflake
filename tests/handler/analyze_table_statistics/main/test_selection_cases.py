@@ -1,7 +1,6 @@
 """Column selection and boundary value tests for analyze_table_statistics handler."""
 
-import json
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 
 import pytest
 
@@ -16,9 +15,6 @@ from mcp_snowflake.handler.analyze_table_statistics import (
 
 from ....mock_effect_handler import MockAnalyzeTableStatistics
 from .test_fixtures import create_test_table_info
-
-if TYPE_CHECKING:
-    import mcp.types as types
 
 
 class TestColumnSelection:
@@ -62,10 +58,11 @@ class TestColumnSelection:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Parse JSON response
-        json_content = cast("types.TextContent", result[1])
-        json_response = json.loads(json_content.text)
-        table_stats = json_response["table_statistics"]
+        # Should return structured data
+        assert isinstance(result, dict)
+        assert "table_statistics" in result
+
+        table_stats = result["table_statistics"]
 
         # Should only have 1 analyzed column
         assert table_stats["table_info"]["analyzed_columns"] == 1
@@ -152,7 +149,8 @@ class TestColumnSelection:
         assert 'APPROX_TOP_K("status", 25)' in query
 
         # Verify result is successful
-        assert len(result) == 2
+        assert isinstance(result, dict)
+        assert "table_statistics" in result
 
     @pytest.mark.asyncio
     async def test_multiple_columns_selection(self) -> None:
@@ -203,10 +201,9 @@ class TestColumnSelection:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Parse JSON response
-        json_content = cast("types.TextContent", result[1])
-        json_response = json.loads(json_content.text)
-        table_stats = json_response["table_statistics"]
+        # Should return structured data
+        assert isinstance(result, dict)
+        table_stats = result["table_statistics"]
 
         # Should only have 2 analyzed columns
         assert table_stats["table_info"]["analyzed_columns"] == 2
@@ -258,17 +255,9 @@ class TestColumnSelection:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        assert len(result) == 2
-
-        # Check summary shows single column
-        summary_content = cast("types.TextContent", result[0])
-        assert "50 total rows" in summary_content.text
-        assert "- String: 1 columns" in summary_content.text
-
-        # Parse JSON and verify single column
-        json_content = cast("types.TextContent", result[1])
-        json_response = json.loads(json_content.text)
-        table_stats = json_response["table_statistics"]
+        # Should return structured data
+        assert isinstance(result, dict)
+        table_stats = result["table_statistics"]
 
         assert table_stats["table_info"]["analyzed_columns"] == 1
         assert "single_col" in table_stats["column_statistics"]

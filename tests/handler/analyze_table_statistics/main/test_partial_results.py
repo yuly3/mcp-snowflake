@@ -1,18 +1,13 @@
 """Partial results tests for analyze_table_statistics handler with unsupported columns."""
 
-import json
-from typing import TYPE_CHECKING, cast
-
 import pytest
-
-if TYPE_CHECKING:
-    from mcp.types import TextContent
 
 from kernel.table_metadata import DataBase, Schema, Table
 from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
     handle_analyze_table_statistics,
 )
+from mcp_snowflake.handler.analyze_table_statistics._types import ColumnDoesNotExist
 
 from ....mock_effect_handler import MockAnalyzeTableStatistics
 from .test_fixtures import create_mixed_analysis_result, create_test_table_info
@@ -55,22 +50,11 @@ class TestPartialResults:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return 2 content items (text + JSON)
-        assert len(result) == 2
+        # Should return structured data
+        assert isinstance(result, dict)
+        assert "table_statistics" in result
 
-        text_content = cast("TextContent", result[0])
-        json_content = cast("TextContent", result[1])
-
-        # Check text content includes unsupported note
-        assert (
-            "Note: Some columns were not analyzed due to unsupported data types"
-            in text_content.text
-        )
-        assert "2 column(s) skipped" in text_content.text
-
-        # Parse JSON response
-        parsed = json.loads(json_content.text)
-        table_stats = parsed["table_statistics"]
+        table_stats = result["table_statistics"]
 
         # Check that only supported columns are in column_statistics
         column_stats = table_stats["column_statistics"]
@@ -123,19 +107,14 @@ class TestPartialResults:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return single TextContent with error
-        assert len(result) == 1
-        error_content = cast("TextContent", result[0])
-
-        # Check error message format
-        error_text = error_content.text
-        assert "Error: No supported columns for statistics" in error_text
-        assert "Unsupported columns:" in error_text
-
-        # Check that columns are listed in "name(type)" format
-        assert "metadata(VARIANT)" in error_text
-        assert "config(OBJECT)" in error_text
-        assert "data(ARRAY)" in error_text
+        # Should return ColumnDoesNotExist error for no supported columns
+        assert isinstance(result, ColumnDoesNotExist)
+        assert not result.not_existed_columns  # No missing columns
+        # Should have unsupported columns
+        unsupported_names = [col.name for col in result.existed_columns]
+        assert "metadata" in unsupported_names
+        assert "config" in unsupported_names
+        assert "data" in unsupported_names
 
     @pytest.mark.asyncio
     async def test_requested_columns_with_unsupported(self) -> None:
@@ -171,18 +150,11 @@ class TestPartialResults:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return 2 content items (text + JSON)
-        assert len(result) == 2
+        # Should return structured data
+        assert isinstance(result, dict)
+        assert "table_statistics" in result
 
-        text_content = cast("TextContent", result[0])
-        json_content = cast("TextContent", result[1])
-
-        # Check text includes unsupported note
-        assert "1 column(s) skipped" in text_content.text
-
-        # Parse JSON and check structure
-        parsed = json.loads(json_content.text)
-        table_stats = parsed["table_statistics"]
+        table_stats = result["table_statistics"]
 
         # Only id should be analyzed
         column_stats = table_stats["column_statistics"]
@@ -190,7 +162,7 @@ class TestPartialResults:
         assert "id" in column_stats
 
         # metadata should be in unsupported_columns
-        unsupported = table_stats["unsupported_columns"]
+        unsupported = table_stats.get("unsupported_columns", [])
         assert len(unsupported) == 1
         assert unsupported[0]["name"] == "metadata"
         assert unsupported[0]["data_type"] == "VARIANT"
@@ -227,17 +199,11 @@ class TestPartialResults:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        assert len(result) == 2
-        text_content = cast("TextContent", result[0])
-        json_content = cast("TextContent", result[1])
+        # Should return structured data (no unsupported columns)
+        assert isinstance(result, dict)
+        assert "table_statistics" in result
 
-        # Text should not mention unsupported columns
-        assert "Note: Some columns were not analyzed" not in text_content.text
-        assert "skipped" not in text_content.text
-
-        # JSON should not have unsupported_columns field
-        parsed = json.loads(json_content.text)
-        table_stats = parsed["table_statistics"]
+        table_stats = result["table_statistics"]
         assert "unsupported_columns" not in table_stats
 
         # All columns should be analyzed

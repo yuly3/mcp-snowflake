@@ -2,12 +2,14 @@
 
 import logging
 
-import mcp.types as types
-
 from ._column_analysis import select_and_classify_columns
-from ._response_builder import build_response
+from ._result_parser import parse_statistics_result
 from ._types import ClassifiedColumns, ColumnDoesNotExist
-from .models import AnalyzeTableStatisticsArgs, EffectAnalyzeTableStatistics
+from .models import (
+    AnalyzeTableStatisticsArgs,
+    AnalyzeTableStatisticsJsonResponse,
+    EffectAnalyzeTableStatistics,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +24,7 @@ __all__ = [
 async def handle_analyze_table_statistics(
     args: AnalyzeTableStatisticsArgs,
     effect: EffectAnalyzeTableStatistics,
-) -> list[types.Content]:
+) -> AnalyzeTableStatisticsJsonResponse | ColumnDoesNotExist:
     """Handle table statistics analysis request.
 
     Parameters
@@ -34,8 +36,9 @@ async def handle_analyze_table_statistics(
 
     Returns
     -------
-    list[types.Content]
-        The response content.
+    AnalyzeTableStatisticsJsonResponse | ColumnDoesNotExist
+        The structured response containing table statistics, or error information
+        if requested columns don't exist.
 
     Raises
     ------
@@ -63,30 +66,20 @@ async def handle_analyze_table_statistics(
         args.columns,
     )
     match classified_columns:
-        case ColumnDoesNotExist(
-            existed_columns=_,
-            not_existed_columns=not_existed_columns,
-        ):
-            not_existed = ", ".join(not_existed_columns)
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Error: Columns not found in table: {not_existed}",
-                )
-            ]
+        case ColumnDoesNotExist() as column_error:
+            return column_error
         case ClassifiedColumns(
             supported_columns=supported_columns,
             unsupported_columns=unsupported_columns,
         ):
             pass
 
-    # If no supported columns, return error with unsupported column list
+    # If no supported columns, return error as ColumnDoesNotExist
     if not supported_columns:
-        unsupported_list = [
-            f"{col.name}({col.data_type.raw_type})" for col in unsupported_columns
-        ]
-        error_text = f"Error: No supported columns for statistics. Unsupported columns: {', '.join(unsupported_list)}"
-        return [types.TextContent(type="text", text=error_text)]
+        return ColumnDoesNotExist(
+            existed_columns=list(unsupported_columns),
+            not_existed_columns=[],
+        )
 
     result_row = await effect.analyze_table_statistics(
         args.database,
@@ -96,9 +89,27 @@ async def handle_analyze_table_statistics(
         args.top_k_limit,
     )
 
-    return build_response(
-        args,
-        result_row,
-        supported_columns,
-        unsupported_columns,
-    )
+    # Parse statistics and build structured response
+    column_statistics = parse_statistics_result(result_row, supported_columns)
+
+    response: AnalyzeTableStatisticsJsonResponse = {
+        "table_statistics": {
+            "table_info": {
+                "database": args.database,
+                "schema": args.schema_,
+                "table": args.table_,
+                "total_rows": result_row["TOTAL_ROWS"],
+                "analyzed_columns": len(supported_columns),
+            },
+            "column_statistics": column_statistics,
+        }
+    }
+
+    # Add unsupported_columns if any exist
+    if unsupported_columns:
+        response["table_statistics"]["unsupported_columns"] = [
+            {"name": col.name, "data_type": col.data_type.raw_type}
+            for col in unsupported_columns
+        ]
+
+    return response

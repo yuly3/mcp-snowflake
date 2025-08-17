@@ -83,12 +83,14 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
                 for col in columns_to_analyze
             ]
             logger.exception(
-                "failed to describe table",
+                "failed to analyze table statistics",
                 extra={
                     "database": database,
                     "schema": schema,
                     "table": table,
                     "columns": column_properties,
+                    "top_k_limit": top_k_limit,
+                    "query": stats_sql,
                 },
             )
             raise

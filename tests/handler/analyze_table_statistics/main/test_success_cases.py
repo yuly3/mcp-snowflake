@@ -1,8 +1,5 @@
 """Success cases tests for analyze_table_statistics handler."""
 
-import json
-from typing import TYPE_CHECKING, cast
-
 import pytest
 
 from kernel.table_metadata import DataBase, Schema, Table
@@ -16,9 +13,6 @@ from .test_fixtures import (
     create_mixed_analysis_result,
     create_test_table_info,
 )
-
-if TYPE_CHECKING:
-    import mcp.types as types
 
 
 class TestSuccessCases:
@@ -59,29 +53,37 @@ class TestSuccessCases:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        assert len(result) == 2
+        # Should return structured data, not content list
+        assert isinstance(result, dict)
+        assert "table_statistics" in result
 
-        # Check summary text
-        summary_content = cast("types.TextContent", result[0])
-        assert "Table Statistics Analysis" in summary_content.text
-        assert "1,000 total rows" in summary_content.text  # Note: formatted with comma
-        assert "- Numeric: 2 columns" in summary_content.text
-        assert "- String: 2 columns" in summary_content.text
-        assert "- Boolean: 1 columns" in summary_content.text
+        # Check table_info
+        table_stats = result["table_statistics"]
+        table_info = table_stats["table_info"]
+        assert table_info["database"] == "test_db"
+        assert table_info["schema"] == "test_schema"
+        assert table_info["table"] == "test_table"
+        assert table_info["total_rows"] == 1000
+        assert table_info["analyzed_columns"] == 5
 
-        # Parse and check JSON response
-        json_content = cast("types.TextContent", result[1])
-        json_response = json.loads(json_content.text)
-        table_stats = json_response["table_statistics"]
+        # Check column statistics
+        column_stats = table_stats["column_statistics"]
+        assert len(column_stats) == 5
 
-        # Verify table info
-        assert table_stats["table_info"]["total_rows"] == 1000
-        assert table_stats["table_info"]["analyzed_columns"] == 5
-        assert table_stats["table_info"]["database"] == "test_db"
-        assert table_stats["table_info"]["schema"] == "test_schema"
-        assert table_stats["table_info"]["table"] == "test_table"
+        # Verify numeric columns
+        assert column_stats["id"]["column_type"] == "numeric"
+        assert column_stats["id"]["data_type"] == "NUMBER(10,0)"
+        assert column_stats["price"]["column_type"] == "numeric"
 
-        # Verify column statistics presence
+        # Verify string columns
+        assert column_stats["name"]["column_type"] == "string"
+        assert column_stats["status"]["column_type"] == "string"
+
+        # Verify boolean column
+        assert column_stats["is_active"]["column_type"] == "boolean"
+
+        # Verify detailed column statistics structure
+        numeric_stats = column_stats["id"]
         column_stats = table_stats["column_statistics"]
         assert len(column_stats) == 5
         assert "id" in column_stats
@@ -149,25 +151,19 @@ class TestSuccessCases:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Verify response structure
-        assert len(result) == 2
-        assert result[0].type == "text"
-        assert result[1].type == "text"
+        # Should return structured data, not content list
+        assert isinstance(result, dict)
+        assert "table_statistics" in result
 
-        # Check summary text includes boolean columns
-        summary_text = result[0].text
-        assert "- Boolean: 1 columns" in summary_text
-
-        # Parse JSON response and verify structure
-        json_response = json.loads(result[1].text)
-        table_stats = json_response["table_statistics"]
-
-        # Check table info
-        assert table_stats["table_info"]["total_rows"] == 1000
-        assert table_stats["table_info"]["analyzed_columns"] == 1
+        # Check table_info
+        table_stats = result["table_statistics"]
+        table_info = table_stats["table_info"]
+        assert table_info["total_rows"] == 1000
+        assert table_info["analyzed_columns"] == 1
 
         # Check boolean column statistics
-        boolean_stats = table_stats["column_statistics"]["is_active"]
+        column_stats = table_stats["column_statistics"]
+        boolean_stats = column_stats["is_active"]
         assert boolean_stats["column_type"] == "boolean"
         assert boolean_stats["data_type"] == "BOOLEAN"
         assert boolean_stats["count"] == 950
@@ -221,32 +217,30 @@ class TestSuccessCases:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        assert len(result) == 2
+        # Should return structured data, not content list
+        assert isinstance(result, dict)
+        assert "table_statistics" in result
 
-        # Check summary text
-        summary_content = cast("types.TextContent", result[0])
-        assert "Table Statistics Analysis" in summary_content.text
-        assert "100 total rows" in summary_content.text
-        assert "- Numeric: 1 columns" in summary_content.text
-        assert "- String: 1 columns" in summary_content.text
+        # Check table_info
+        table_stats = result["table_statistics"]
+        table_info = table_stats["table_info"]
+        assert table_info["total_rows"] == 100
+        assert table_info["analyzed_columns"] == 2
 
-        # Parse and check JSON response
-        json_content = cast("types.TextContent", result[1])
-        json_response = json.loads(json_content.text)
-        table_stats = json_response["table_statistics"]
-
-        assert table_stats["table_info"]["total_rows"] == 100
-        assert table_stats["table_info"]["analyzed_columns"] == 2
-        assert "id" in table_stats["column_statistics"]
-        assert "name" in table_stats["column_statistics"]
+        # Check column statistics
+        column_stats = table_stats["column_statistics"]
+        assert "id" in column_stats
+        assert "name" in column_stats
 
         # Verify specific statistics values
-        id_stats = table_stats["column_statistics"]["id"]
+        id_stats = column_stats["id"]
+        assert id_stats["column_type"] == "numeric"
         assert id_stats["min"] == 1.0
         assert id_stats["max"] == 100.0
         assert id_stats["avg"] == 50.5
 
-        name_stats = table_stats["column_statistics"]["name"]
+        name_stats = column_stats["name"]
+        assert name_stats["column_type"] == "string"
         assert name_stats["min_length"] == 3
         assert name_stats["max_length"] == 20
-        assert name_stats["distinct_count_approx"] == 95  # Correct field name
+        assert name_stats["distinct_count_approx"] == 95
