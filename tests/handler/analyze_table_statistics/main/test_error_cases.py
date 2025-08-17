@@ -132,22 +132,3 @@ class TestErrorHandling:
         error_content = cast("types.TextContent", result[0])
         assert "Error executing statistics query" in error_content.text
         assert "Query execution failed" in error_content.text
-
-    @pytest.mark.asyncio
-    async def test_no_columns_to_analyze_error(self) -> None:
-        """Test error when no columns are available for analysis."""
-        table_data = create_test_table_info([])  # Empty columns list
-
-        mock_effect = MockEffectHandler(table_data=table_data)
-
-        args = AnalyzeTableStatisticsArgs(
-            database=DataBase("test_db"),
-            schema=Schema("test_schema"),
-            table=Table("test_table"),
-        )
-
-        result = await handle_analyze_table_statistics(args, mock_effect)
-
-        assert len(result) == 1
-        error_content = cast("types.TextContent", result[0])
-        assert "Error: No columns to analyze" in error_content.text

@@ -8,7 +8,7 @@ from typing import Any
 from expression import option
 from kernel.statistics_support_column import StatisticsSupportColumn
 
-from ._types import (
+from .models import (
     BooleanStatsDict,
     DateStatsDict,
     NumericStatsDict,

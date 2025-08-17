@@ -1,11 +1,12 @@
 """Column analysis test module."""
 
-import mcp.types as types
-
 from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import TableColumn
 from mcp_snowflake.handler.analyze_table_statistics._column_analysis import (
     select_and_classify_columns,
+)
+from mcp_snowflake.handler.analyze_table_statistics._types import (
+    ColumnDoesNotExist,
 )
 
 
@@ -52,8 +53,9 @@ class TestSelectAndClassifyColumns:
 
         result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert not isinstance(result, types.TextContent)
-        supported_columns, unsupported_info = result
+        assert not isinstance(result, ColumnDoesNotExist)
+        supported_columns = result.supported_columns
+        unsupported_columns = result.unsupported_columns
 
         # Verify supported columns (now StatisticsSupportColumn instances)
         assert len(supported_columns) == 2
@@ -63,15 +65,13 @@ class TestSelectAndClassifyColumns:
         assert supported_columns[1].name == "name"
 
         # Verify unsupported columns
-        assert len(unsupported_info) == 2
-        unsupported_col_1, reason_1 = unsupported_info[0]
-        unsupported_col_2, reason_2 = unsupported_info[1]
+        assert len(unsupported_columns) == 2
+        unsupported_col_1 = unsupported_columns[0]
+        unsupported_col_2 = unsupported_columns[1]
         assert unsupported_col_1.name == "metadata"
         assert unsupported_col_1.data_type.raw_type == "VARIANT"
-        assert reason_1 == "Unsupported Snowflake data type for statistics: VARIANT"
         assert unsupported_col_2.name == "config"
         assert unsupported_col_2.data_type.raw_type == "OBJECT"
-        assert reason_2 == "Unsupported Snowflake data type for statistics: OBJECT"
 
     def test_classify_all_supported_columns(self) -> None:
         """Test classification when all columns are supported."""
@@ -97,14 +97,15 @@ class TestSelectAndClassifyColumns:
 
         result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert not isinstance(result, types.TextContent)
-        supported_columns, unsupported_info = result
+        assert not isinstance(result, ColumnDoesNotExist)
+        supported_columns = result.supported_columns
+        unsupported_columns = result.unsupported_columns
 
         assert len(supported_columns) == 2
         assert all(
             isinstance(col, StatisticsSupportColumn) for col in supported_columns
         )
-        assert len(unsupported_info) == 0
+        assert len(unsupported_columns) == 0
 
     def test_classify_requested_columns_with_mixed_support(self) -> None:
         """Test classification with specific requested columns."""
@@ -130,14 +131,15 @@ class TestSelectAndClassifyColumns:
 
         result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert not isinstance(result, types.TextContent)
-        supported_columns, unsupported_info = result
+        assert not isinstance(result, ColumnDoesNotExist)
+        supported_columns = result.supported_columns
+        unsupported_columns = result.unsupported_columns
 
         assert len(supported_columns) == 1
         assert isinstance(supported_columns[0], StatisticsSupportColumn)
         assert supported_columns[0].name == "id"
-        assert len(unsupported_info) == 1
-        assert unsupported_info[0][0].name == "metadata"
+        assert len(unsupported_columns) == 1
+        assert unsupported_columns[0].name == "metadata"
 
     def test_classify_missing_columns_returns_error(self) -> None:
         """Test error when requested columns don't exist."""
@@ -155,15 +157,5 @@ class TestSelectAndClassifyColumns:
 
         result = select_and_classify_columns(all_columns, requested_columns)
 
-        assert isinstance(result, types.TextContent)
-        assert "nonexistent" in result.text
-
-    def test_classify_empty_columns_list_returns_error(self) -> None:
-        """Test error when no columns are available."""
-        all_columns: list[TableColumn] = []
-        requested_columns: list[str] = []
-
-        result = select_and_classify_columns(all_columns, requested_columns)
-
-        assert isinstance(result, types.TextContent)
-        assert "No columns to analyze" in result.text
+        assert isinstance(result, ColumnDoesNotExist)
+        assert "nonexistent" in result.not_existed_columns

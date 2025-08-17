@@ -2,7 +2,7 @@
 
 import json
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import mcp.types as types
 
@@ -10,11 +10,7 @@ from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import TableColumn
 
 from ._result_parser import parse_statistics_result
-from ._types import AnalyzeTableStatisticsJsonResponse
-from .models import AnalyzeTableStatisticsArgs
-
-if TYPE_CHECKING:
-    from ._types import AnalyzeTableStatisticsJsonResponse
+from .models import AnalyzeTableStatisticsArgs, AnalyzeTableStatisticsJsonResponse
 
 
 def build_response(

@@ -10,7 +10,7 @@ from mcp_snowflake.handler.analyze_table_statistics._result_parser import (
 from ._utils import convert_to_statistics_support_columns
 
 if TYPE_CHECKING:
-    from mcp_snowflake.handler.analyze_table_statistics._types import (
+    from mcp_snowflake.handler.analyze_table_statistics.models import (
         BooleanStatsDict,
         DateStatsDict,
         NumericStatsDict,
