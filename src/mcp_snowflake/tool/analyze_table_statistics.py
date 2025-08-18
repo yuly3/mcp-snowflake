@@ -12,6 +12,7 @@ from snowflake.connector import (
     ProgrammingError,
 )
 
+from cattrs_converter import JsonImmutableConverter
 from expression.contract import ContractViolationError
 
 from ..handler import (
@@ -28,7 +29,12 @@ from .base import Tool
 
 
 class AnalyzeTableStatisticsTool(Tool):
-    def __init__(self, effect_handler: EffectAnalyzeTableStatistics) -> None:
+    def __init__(
+        self,
+        json_converter: JsonImmutableConverter,
+        effect_handler: EffectAnalyzeTableStatistics,
+    ) -> None:
+        self.json_converter = json_converter
         self.effect_handler = effect_handler
 
     @property
@@ -85,7 +91,11 @@ class AnalyzeTableStatisticsTool(Tool):
                         types.TextContent(type="text", text=summary_text),
                         types.TextContent(
                             type="text",
-                            text=json.dumps(response, indent=2, ensure_ascii=False),
+                            text=json.dumps(
+                                self.json_converter.unstructure(response),
+                                indent=2,
+                                ensure_ascii=False,
+                            ),
                         ),
                     ]
 

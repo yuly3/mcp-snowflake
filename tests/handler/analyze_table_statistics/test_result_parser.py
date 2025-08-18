@@ -6,6 +6,7 @@ from kernel.table_metadata import TableColumn
 from mcp_snowflake.handler.analyze_table_statistics._result_parser import (
     parse_statistics_result,
 )
+from mcp_snowflake.handler.analyze_table_statistics.models import TopValue
 
 from ._utils import convert_to_statistics_support_columns
 
@@ -100,9 +101,9 @@ class TestParseStatisticsResult:
         assert status_stats["max_length"] == 10
         assert status_stats["distinct_count_approx"] == 3
         assert status_stats["top_values"] == [
-            ["active", 400],
-            ["inactive", 350],
-            ["pending", 250],
+            TopValue("active", 400),
+            TopValue("inactive", 350),
+            TopValue("pending", 250),
         ]
 
     def test_parse_date_column(self) -> None:
@@ -208,7 +209,11 @@ class TestParseStatisticsResult:
         # Check string column stats
         status_stats = cast("StringStatsDict", column_stats["status"])
         assert status_stats["column_type"] == "string"
-        assert status_stats["top_values"] == [["A", 400], ["B", 350], ["C", 250]]
+        assert status_stats["top_values"] == [
+            TopValue("A", 400),
+            TopValue("B", 350),
+            TopValue("C", 250),
+        ]
 
         # Check date column stats
         date_stats = cast("DateStatsDict", column_stats["created_date"])
@@ -388,3 +393,71 @@ class TestParseStatisticsResult:
         assert boolean_stats["false_percentage"] == 0.0
         assert boolean_stats["true_percentage_with_nulls"] == 0.0
         assert boolean_stats["false_percentage_with_nulls"] == 0.0
+
+    def test_parse_float_count_normalization(self) -> None:
+        """Test parsing with float count values that get converted to int."""
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
+
+        result_row = {
+            "TOTAL_ROWS": 1000,
+            "STRING_STATUS_COUNT": 1000,
+            "STRING_STATUS_NULL_COUNT": 0,
+            "STRING_STATUS_MIN_LENGTH": 1,
+            "STRING_STATUS_MAX_LENGTH": 10,
+            "STRING_STATUS_DISTINCT": 3,
+            # Float count values should be converted to int
+            "STRING_STATUS_TOP_VALUES": '[["active", 400.0], ["inactive", 350.5], ["pending", 250.9]]',
+        }
+
+        column_stats = parse_statistics_result(
+            result_row,
+            convert_to_statistics_support_columns(columns_info),
+        )
+
+        status_stats = cast("StringStatsDict", column_stats["status"])
+        assert status_stats["top_values"] == [
+            TopValue("active", 400),  # 400.0 → 400
+            TopValue("inactive", 350),  # 350.5 → 350 (int() truncates)
+            TopValue("pending", 250),  # 250.9 → 250
+        ]
+
+    def test_parse_negative_count_skipping(self) -> None:
+        """Test parsing with negative count values that get skipped."""
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
+
+        result_row = {
+            "TOTAL_ROWS": 1000,
+            "STRING_STATUS_COUNT": 1000,
+            "STRING_STATUS_NULL_COUNT": 0,
+            "STRING_STATUS_MIN_LENGTH": 1,
+            "STRING_STATUS_MAX_LENGTH": 10,
+            "STRING_STATUS_DISTINCT": 3,
+            # Mix of valid and negative counts
+            "STRING_STATUS_TOP_VALUES": '[["bad", -1], ["good", 100], ["invalid", -5], ["ok", 50]]',
+        }
+
+        column_stats = parse_statistics_result(
+            result_row,
+            convert_to_statistics_support_columns(columns_info),
+        )
+
+        status_stats = cast("StringStatsDict", column_stats["status"])
+        # Only positive count entries should remain
+        assert status_stats["top_values"] == [
+            TopValue("good", 100),
+            TopValue("ok", 50),
+        ]

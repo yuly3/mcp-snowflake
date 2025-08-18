@@ -3,7 +3,7 @@
 import json
 import logging
 from collections.abc import Iterable, Mapping
-from typing import Any
+from typing import Any, cast
 
 from expression import option
 from kernel.statistics_support_column import StatisticsSupportColumn
@@ -14,6 +14,7 @@ from .models import (
     NumericStatsDict,
     StatsDict,
     StringStatsDict,
+    TopValue,
 )
 
 logger = logging.getLogger(__name__)
@@ -69,13 +70,20 @@ def parse_statistics_result(
             case "string":
                 # Parse APPROX_TOP_K result from JSON string
                 top_values_raw = result_row[f"{prefix}_TOP_VALUES"]
+
                 try:
-                    top_values = json.loads(top_values_raw) if top_values_raw else []
+                    raw_values = (
+                        cast("list[Any]", json.loads(top_values_raw))
+                        if top_values_raw
+                        else []
+                    )
                 except (json.JSONDecodeError, TypeError):
                     logger.warning(
-                        f"Failed to parse top_values for column {col_name}: {top_values_raw}"
+                        f"Failed to parse top_values JSON for column {col_name}: {top_values_raw!r}"
                     )
-                    top_values = []
+                    raw_values = []
+
+                top_values: list[TopValue[str]] = parse_top_values(raw_values, str)
 
                 stats = StringStatsDict(
                     column_type="string",
@@ -132,3 +140,37 @@ def parse_statistics_result(
         column_statistics[col_name] = stats
 
     return column_statistics
+
+
+def parse_top_values[T](
+    raw_top_values: list[Any],
+    value_cls: type[T],
+) -> list[TopValue[T]]:
+    """Parse raw top values from the database result.
+
+    Parameters
+    ----------
+    raw_top_values : list[Any]
+        Raw top values from the database result, expected to be a list of lists.
+    value_cls : type[T]
+        The type of the values in the top values list.
+
+    Returns
+    -------
+    list[TopValue[T]]
+        A list of TopValue instances parsed from the raw input.
+    """
+    top_values: list[TopValue[T]] = []
+    for item in raw_top_values:
+        if isinstance(item, list) and len(item) == 2:
+            value_raw, count_raw = cast("list[Any]", item)
+            if isinstance(value_raw, value_cls) or value_raw is None:
+                try:
+                    top_values.append(TopValue(value_raw, int(count_raw)))
+                except (ValueError, TypeError):
+                    logger.warning(f"Skipped invalid top_values element: {item!r}")
+            else:
+                logger.warning(f"Skipped invalid top_values element: {item!r}")
+        else:
+            logger.warning(f"Skipped invalid top_values element: {item!r}")
+    return top_values

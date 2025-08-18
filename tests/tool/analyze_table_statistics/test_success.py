@@ -5,6 +5,7 @@ import json
 import mcp.types as types
 import pytest
 
+from cattrs_converter import JsonImmutableConverter
 from kernel.table_metadata import DataBase, Schema, TableColumn, TableInfo
 from mcp_snowflake.tool.analyze_table_statistics import AnalyzeTableStatisticsTool
 
@@ -14,16 +15,16 @@ from ...mock_effect_handler import MockAnalyzeTableStatistics
 class TestAnalyzeTableStatisticsToolSuccess:
     """Test AnalyzeTableStatisticsTool success cases."""
 
-    def test_name_property(self) -> None:
+    def test_name_property(self, json_converter: JsonImmutableConverter) -> None:
         """Test name property."""
         mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(mock_effect)
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
         assert tool.name == "analyze_table_statistics"
 
-    def test_definition_property(self) -> None:
+    def test_definition_property(self, json_converter: JsonImmutableConverter) -> None:
         """Test definition property."""
         mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(mock_effect)
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
         definition = tool.definition
 
         assert definition.name == "analyze_table_statistics"
@@ -53,7 +54,10 @@ class TestAnalyzeTableStatisticsToolSuccess:
         assert properties["top_k_limit"]["maximum"] == 100
 
     @pytest.mark.asyncio
-    async def test_perform_success_basic(self) -> None:
+    async def test_perform_success_basic(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
         """Test basic successful statistics analysis."""
         # Set up mock table info with various column types
         table_info = TableInfo(
@@ -140,7 +144,7 @@ class TestAnalyzeTableStatisticsToolSuccess:
             table_info=table_info,
             statistics_result=statistics_result,
         )
-        tool = AnalyzeTableStatisticsTool(mock_effect)
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -185,7 +189,10 @@ class TestAnalyzeTableStatisticsToolSuccess:
         assert actual_columns.issubset(expected_columns)
 
     @pytest.mark.asyncio
-    async def test_perform_with_specific_columns(self) -> None:
+    async def test_perform_with_specific_columns(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
         """Test statistics analysis with specific columns specified."""
         table_info = TableInfo(
             database=DataBase("test_db"),
@@ -229,7 +236,7 @@ class TestAnalyzeTableStatisticsToolSuccess:
             table_info=table_info,
             statistics_result=statistics_result,
         )
-        tool = AnalyzeTableStatisticsTool(mock_effect)
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -251,7 +258,10 @@ class TestAnalyzeTableStatisticsToolSuccess:
         assert "table_statistics" in response_data
 
     @pytest.mark.asyncio
-    async def test_perform_with_custom_top_k_limit(self) -> None:
+    async def test_perform_with_custom_top_k_limit(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
         """Test statistics analysis with custom top_k_limit."""
         table_info = TableInfo(
             database=DataBase("test_db"),
@@ -284,7 +294,7 @@ class TestAnalyzeTableStatisticsToolSuccess:
             table_info=table_info,
             statistics_result=statistics_result,
         )
-        tool = AnalyzeTableStatisticsTool(mock_effect)
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -305,11 +315,14 @@ class TestAnalyzeTableStatisticsToolSuccess:
         assert "table_statistics" in response_data
 
     @pytest.mark.asyncio
-    async def test_perform_with_minimal_table(self) -> None:
+    async def test_perform_with_minimal_table(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
         """Test with minimal table (no columns)."""
         # Use default table info from MockAnalyzeTableStatistics (no columns)
         mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(mock_effect)
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -325,7 +338,10 @@ class TestAnalyzeTableStatisticsToolSuccess:
         assert "Error: No supported columns for statistics" in error_text
 
     @pytest.mark.asyncio
-    async def test_perform_with_unsupported_columns(self) -> None:
+    async def test_perform_with_unsupported_columns(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
         """Test statistics analysis with unsupported column types."""
         table_info = TableInfo(
             database=DataBase("test_db"),
@@ -377,7 +393,7 @@ class TestAnalyzeTableStatisticsToolSuccess:
             table_info=table_info,
             statistics_result=statistics_result,
         )
-        tool = AnalyzeTableStatisticsTool(mock_effect)
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
             "database": "test_db",

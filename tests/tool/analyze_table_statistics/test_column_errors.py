@@ -3,6 +3,7 @@
 import mcp.types as types
 import pytest
 
+from cattrs_converter import JsonImmutableConverter
 from kernel.table_metadata import DataBase, Schema, TableColumn, TableInfo
 from mcp_snowflake.tool.analyze_table_statistics import AnalyzeTableStatisticsTool
 
@@ -13,7 +14,10 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
     """Test AnalyzeTableStatisticsTool column error cases."""
 
     @pytest.mark.asyncio
-    async def test_perform_with_nonexistent_columns(self) -> None:
+    async def test_perform_with_nonexistent_columns(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
         """Test with columns that don't exist in the table."""
         # Set up mock table info with limited columns
         table_info = TableInfo(
@@ -42,7 +46,7 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
         )
 
         mock_effect = MockAnalyzeTableStatistics(table_info=table_info)
-        tool = AnalyzeTableStatisticsTool(mock_effect)
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         # Request analysis for columns that don't exist
         arguments = {
@@ -65,7 +69,10 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
         assert "ALSO_MISSING" in result[0].text
 
     @pytest.mark.asyncio
-    async def test_perform_with_no_supported_columns(self) -> None:
+    async def test_perform_with_no_supported_columns(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
         """Test with table that has no supported columns for statistics."""
         # Set up mock table info with only unsupported column types
         table_info = TableInfo(
@@ -94,7 +101,7 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
         )
 
         mock_effect = MockAnalyzeTableStatistics(table_info=table_info)
-        tool = AnalyzeTableStatisticsTool(mock_effect)
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -112,7 +119,10 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
         assert "BINARY_DATA(BINARY)" in result[0].text
 
     @pytest.mark.asyncio
-    async def test_perform_with_mixed_existing_nonexisting_columns(self) -> None:
+    async def test_perform_with_mixed_existing_nonexisting_columns(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
         """Test with a mix of existing and non-existing columns."""
         # Set up mock table info
         table_info = TableInfo(
@@ -141,7 +151,7 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
         )
 
         mock_effect = MockAnalyzeTableStatistics(table_info=table_info)
-        tool = AnalyzeTableStatisticsTool(mock_effect)
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         # Request analysis with mix of existing and non-existing columns
         arguments = {

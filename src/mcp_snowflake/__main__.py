@@ -65,7 +65,8 @@ class SnowflakeServerContext:
 
         tools = [
             AnalyzeTableStatisticsTool(
-                AnalyzeTableStatisticsEffectHandler(self.snowflake_client)
+                self.json_converter,
+                AnalyzeTableStatisticsEffectHandler(self.snowflake_client),
             ),
             DescribeTableTool(DescribeTableEffectHandler(self.snowflake_client)),
             ExecuteQueryTool(

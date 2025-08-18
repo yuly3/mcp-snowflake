@@ -2,12 +2,21 @@ from collections.abc import Awaitable, Sequence
 from typing import Any, Literal, NotRequired, Protocol, TypedDict
 
 import attrs
+from attrs import validators
 from pydantic import BaseModel, Field
 
 from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import DataBase, Schema, Table, TableColumn
 
 from ..describe_table import EffectDescribeTable
+
+
+@attrs.define(frozen=True, slots=True)
+class TopValue[T]:
+    """Type-safe representation of top value with count from APPROX_TOP_K."""
+
+    value: T | None
+    count: int = attrs.field(validator=[validators.ge(0)])
 
 
 class AnalyzeTableStatisticsArgs(BaseModel):
@@ -97,8 +106,8 @@ class StringStatsDict(TypedDict):
     distinct_count_approx: int
     min_length: int
     max_length: int
-    top_values: list[list[Any]]
-    """[[value, count], ...]"""
+    top_values: list[TopValue[str]]
+    """List of TopValue instances with value and count pairs"""
 
 
 class DateStatsDict(TypedDict):
