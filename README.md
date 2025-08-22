@@ -89,6 +89,15 @@ uvx mcp-snowflake --config {your-config-path}
 
 ### Available Tools
 
+#### Tool List
+- [`list_schemas`](#list_schemas) - Retrieve a list of schemas from a specified database
+- [`list_tables`](#list_tables) - Retrieve a list of tables from a specified database and schema
+- [`list_views`](#list_views) - Retrieve a list of views from a specified database and schema
+- [`describe_table`](#describe_table) - Retrieve detailed structure information for a specified table
+- [`execute_query`](#execute_query) - Execute read-only SQL queries and return structured results
+- [`sample_table_data`](#sample_table_data) - Retrieve sample data from a specified table
+- [`analyze_table_statistics`](#analyze_table_statistics) - Generate comprehensive statistical analysis for table columns
+
 #### list_schemas
 Retrieve a list of schemas from a specified database.
 
