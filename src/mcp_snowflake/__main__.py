@@ -18,72 +18,15 @@ from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 from pydantic_settings import SettingsConfigDict
 
-from cattrs_converter import JsonImmutableConverter
-
-from .adapter import (
-    AnalyzeTableStatisticsEffectHandler,
-    DescribeTableEffectHandler,
-    ExecuteQueryEffectHandler,
-    ListSchemasEffectHandler,
-    ListTablesEffectHandler,
-    ListViewsEffectHandler,
-    SampleTableDataEffectHandler,
-)
 from .cli import Cli
+from .context import SnowflakeServerContext
 from .settings import Settings
 from .snowflake_client import SnowflakeClient
-from .tool import (
-    AnalyzeTableStatisticsTool,
-    DescribeTableTool,
-    ExecuteQueryTool,
-    ListSchemasTool,
-    ListTablesTool,
-    ListViewsTool,
-    SampleTableDataTool,
-    Tool,
-)
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create a server instance
 server = Server("mcp-snowflake")
-
-
-class SnowflakeServerContext:
-    """Context class to hold Snowflake client instance."""
-
-    def __init__(self) -> None:
-        self.snowflake_client: SnowflakeClient | None = None
-        self.json_converter = JsonImmutableConverter()
-        self.tools: Mapping[str, Tool] = {}
-
-    def build_tools(self) -> None:
-        if not self.snowflake_client:
-            raise ValueError("Snowflake client is not initialized")
-
-        tools = [
-            AnalyzeTableStatisticsTool(
-                self.json_converter,
-                AnalyzeTableStatisticsEffectHandler(self.snowflake_client),
-            ),
-            DescribeTableTool(DescribeTableEffectHandler(self.snowflake_client)),
-            ExecuteQueryTool(
-                self.json_converter,
-                ExecuteQueryEffectHandler(self.snowflake_client),
-            ),
-            ListSchemasTool(ListSchemasEffectHandler(self.snowflake_client)),
-            ListTablesTool(ListTablesEffectHandler(self.snowflake_client)),
-            ListViewsTool(ListViewsEffectHandler(self.snowflake_client)),
-            SampleTableDataTool(
-                self.json_converter,
-                SampleTableDataEffectHandler(self.snowflake_client),
-            ),
-        ]
-        self.tools = {tool.name: tool for tool in tools}
-
-
 server_context = SnowflakeServerContext()
 
 
@@ -132,7 +75,7 @@ async def main() -> None:
 
         logger.info("Snowflake client initialized successfully")
 
-        server_context.build_tools()
+        server_context.build_tools(settings.tools)
         async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
             await server.run(
                 read_stream,

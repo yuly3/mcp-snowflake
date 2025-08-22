@@ -23,8 +23,40 @@ class SnowflakeSettings(BaseModel):
     )
 
 
+class ToolsSettings(BaseModel):
+    """Settings for enabling/disabling individual tools."""
+
+    analyze_table_statistics: bool = Field(True, init=False)
+    describe_table: bool = Field(True, init=False)
+    execute_query: bool = Field(True, init=False)
+    list_schemas: bool = Field(True, init=False)
+    list_tables: bool = Field(True, init=False)
+    list_views: bool = Field(True, init=False)
+    sample_table_data: bool = Field(True, init=False)
+
+    def enabled_tool_names(self) -> set[str]:
+        """Return the set of enabled tool names."""
+        enabled_tools: set[str] = set()
+        if self.analyze_table_statistics:
+            enabled_tools.add("analyze_table_statistics")
+        if self.describe_table:
+            enabled_tools.add("describe_table")
+        if self.execute_query:
+            enabled_tools.add("execute_query")
+        if self.list_schemas:
+            enabled_tools.add("list_schemas")
+        if self.list_tables:
+            enabled_tools.add("list_tables")
+        if self.list_views:
+            enabled_tools.add("list_views")
+        if self.sample_table_data:
+            enabled_tools.add("sample_table_data")
+        return enabled_tools
+
+
 class Settings(BaseSettings):
-    snowflake: SnowflakeSettings = Field(init=False)
+    snowflake: SnowflakeSettings = Field(default_factory=SnowflakeSettings)
+    tools: ToolsSettings = Field(default_factory=ToolsSettings)
 
     @classmethod
     def settings_customise_sources(

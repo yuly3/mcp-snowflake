@@ -51,6 +51,16 @@ password = "your-password"
 warehouse = "your-warehouse"  # Optional
 role = "your-role"  # Optional
 authenticator = "SNOWFLAKE"  # "SNOWFLAKE" or "externalbrowser"
+
+[tools]
+# Enable/disable specific tools (all enabled by default)
+analyze_table_statistics = true  # Optional
+describe_table = true  # Optional
+execute_query = true  # Optional
+list_schemas = true  # Optional
+list_tables = true  # Optional
+list_views = true  # Optional
+sample_table_data = true  # Optional
 ```
 
 ### Using Environment Variables
@@ -67,6 +77,15 @@ Set the following environment variables:
 - `SNOWFLAKE__ROLE`: Default role
 - `SNOWFLAKE__AUTHENTICATOR`: Authentication method ("SNOWFLAKE" or "externalbrowser")
 
+#### Tool Configuration (Optional)
+- `TOOLS__ANALYZE_TABLE_STATISTICS`: Enable/disable analyze_table_statistics tool ("true" or "false", default: "true")
+- `TOOLS__DESCRIBE_TABLE`: Enable/disable describe_table tool ("true" or "false", default: "true")
+- `TOOLS__EXECUTE_QUERY`: Enable/disable execute_query tool ("true" or "false", default: "true")
+- `TOOLS__LIST_SCHEMAS`: Enable/disable list_schemas tool ("true" or "false", default: "true")
+- `TOOLS__LIST_TABLES`: Enable/disable list_tables tool ("true" or "false", default: "true")
+- `TOOLS__LIST_VIEWS`: Enable/disable list_views tool ("true" or "false", default: "true")
+- `TOOLS__SAMPLE_TABLE_DATA`: Enable/disable sample_table_data tool ("true" or "false", default: "true")
+
 Example:
 ```bash
 export SNOWFLAKE__ACCOUNT="your-account.region"
@@ -75,6 +94,20 @@ export SNOWFLAKE__PASSWORD="your-password"
 export SNOWFLAKE__WAREHOUSE="your-warehouse"
 export SNOWFLAKE__ROLE="your-role"
 export SNOWFLAKE__AUTHENTICATOR="SNOWFLAKE"
+```
+
+For PowerShell (Windows):
+```powershell
+$env:SNOWFLAKE__ACCOUNT="your-account.region"
+$env:SNOWFLAKE__USER="your-username"
+$env:SNOWFLAKE__PASSWORD="your-password"
+$env:SNOWFLAKE__WAREHOUSE="your-warehouse"
+$env:SNOWFLAKE__ROLE="your-role"
+$env:SNOWFLAKE__AUTHENTICATOR="SNOWFLAKE"
+
+# Tool configuration (optional)
+$env:TOOLS__EXECUTE_QUERY="false"  # Disable execute_query tool
+$env:TOOLS__ANALYZE_TABLE_STATISTICS="false"  # Disable analyze_table_statistics tool
 ```
 
 > [!NOTE]

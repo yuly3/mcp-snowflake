@@ -8,3 +8,13 @@ password = "your-password"
 warehouse = "your-warehouse"  # Optional
 role = "your-role"  # Optional
 authenticator = "SNOWFLAKE"  # "SNOWFLAKE" or "externalbrowser"
+
+# [tools]
+# Enable/disable specific tools (all enabled by default)
+# analyze_table_statistics = true
+# describe_table = true
+# execute_query = true
+# list_schemas = true
+# list_tables = true
+# list_views = true
+# sample_table_data = true
