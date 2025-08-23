@@ -19,67 +19,6 @@ class TopValue[T]:
     count: int = attrs.field(validator=[validators.ge(0)])
 
 
-class AnalyzeTableStatisticsArgs(BaseModel):
-    """Arguments for analyzing table statistics."""
-
-    database: DataBase
-    schema_: Schema = Field(alias="schema")
-    table_: Table = Field(alias="table")
-    columns: list[str] = Field(default_factory=list)
-    """Empty list means all columns"""
-    top_k_limit: int = Field(default=10, ge=1, le=100)
-    """Number of most frequent values to retrieve"""
-
-
-class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
-    """Protocol for dependencies required by table statistics analysis."""
-
-    def analyze_table_statistics(
-        self,
-        database: DataBase,
-        schema: Schema,
-        table: Table,
-        columns_to_analyze: Sequence[StatisticsSupportColumn],
-        top_k_limit: int,
-    ) -> Awaitable[dict[str, Any]]:
-        """Execute statistics query and return the single result row.
-
-        Parameters
-        ----------
-        database : DataBase
-            Database name
-        schema : Schema
-            Schema name
-        table : Table
-            Table name
-        columns_to_analyze : Sequence[StatisticsSupportColumn]
-            Column information objects with statistics support
-        top_k_limit : int
-            Limit for APPROX_TOP_K function
-
-        Returns
-        -------
-        Awaitable[dict[str, Any]]
-            Single row of statistics query results
-
-        Raises
-        ------
-        TimeoutError
-            If query execution times out
-        ProgrammingError
-            SQL syntax errors or other programming errors
-        OperationalError
-            Database operation related errors
-        DataError
-            Data processing related errors
-        IntegrityError
-            Referential integrity constraint violations
-        NotSupportedError
-            When an unsupported database feature is used
-        """
-        ...
-
-
 class NumericStatsDict(TypedDict):
     """TypedDict for numeric column statistics."""
 
@@ -143,6 +82,79 @@ class BooleanStatsDict(TypedDict):
 
 
 StatsDict = NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict
+
+
+class AnalyzeTableStatisticsArgs(BaseModel):
+    """Arguments for analyzing table statistics."""
+
+    database: DataBase
+    schema_: Schema = Field(alias="schema")
+    table_: Table = Field(alias="table")
+    columns: list[str] = Field(default_factory=list)
+    """Empty list means all columns"""
+    top_k_limit: int = Field(default=10, ge=1, le=100)
+    """Number of most frequent values to retrieve"""
+
+
+@attrs.define(frozen=True, slots=True)
+class TableStatisticsParseResult:
+    """Result of parsing table statistics query result row.
+
+    Contains both the total row count and column-wise statistics
+    parsed from a single database result row.
+    """
+
+    total_rows: int
+    column_statistics: dict[str, StatsDict]
+
+
+class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
+    """Protocol for dependencies required by table statistics analysis."""
+
+    def analyze_table_statistics(
+        self,
+        database: DataBase,
+        schema: Schema,
+        table: Table,
+        columns_to_analyze: Sequence[StatisticsSupportColumn],
+        top_k_limit: int,
+    ) -> Awaitable[dict[str, Any]]:
+        """Execute statistics query and return the single result row.
+
+        Parameters
+        ----------
+        database : DataBase
+            Database name
+        schema : Schema
+            Schema name
+        table : Table
+            Table name
+        columns_to_analyze : Sequence[StatisticsSupportColumn]
+            Column information objects with statistics support
+        top_k_limit : int
+            Limit for APPROX_TOP_K function
+
+        Returns
+        -------
+        Awaitable[dict[str, Any]]
+            Single row of statistics query results
+
+        Raises
+        ------
+        TimeoutError
+            If query execution times out
+        ProgrammingError
+            SQL syntax errors or other programming errors
+        OperationalError
+            Database operation related errors
+        DataError
+            Data processing related errors
+        IntegrityError
+            Referential integrity constraint violations
+        NotSupportedError
+            When an unsupported database feature is used
+        """
+        ...
 
 
 class UnsupportedColumnDict(TypedDict):

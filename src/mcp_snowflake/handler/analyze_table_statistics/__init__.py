@@ -11,6 +11,7 @@ from .models import (
     ColumnDoesNotExist,
     EffectAnalyzeTableStatistics,
     NoSupportedColumns,
+    TableStatisticsParseResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ __all__ = [
     "ColumnDoesNotExist",
     "EffectAnalyzeTableStatistics",
     "NoSupportedColumns",
+    "TableStatisticsParseResult",
     "handle_analyze_table_statistics",
 ]
 
@@ -93,7 +95,7 @@ async def handle_analyze_table_statistics(
     )
 
     # Parse statistics and build structured response
-    column_statistics = parse_statistics_result(result_row, supported_columns)
+    parsed = parse_statistics_result(result_row, supported_columns)
 
     response: AnalyzeTableStatisticsJsonResponse = {
         "table_statistics": {
@@ -101,10 +103,10 @@ async def handle_analyze_table_statistics(
                 "database": args.database,
                 "schema": args.schema_,
                 "table": args.table_,
-                "total_rows": result_row["TOTAL_ROWS"],
+                "total_rows": parsed.total_rows,
                 "analyzed_columns": len(supported_columns),
             },
-            "column_statistics": column_statistics,
+            "column_statistics": parsed.column_statistics,
         }
     }
 

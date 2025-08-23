@@ -14,6 +14,7 @@ from .models import (
     NumericStatsDict,
     StatsDict,
     StringStatsDict,
+    TableStatisticsParseResult,
     TopValue,
 )
 
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 def parse_statistics_result(
     result_row: Mapping[str, Any],
     columns_info: Iterable[StatisticsSupportColumn],
-) -> dict[str, StatsDict]:
+) -> TableStatisticsParseResult:
     """Parse the statistics query result into structured column statistics.
 
     Parameters
@@ -35,9 +36,17 @@ def parse_statistics_result(
 
     Returns
     -------
-    dict[str, StatsDict]
-        Mapping of column names to their statistics.
+    TableStatisticsParseResult
+        Parsed statistics containing total_rows and column statistics.
     """
+    # Extract total_rows with fallback to 0 if missing or None
+    total_rows_raw = result_row.get("TOTAL_ROWS")
+    if total_rows_raw is None:
+        logger.warning("TOTAL_ROWS missing from statistics result, defaulting to 0")
+        total_rows = 0
+    else:
+        total_rows = int(total_rows_raw)
+
     column_statistics: dict[str, StatsDict] = {}
 
     for col_info in columns_info:
@@ -139,7 +148,10 @@ def parse_statistics_result(
 
         column_statistics[col_name] = stats
 
-    return column_statistics
+    return TableStatisticsParseResult(
+        total_rows=total_rows,
+        column_statistics=column_statistics,
+    )
 
 
 def parse_top_values[T](

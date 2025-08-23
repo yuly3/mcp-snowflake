@@ -46,13 +46,14 @@ class TestParseStatisticsResult:
             "NUMERIC_PRICE_DISTINCT": 950,
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        assert len(column_stats) == 1
-        price_stats = cast("NumericStatsDict", column_stats["price"])
+        assert parsed.total_rows == 1000
+        assert len(parsed.column_statistics) == 1
+        price_stats = cast("NumericStatsDict", parsed.column_statistics["price"])
         assert price_stats["column_type"] == "numeric"
         assert price_stats["data_type"] == "NUMBER(10,2)"
         assert price_stats["count"] == 1000
@@ -86,13 +87,14 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": '[["active", 400], ["inactive", 350], ["pending", 250]]',
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        assert len(column_stats) == 1
-        status_stats = cast("StringStatsDict", column_stats["status"])
+        assert parsed.total_rows == 1000
+        assert len(parsed.column_statistics) == 1
+        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
         assert status_stats["column_type"] == "string"
         assert status_stats["data_type"] == "VARCHAR(10)"
         assert status_stats["count"] == 1000
@@ -127,13 +129,14 @@ class TestParseStatisticsResult:
             "DATE_CREATED_DATE_DISTINCT": 300,
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        assert len(column_stats) == 1
-        date_stats = cast("DateStatsDict", column_stats["created_date"])
+        assert parsed.total_rows == 1000
+        assert len(parsed.column_statistics) == 1
+        date_stats = cast("DateStatsDict", parsed.column_statistics["created_date"])
         assert date_stats["column_type"] == "date"
         assert date_stats["data_type"] == "DATE"
         assert date_stats["count"] == 1000
@@ -194,20 +197,21 @@ class TestParseStatisticsResult:
             "DATE_CREATED_DATE_DISTINCT": 300,
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        assert len(column_stats) == 3
+        assert parsed.total_rows == 1000
+        assert len(parsed.column_statistics) == 3
 
         # Check numeric column stats
-        price_stats = cast("NumericStatsDict", column_stats["price"])
+        price_stats = cast("NumericStatsDict", parsed.column_statistics["price"])
         assert price_stats["column_type"] == "numeric"
         assert price_stats["avg"] == 505.25
 
         # Check string column stats
-        status_stats = cast("StringStatsDict", column_stats["status"])
+        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
         assert status_stats["column_type"] == "string"
         assert status_stats["top_values"] == [
             TopValue("A", 400),
@@ -216,7 +220,7 @@ class TestParseStatisticsResult:
         ]
 
         # Check date column stats
-        date_stats = cast("DateStatsDict", column_stats["created_date"])
+        date_stats = cast("DateStatsDict", parsed.column_statistics["created_date"])
         assert date_stats["column_type"] == "date"
         assert date_stats["date_range_days"] == 364
 
@@ -244,12 +248,12 @@ class TestParseStatisticsResult:
             "NUMERIC_PRICE_DISTINCT": 0,
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        price_stats = cast("NumericStatsDict", column_stats["price"])
+        price_stats = cast("NumericStatsDict", parsed.column_statistics["price"])
         assert price_stats["min"] == 0.0  # Default for None
         assert price_stats["max"] == 0.0
         assert price_stats["avg"] == 0.0
@@ -278,12 +282,12 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": "invalid_json",
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        status_stats = cast("StringStatsDict", column_stats["status"])
+        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
         assert status_stats["top_values"] == []  # Should default to empty list
 
     def test_parse_empty_top_values(self) -> None:
@@ -307,12 +311,12 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": None,
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        status_stats = cast("StringStatsDict", column_stats["status"])
+        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
         assert status_stats["top_values"] == []
 
     def test_parse_boolean_column(self) -> None:
@@ -338,13 +342,14 @@ class TestParseStatisticsResult:
             "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 23.0,
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        assert len(column_stats) == 1
-        boolean_stats = cast("BooleanStatsDict", column_stats["is_active"])
+        assert parsed.total_rows == 1000
+        assert len(parsed.column_statistics) == 1
+        boolean_stats = cast("BooleanStatsDict", parsed.column_statistics["is_active"])
         assert boolean_stats["column_type"] == "boolean"
         assert boolean_stats["data_type"] == "BOOLEAN"
         assert boolean_stats["count"] == 950
@@ -379,12 +384,12 @@ class TestParseStatisticsResult:
             "BOOLEAN_IS_ACTIVE_FALSE_PERCENTAGE_WITH_NULLS": 0.0,
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        boolean_stats = cast("BooleanStatsDict", column_stats["is_active"])
+        boolean_stats = cast("BooleanStatsDict", parsed.column_statistics["is_active"])
         assert boolean_stats["count"] == 0
         assert boolean_stats["null_count"] == 1000
         assert boolean_stats["true_count"] == 0
@@ -416,12 +421,12 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": '[["active", 400.0], ["inactive", 350.5], ["pending", 250.9]]',
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        status_stats = cast("StringStatsDict", column_stats["status"])
+        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
         assert status_stats["top_values"] == [
             TopValue("active", 400),  # 400.0 → 400
             TopValue("inactive", 350),  # 350.5 → 350 (int() truncates)
@@ -450,12 +455,12 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": '[["bad", -1], ["good", 100], ["invalid", -5], ["ok", 50]]',
         }
 
-        column_stats = parse_statistics_result(
+        parsed = parse_statistics_result(
             result_row,
             convert_to_statistics_support_columns(columns_info),
         )
 
-        status_stats = cast("StringStatsDict", column_stats["status"])
+        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
         # Only positive count entries should remain
         assert status_stats["top_values"] == [
             TopValue("good", 100),
