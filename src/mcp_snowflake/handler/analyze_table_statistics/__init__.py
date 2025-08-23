@@ -11,6 +11,7 @@ from .models import (
     ColumnDoesNotExist,
     EffectAnalyzeTableStatistics,
     NoSupportedColumns,
+    StatisticsResultParseError,
     TableStatisticsParseResult,
 )
 
@@ -23,6 +24,7 @@ __all__ = [
     "ColumnDoesNotExist",
     "EffectAnalyzeTableStatistics",
     "NoSupportedColumns",
+    "StatisticsResultParseError",
     "TableStatisticsParseResult",
     "handle_analyze_table_statistics",
 ]

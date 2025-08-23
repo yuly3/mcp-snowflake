@@ -18,7 +18,7 @@ from ...mock_effect_handler import MockAnalyzeTableStatistics
 
 
 class TestAnalyzeTableStatisticsToolErrors:
-    """Test AnalyzeTableStatisticsTool error cases."""
+    """Tests for error conditions in analyze_table_statistics tool."""
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_arguments(
@@ -315,3 +315,73 @@ class TestAnalyzeTableStatisticsToolErrors:
         assert result[0].type == "text"
         assert "Error: Unexpected error:" in result[0].text
         assert "Unexpected contract violation" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_perform_with_statistics_result_parse_error(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that StatisticsResultParseError is properly mapped to user-friendly message."""
+        from types import SimpleNamespace
+        from typing import Any
+
+        from kernel.table_metadata import TableColumn
+
+        # Mock effect that returns result causing parse error
+        class MockEffectWithBadResult:
+            async def describe_table(
+                self,
+                database: Any,  # noqa: ARG002
+                schema: Any,  # noqa: ARG002
+                table: Any,  # noqa: ARG002
+            ) -> Any:
+                return SimpleNamespace(
+                    columns=[
+                        TableColumn(
+                            name="status",
+                            data_type="VARCHAR(10)",
+                            nullable=False,
+                            ordinal_position=1,
+                        )
+                    ]
+                )
+
+            async def analyze_table_statistics(
+                self,
+                database: Any,  # noqa: ARG002
+                schema: Any,  # noqa: ARG002
+                table: Any,  # noqa: ARG002
+                columns_to_analyze: Any,  # noqa: ARG002
+                top_k_limit: Any,  # noqa: ARG002
+            ) -> dict[str, Any]:
+                # Return result with invalid TOP_VALUES JSON
+                return {
+                    "TOTAL_ROWS": 1000,
+                    "STRING_STATUS_COUNT": 1000,
+                    "STRING_STATUS_NULL_COUNT": 0,
+                    "STRING_STATUS_MIN_LENGTH": 1,
+                    "STRING_STATUS_MAX_LENGTH": 10,
+                    "STRING_STATUS_DISTINCT": 3,
+                    "STRING_STATUS_TOP_VALUES": "invalid_json",  # This will cause parse error
+                }
+
+        tool = AnalyzeTableStatisticsTool(
+            json_converter=json_converter,
+            effect_handler=MockEffectWithBadResult(),
+        )
+
+        arguments = {
+            "database": "test_db",
+            "schema": "test_schema",
+            "table": "test_table",
+            "columns": ["status"],
+        }
+
+        result = await tool.perform(arguments)
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert result[0].type == "text"
+        assert (
+            "Error: Snowflake returned unexpected result format:" in result[0].text
+        ), f"Expected parse error message but got: {result[0].text!r}"
+        assert "Failed to parse STRING_STATUS_TOP_VALUES JSON" in result[0].text

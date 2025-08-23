@@ -6,12 +6,14 @@ from collections.abc import Iterable, Mapping
 from typing import Any, cast
 
 from expression import option
+from expression.contract import contract
 from kernel.statistics_support_column import StatisticsSupportColumn
 
 from .models import (
     BooleanStatsDict,
     DateStatsDict,
     NumericStatsDict,
+    StatisticsResultParseError,
     StatsDict,
     StringStatsDict,
     TableStatisticsParseResult,
@@ -21,6 +23,7 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
+@contract(known_err=(StatisticsResultParseError,))
 def parse_statistics_result(
     result_row: Mapping[str, Any],
     columns_info: Iterable[StatisticsSupportColumn],
@@ -38,14 +41,19 @@ def parse_statistics_result(
     -------
     TableStatisticsParseResult
         Parsed statistics containing total_rows and column statistics.
+
+    Raises
+    ------
+    StatisticsResultParseError
+        If TOTAL_ROWS is missing/None, or if string column TOP_VALUES is None,
+        or if JSON parsing fails for TOP_VALUES.
     """
     # Extract total_rows with fallback to 0 if missing or None
     total_rows_raw = result_row.get("TOTAL_ROWS")
     if total_rows_raw is None:
-        logger.warning("TOTAL_ROWS missing from statistics result, defaulting to 0")
-        total_rows = 0
-    else:
-        total_rows = int(total_rows_raw)
+        logger.error("TOTAL_ROWS missing from statistics result")
+        raise StatisticsResultParseError("TOTAL_ROWS missing from statistics result")
+    total_rows = int(total_rows_raw)
 
     column_statistics: dict[str, StatsDict] = {}
 
@@ -80,19 +88,39 @@ def parse_statistics_result(
                 # Parse APPROX_TOP_K result from JSON string
                 top_values_raw = result_row[f"{prefix}_TOP_VALUES"]
 
+                if top_values_raw is None:
+                    logger.error(
+                        f"{prefix}_TOP_VALUES is required for string column but was None",
+                        extra={"column": col_name, "prefix": prefix},
+                    )
+                    raise StatisticsResultParseError(
+                        f"{prefix}_TOP_VALUES is required for string column but was None"
+                    )
+
                 try:
                     raw_values = (
                         cast("list[Any]", json.loads(top_values_raw))
                         if top_values_raw
                         else []
                     )
-                except (json.JSONDecodeError, TypeError):
-                    logger.warning(
-                        f"Failed to parse top_values JSON for column {col_name}: {top_values_raw!r}"
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.error(
+                        f"Failed to parse {prefix}_TOP_VALUES JSON",
+                        extra={
+                            "column": col_name,
+                            "raw_value": top_values_raw,
+                            "error": str(e),
+                        },
                     )
-                    raw_values = []
+                    raise StatisticsResultParseError(
+                        f"Failed to parse {prefix}_TOP_VALUES JSON: {top_values_raw!r}"
+                    ) from e
 
-                top_values: list[TopValue[str]] = parse_top_values(raw_values, str)
+                top_values = parse_top_values(
+                    raw_values,
+                    str,
+                    col_name,
+                )
 
                 stats = StringStatsDict(
                     column_type="string",
@@ -154,9 +182,11 @@ def parse_statistics_result(
     )
 
 
+@contract(known_err=(StatisticsResultParseError,))
 def parse_top_values[T](
     raw_top_values: list[Any],
     value_cls: type[T],
+    column_name: str,
 ) -> list[TopValue[T]]:
     """Parse raw top values from the database result.
 
@@ -166,23 +196,64 @@ def parse_top_values[T](
         Raw top values from the database result, expected to be a list of lists.
     value_cls : type[T]
         The type of the values in the top values list.
+    column_name : str
+        Name of the column being processed (for error messages).
 
     Returns
     -------
     list[TopValue[T]]
         A list of TopValue instances parsed from the raw input.
+
+    Raises
+    ------
+    StatisticsResultParseError
+        If any element has invalid structure, type, or negative count.
     """
     top_values: list[TopValue[T]] = []
     for item in raw_top_values:
-        if isinstance(item, list) and len(item) == 2:
-            value_raw, count_raw = cast("list[Any]", item)
-            if isinstance(value_raw, value_cls) or value_raw is None:
-                try:
-                    top_values.append(TopValue(value_raw, int(count_raw)))
-                except (ValueError, TypeError):
-                    logger.warning(f"Skipped invalid top_values element: {item!r}")
-            else:
-                logger.warning(f"Skipped invalid top_values element: {item!r}")
-        else:
-            logger.warning(f"Skipped invalid top_values element: {item!r}")
+        if not isinstance(item, list) or len(item) != 2:
+            logger.error(
+                f"Invalid top_values element structure for column {column_name}",
+                extra={"column": column_name, "invalid_item": item},
+            )
+            raise StatisticsResultParseError(
+                f"Invalid top_values element for column {column_name}: {item!r}"
+            )
+
+        value_raw, count_raw = cast("list[Any]", item)
+
+        # Check value type
+        if not (isinstance(value_raw, value_cls) or value_raw is None):
+            logger.error(
+                f"Invalid value type in top_values for column {column_name}",
+                extra={
+                    "column": column_name,
+                    "expected_type": value_cls.__name__,
+                    "value": value_raw,
+                    "item": item,
+                },
+            )
+            raise StatisticsResultParseError(
+                f"Invalid top_values element for column {column_name}: {item!r}"
+            )
+
+        # Check and convert count
+        try:
+            count_int = int(count_raw)
+            top_value = TopValue(value_raw, count_int)
+        except (ValueError, TypeError) as e:
+            logger.error(
+                f"Invalid count in top_values for column {column_name}",
+                extra={
+                    "column": column_name,
+                    "count_raw": count_raw,
+                    "item": item,
+                    "error": str(e),
+                },
+            )
+            raise StatisticsResultParseError(
+                f"Invalid top_values element for column {column_name}: {item!r}"
+            ) from e
+        top_values.append(top_value)
+
     return top_values

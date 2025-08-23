@@ -2,11 +2,16 @@
 
 from typing import TYPE_CHECKING, cast
 
+import pytest
+
 from kernel.table_metadata import TableColumn
 from mcp_snowflake.handler.analyze_table_statistics._result_parser import (
     parse_statistics_result,
 )
-from mcp_snowflake.handler.analyze_table_statistics.models import TopValue
+from mcp_snowflake.handler.analyze_table_statistics.models import (
+    StatisticsResultParseError,
+    TopValue,
+)
 
 from ._utils import convert_to_statistics_support_columns
 
@@ -262,7 +267,7 @@ class TestParseStatisticsResult:
         assert price_stats["percentile_75"] == 0.0
 
     def test_parse_invalid_json_top_values(self) -> None:
-        """Test parsing with invalid JSON in top_values."""
+        """Test parsing with invalid JSON in top_values - should raise exception."""
         columns_info = [
             TableColumn(
                 name="status",
@@ -282,16 +287,17 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": "invalid_json",
         }
 
-        parsed = parse_statistics_result(
-            result_row,
-            convert_to_statistics_support_columns(columns_info),
-        )
-
-        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
-        assert status_stats["top_values"] == []  # Should default to empty list
+        with pytest.raises(
+            StatisticsResultParseError,
+            match="Failed to parse STRING_STATUS_TOP_VALUES JSON",
+        ):
+            _ = parse_statistics_result(
+                result_row,
+                convert_to_statistics_support_columns(columns_info),
+            )
 
     def test_parse_empty_top_values(self) -> None:
-        """Test parsing with empty top_values."""
+        """Test parsing with empty top_values - should raise exception since None is not allowed."""
         columns_info = [
             TableColumn(
                 name="status",
@@ -311,13 +317,14 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": None,
         }
 
-        parsed = parse_statistics_result(
-            result_row,
-            convert_to_statistics_support_columns(columns_info),
-        )
-
-        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
-        assert status_stats["top_values"] == []
+        with pytest.raises(
+            StatisticsResultParseError,
+            match="STRING_STATUS_TOP_VALUES is required for string column but was None",
+        ):
+            _ = parse_statistics_result(
+                result_row,
+                convert_to_statistics_support_columns(columns_info),
+            )
 
     def test_parse_boolean_column(self) -> None:
         """Test parsing boolean column statistics."""
@@ -434,7 +441,7 @@ class TestParseStatisticsResult:
         ]
 
     def test_parse_negative_count_skipping(self) -> None:
-        """Test parsing with negative count values that get skipped."""
+        """Test parsing with negative count values - should raise exception."""
         columns_info = [
             TableColumn(
                 name="status",
@@ -455,14 +462,106 @@ class TestParseStatisticsResult:
             "STRING_STATUS_TOP_VALUES": '[["bad", -1], ["good", 100], ["invalid", -5], ["ok", 50]]',
         }
 
-        parsed = parse_statistics_result(
-            result_row,
-            convert_to_statistics_support_columns(columns_info),
-        )
+        with pytest.raises(
+            StatisticsResultParseError,
+            match="Invalid top_values element for column status",
+        ):
+            _ = parse_statistics_result(
+                result_row,
+                convert_to_statistics_support_columns(columns_info),
+            )
 
-        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
-        # Only positive count entries should remain
-        assert status_stats["top_values"] == [
-            TopValue("good", 100),
-            TopValue("ok", 50),
+    def test_error_missing_total_rows(self) -> None:
+        """Test parsing with missing TOTAL_ROWS - should raise exception."""
+        columns_info = [
+            TableColumn(
+                name="price",
+                data_type="NUMBER(10,2)",
+                nullable=False,
+                ordinal_position=1,
+            ),
         ]
+
+        result_row = {
+            # TOTAL_ROWS is missing
+            "NUMERIC_PRICE_COUNT": 1000,
+            "NUMERIC_PRICE_NULL_COUNT": 0,
+            "NUMERIC_PRICE_MIN": 10.5,
+            "NUMERIC_PRICE_MAX": 999.99,
+            "NUMERIC_PRICE_AVG": 505.25,
+            "NUMERIC_PRICE_Q1": 250.0,
+            "NUMERIC_PRICE_MEDIAN": 500.0,
+            "NUMERIC_PRICE_Q3": 750.0,
+            "NUMERIC_PRICE_DISTINCT": 950,
+        }
+
+        with pytest.raises(
+            StatisticsResultParseError,
+            match="TOTAL_ROWS missing from statistics result",
+        ):
+            _ = parse_statistics_result(
+                result_row,
+                convert_to_statistics_support_columns(columns_info),
+            )
+
+    def test_error_top_values_wrong_shape(self) -> None:
+        """Test parsing with wrong shape top_values elements - should raise exception."""
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
+
+        result_row = {
+            "TOTAL_ROWS": 1000,
+            "STRING_STATUS_COUNT": 1000,
+            "STRING_STATUS_NULL_COUNT": 0,
+            "STRING_STATUS_MIN_LENGTH": 1,
+            "STRING_STATUS_MAX_LENGTH": 10,
+            "STRING_STATUS_DISTINCT": 3,
+            # Wrong shape: 3 elements instead of 2
+            "STRING_STATUS_TOP_VALUES": '[["A", 1, "extra"], ["B", 2]]',
+        }
+
+        with pytest.raises(
+            StatisticsResultParseError,
+            match="Invalid top_values element for column status",
+        ):
+            _ = parse_statistics_result(
+                result_row,
+                convert_to_statistics_support_columns(columns_info),
+            )
+
+    def test_error_top_values_value_type_mismatch(self) -> None:
+        """Test parsing with value type mismatch in top_values - should raise exception."""
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
+
+        result_row = {
+            "TOTAL_ROWS": 1000,
+            "STRING_STATUS_COUNT": 1000,
+            "STRING_STATUS_NULL_COUNT": 0,
+            "STRING_STATUS_MIN_LENGTH": 1,
+            "STRING_STATUS_MAX_LENGTH": 10,
+            "STRING_STATUS_DISTINCT": 3,
+            # Value type mismatch: number instead of string
+            "STRING_STATUS_TOP_VALUES": '[["A", 1], [123, 2]]',
+        }
+
+        with pytest.raises(
+            StatisticsResultParseError,
+            match="Invalid top_values element for column status",
+        ):
+            _ = parse_statistics_result(
+                result_row,
+                convert_to_statistics_support_columns(columns_info),
+            )

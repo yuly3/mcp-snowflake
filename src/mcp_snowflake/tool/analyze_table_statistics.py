@@ -24,6 +24,7 @@ from ..handler.analyze_table_statistics import (
     AnalyzeTableStatisticsJsonResponse,
     ColumnDoesNotExist,
     NoSupportedColumns,
+    StatisticsResultParseError,
 )
 from .base import Tool
 
@@ -69,6 +70,8 @@ class AnalyzeTableStatisticsTool(Tool):
             text = f"Error: Referential integrity constraint violation: {e}"
         except NotSupportedError as e:
             text = f"Error: Unsupported database feature used: {e}"
+        except StatisticsResultParseError as e:
+            text = f"Error: Snowflake returned unexpected result format: {e}"
         except ContractViolationError as e:
             text = f"Error: Unexpected error: {e}"
         else:

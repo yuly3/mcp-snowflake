@@ -11,6 +11,17 @@ from kernel.table_metadata import DataBase, Schema, Table, TableColumn
 from ..describe_table import EffectDescribeTable
 
 
+class StatisticsResultParseError(Exception):
+    """Exception raised when statistics result parsing fails.
+
+    This exception is raised when:
+    - Required keys are missing from the statistics result row
+    - JSON parsing fails for TOP_VALUES fields
+    - TOP_VALUES elements have invalid structure or values
+    - Unexpected data types or values are encountered
+    """
+
+
 @attrs.define(frozen=True, slots=True)
 class TopValue[T]:
     """Type-safe representation of top value with count from APPROX_TOP_K."""
