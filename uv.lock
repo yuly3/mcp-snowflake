@@ -654,12 +654,14 @@ version = "0.1.0"
 source = { editable = "packages/query-registry" }
 dependencies = [
     { name = "attrs" },
+    { name = "expression" },
     { name = "snowflake-connector-python" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "attrs", specifier = ">=25.3.0" },
+    { name = "expression", editable = "packages/expression" },
     { name = "snowflake-connector-python", specifier = ">=3.0.0" },
 ]
 

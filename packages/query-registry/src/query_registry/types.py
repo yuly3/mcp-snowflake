@@ -2,19 +2,14 @@
 Type definitions for QueryRegistry system.
 """
 
-from __future__ import annotations
-
+import asyncio
 import uuid
+from datetime import datetime, timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import attrs
-
-if TYPE_CHECKING:
-    import asyncio
-    from datetime import datetime, timedelta
-
-    from snowflake.connector import SnowflakeConnection
+from snowflake.connector import SnowflakeConnection
 
 
 class QueryStatus(Enum):

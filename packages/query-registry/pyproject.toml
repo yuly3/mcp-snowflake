@@ -1,6 +1,7 @@
 [project]
 dependencies = [
     "attrs>=25.3.0",
+    "expression",
     "snowflake-connector-python>=3.0.0",
 ]
 description = "Query registry for async execute_query management"
