@@ -153,4 +153,5 @@ known-first-party = [
     "cattrs_converter",
     "expression",
     "kernel",
+    "query_registry",
 ]

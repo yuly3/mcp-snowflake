@@ -82,10 +82,12 @@ ignore = [
 cattrs-converter = { workspace = true }
 expression = { workspace = true }
 kernel = { workspace = true }
+query-registry = { workspace = true }
 
 [tool.uv.workspace]
 members = [
     "packages/cattrs-converter",
     "packages/expression",
     "packages/kernel",
+    "packages/query-registry",
 ]

@@ -4,6 +4,7 @@
     "classmethod",
     "Geospatial",
     "Jsonable",
+    "sfqid",
     "SMALLINT",
     "sqlparse",
     "TINYINT",
