@@ -4,11 +4,12 @@ Error handling tests for QueryRegistry.
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 
 import pytest
 from snowflake.connector.errors import OperationalError
 
-from query_registry import QueryRegistry
+from query_registry import QueryOptions, QueryRegistry
 
 from .conftest import MockConnection, MockSnowflakeConnectionProvider
 
@@ -19,10 +20,6 @@ class TestQueryRegistryErrorHandling:
     @pytest.mark.asyncio
     async def test_query_timeout_handling(self, registry: QueryRegistry) -> None:
         """Test query timeout handling."""
-        from datetime import timedelta
-
-        from query_registry import QueryOptions
-
         # Create query with very short timeout
         options = QueryOptions(query_timeout=timedelta(milliseconds=1))
         query_id = await registry.execute_query("SELECT * FROM slow_table", options)
