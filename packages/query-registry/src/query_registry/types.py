@@ -27,11 +27,13 @@ class QueryStatus(Enum):
 class QueryOptions:
     """Options for query execution."""
 
-    query_timeout: timedelta | None = attrs.field(default=None)
+    query_timeout: timedelta = attrs.field(default=timedelta(seconds=3600))
     max_inline_rows: int = attrs.field(default=10000)
     poll_interval: float = attrs.field(default=1.0)
 
     def __attrs_post_init__(self) -> None:
+        if self.query_timeout <= timedelta(0):
+            raise ValueError("query_timeout must be positive")
         if self.max_inline_rows <= 0:
             raise ValueError("max_inline_rows must be positive")
         if self.poll_interval <= 0:

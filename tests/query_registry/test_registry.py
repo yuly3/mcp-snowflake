@@ -81,7 +81,7 @@ class MockCursor:
         self._rows: list[dict[str, Any]] = []
         self._row_index = 0
 
-    def execute_async(self, sql: str) -> None:  # noqa: ARG002
+    def execute_async(self, sql: str, timeout: int | None = None) -> None:  # noqa: ARG002
         """Mock execute_async."""
         self.sfqid = str(uuid.uuid4())
         # Default to running state

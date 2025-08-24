@@ -628,11 +628,17 @@ class QueryRegistry:
         # Get connection for execution
         conn = self._connection_provider.get_connection()
 
+        # Get timeout from QueryOptions
+        async with self._lock:
+            record = self._store[query_id]
+            timeout = record.options.query_timeout
+
         sfqid = await asyncio.get_event_loop().run_in_executor(
             self._executor,
             _sync_execute_query,
             conn,
             sql,
+            timeout,
         )
 
         # Store connection for polling
@@ -703,7 +709,7 @@ class QueryRegistry:
         """Check if query has exceeded timeout."""
         async with self._lock:
             record = self._store.get(query_id)
-            if not record or not record.options.query_timeout:
+            if not record:
                 return False
 
             if not record.started_at:
@@ -797,11 +803,16 @@ class QueryRegistry:
         logger.error(f"Query {query_id} startup failed and cleaned up: {error}")
 
 
-def _sync_execute_query(connection: SnowflakeConnection, sql_query: str) -> str:
+def _sync_execute_query(
+    connection: SnowflakeConnection,
+    sql_query: str,
+    timeout: timedelta,
+) -> str:
     """Execute async query and return sfqid."""
+    timeout_seconds = int(timeout.total_seconds())
     try:
         with connection.cursor() as cursor:
-            _ = cursor.execute_async(sql_query)
+            _ = cursor.execute_async(sql_query, timeout=timeout_seconds)
             sfqid = cursor.sfqid
     except Exception:
         # Close connection on error
