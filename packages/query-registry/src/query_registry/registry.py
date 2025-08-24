@@ -291,10 +291,14 @@ class QueryRegistry:
             # Execute cancel query with new connection
             await self._cancel_query_sync(sfqid)
 
-            # Update to canceled status
+            # Update to canceled status and close connection
             async with self._lock:
                 record = self._store[query_id]
                 record.mark_as_canceled()
+                # Close connection after cancellation
+                if record.runtime and record.runtime.connection:
+                    await self._close_connection_safely(record.runtime.connection)
+                    record.runtime.connection = None
         except Exception as e:
             logger.error(f"Failed to cancel query {query_id}: {e}")
             return False
@@ -576,13 +580,20 @@ class QueryRegistry:
                         tasks_to_cancel.append(record.runtime.task)
                         _ = record.runtime.task.cancel()
 
-            for query_id in expired_ids:
-                del self._store[query_id]
-                deleted_count += 1
-
-        # Wait for cancelled tasks outside of lock
+        # Wait for cancelled tasks outside of lock BEFORE closing connections
         if tasks_to_cancel:
             _ = await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
+
+        # Safely close connections and remove from store
+        async with self._lock:
+            for query_id in expired_ids:
+                record = self._store.get(query_id)
+                if record:
+                    # Close connection after tasks are completed
+                    if record.runtime and record.runtime.connection:
+                        await self._close_connection_safely(record.runtime.connection)
+                    del self._store[query_id]
+                    deleted_count += 1
 
         return deleted_count
 
@@ -629,11 +640,18 @@ class QueryRegistry:
                     _ = record.runtime.task.cancel()
                     tasks_to_wait.append(record.runtime.task)
 
-            self._store.clear()
-
-        # Wait for all tasks to complete outside of lock
+        # Wait for all tasks to complete outside of lock BEFORE closing connections
         if tasks_to_wait:
             _ = await asyncio.gather(*tasks_to_wait, return_exceptions=True)
+
+        # Safely close connections and clear store
+        async with self._lock:
+            for record in self._store.values():
+                # Close all connections after tasks are completed
+                if record.runtime and record.runtime.connection:
+                    await self._close_connection_safely(record.runtime.connection)
+
+            self._store.clear()
 
     async def _execute_async_sync(self, query_id: str, sql: str) -> str:
         """Execute execute_async in sync thread and return sfqid."""

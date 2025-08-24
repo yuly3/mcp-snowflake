@@ -102,6 +102,9 @@ class TestQueryRegistryResourceCleanup:
         # Create query
         query_id = await registry.execute_query("SELECT 1")
 
+        # Get initial close count
+        initial_close_count = mock_provider.get_total_close_calls()
+
         # Manually set TTL to expired (accessing private members for testing)
         async with registry._lock:  # noqa: SLF001
             record = registry._store[query_id]  # noqa: SLF001
@@ -115,8 +118,11 @@ class TestQueryRegistryResourceCleanup:
         snapshot = await registry.get_snapshot(query_id)
         assert snapshot is None
 
-        # Note: prune_expired focuses on task cancellation and store cleanup
-        # Connection close happens in _handle_completion when polling completes
+        # Verify connection close was called during prune_expired
+        final_close_count = mock_provider.get_total_close_calls()
+        assert final_close_count > initial_close_count, (
+            "Connection.close() should be called during prune_expired"
+        )
 
     @pytest.mark.asyncio
     async def test_connection_close_on_registry_close(
@@ -141,6 +147,9 @@ class TestQueryRegistryResourceCleanup:
             assert snapshot1 is not None
             assert snapshot2 is not None
 
+            # Get initial close count
+            initial_close_count = mock_provider.get_total_close_calls()
+
             # Close registry
             await registry.close()
 
@@ -150,8 +159,11 @@ class TestQueryRegistryResourceCleanup:
                     "Registry close should clear all queries"
                 )
 
-            # Note: registry.close() focuses on task cancellation and store cleanup
-            # Connection close happens in _handle_completion when polling completes
+            # Verify connection close was called during close
+            final_close_count = mock_provider.get_total_close_calls()
+            assert final_close_count > initial_close_count, (
+                "Connection.close() should be called during registry close"
+            )
 
     @pytest.mark.asyncio
     async def test_task_cancellation_on_cancel(
