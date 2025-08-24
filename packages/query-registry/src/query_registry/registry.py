@@ -5,6 +5,7 @@ QueryRegistry implementation for async query execution management.
 import asyncio
 import contextlib
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -21,6 +22,12 @@ from snowflake.connector.errors import (
 from expression.contract import contract_async
 
 from .connection import SnowflakeConnectionProvider
+from .logging_utils import (
+    log_performance,
+    log_query_event,
+    log_registry_event,
+    sanitize_sql_for_logging,
+)
 from .types import (
     ColumnMeta,
     QueryOptions,
@@ -89,6 +96,8 @@ class QueryRegistry:
         self._lock = asyncio.Lock()
         self._store: dict[str, QueryRecord] = {}
 
+        log_registry_event(logger, "initialized", level=logging.INFO)
+
     @contract_async(
         known_err=(
             ValueError,
@@ -153,6 +162,8 @@ class QueryRegistry:
         For complete usage examples, see tests in:
         `tests/query_registry/test_registry.py::TestQueryRegistry::test_execute_query_integration`
         """
+        start_time = time.perf_counter()
+
         # Input validation
         if not sql or not sql.strip():
             raise ValueError("SQL query cannot be empty or whitespace-only")
@@ -161,6 +172,18 @@ class QueryRegistry:
         query_id = generate_query_id()
         if options is None:
             options = QueryOptions()
+
+        # Log query execution start with sanitized SQL
+        sql_preview = sanitize_sql_for_logging(sql, max_length=100)
+        log_query_event(
+            logger,
+            "execution_started",
+            query_id,
+            sql_preview=sql_preview,
+            timeout_seconds=options.query_timeout.total_seconds(),
+            poll_interval_seconds=options.poll_interval,
+            max_inline_rows=options.max_inline_rows,
+        )
 
         now = datetime.now(UTC)
         record = QueryRecord(
@@ -176,9 +199,17 @@ class QueryRegistry:
         async with self._lock:
             self._store[query_id] = record
 
+        log_query_event(
+            logger,
+            "record_created",
+            query_id,
+            status=record.status.value,
+        )
+
         # 2. Start execution immediately
         try:
             sfqid = await self._execute_async_sync(query_id, sql)
+            log_query_event(logger, "async_execution_started", query_id, sfqid=sfqid)
 
             # 3. Set runtime information and mark as running
             async with self._lock:
@@ -188,6 +219,14 @@ class QueryRegistry:
                     poll_interval=options.poll_interval,
                 )
 
+            log_query_event(
+                logger,
+                "status_transition",
+                query_id,
+                status=QueryStatus.RUNNING.value,
+                sfqid=sfqid,
+            )
+
             # 4. Start polling task
             task = asyncio.create_task(self._poll_until_done(query_id))
             async with self._lock:
@@ -195,10 +234,30 @@ class QueryRegistry:
                 if record.runtime:
                     record.runtime.task = task
 
+            log_query_event(
+                logger,
+                "polling_started",
+                query_id,
+                poll_interval=options.poll_interval,
+            )
+
         except Exception as e:
             # Execution start failed - cleanup the record
+            log_query_event(
+                logger,
+                "execution_failed",
+                query_id,
+                level=logging.ERROR,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
             await self._cleanup_failed_query(query_id, e)
             raise
+
+        # Log performance metrics
+        end_time = time.perf_counter()
+        duration_ms = (end_time - start_time) * 1000
+        log_performance(logger, "execute_query", duration_ms, query_id)
 
         return query_id
 
@@ -248,25 +307,60 @@ class QueryRegistry:
         For complete usage examples, see tests in:
         `tests/query_registry/test_registry.py::TestQueryRegistry::test_cancel_integration`
         """
+        start_time = time.perf_counter()
+
         # Input validation
         if not query_id or not query_id.strip():
+            logger.warning(
+                "Cancel attempted with empty query_id",
+                extra={
+                    "action": "cancel_validation_failed",
+                    "reason": "empty_query_id",
+                },
+            )
             raise ValueError("Query ID cannot be empty or whitespace-only")
+
+        log_query_event(logger, "cancellation_requested", query_id)
 
         async with self._lock:
             record = self._store.get(query_id)
             if not record or not record.runtime:
+                log_query_event(
+                    logger,
+                    "cancellation_skipped",
+                    query_id,
+                    level=logging.DEBUG,
+                    reason="query_not_found_or_no_runtime",
+                )
                 return False
 
             # Don't cancel already completed queries
             if record.is_completed():
+                log_query_event(
+                    logger,
+                    "cancellation_skipped",
+                    query_id,
+                    level=logging.DEBUG,
+                    reason="already_completed",
+                    current_status=record.status.value,
+                )
                 return False
 
             sfqid = record.get_sfqid()
             if not sfqid:
+                log_query_event(
+                    logger,
+                    "cancellation_skipped",
+                    query_id,
+                    level=logging.DEBUG,
+                    reason="no_sfqid",
+                )
                 return False
 
             # Mark cancel requested
             record.request_cancellation()
+
+            log_query_event(logger, "cancellation_marked", query_id, sfqid=sfqid)
 
             # Cancel polling task if exists - extract task for safe cancellation
             task_to_cancel = None
@@ -278,6 +372,13 @@ class QueryRegistry:
                 task_to_cancel = record.runtime.task
                 _ = record.runtime.task.cancel()
 
+                log_query_event(
+                    logger,
+                    "task_cancelled",
+                    query_id,
+                    sfqid=sfqid,
+                )
+
         # Cancel task outside of lock to avoid blocking
         if task_to_cancel:
             try:
@@ -285,11 +386,26 @@ class QueryRegistry:
             except asyncio.CancelledError:
                 pass  # Expected when cancelled
             except Exception as e:
-                logger.warning(f"Unexpected error during task cancellation: {e}")
+                logger.warning(
+                    f"Unexpected error during task cancellation: {e}",
+                    extra={
+                        "action": "task_cancellation_error",
+                        "query_id": query_id,
+                        "error_type": type(e).__name__,
+                        "error_message": str(e),
+                    },
+                )
 
         try:
             # Execute cancel query with new connection
             await self._cancel_query_sync(sfqid)
+
+            log_query_event(
+                logger,
+                "snowflake_cancellation_sent",
+                query_id,
+                sfqid=sfqid,
+            )
 
             # Update to canceled status and close connection
             async with self._lock:
@@ -299,9 +415,25 @@ class QueryRegistry:
                 if record.runtime and record.runtime.connection:
                     await self._close_connection_safely(record.runtime.connection)
                     record.runtime.connection = None
+
+            log_query_event(logger, "cancellation_completed", query_id)
+
         except Exception as e:
-            logger.error(f"Failed to cancel query {query_id}: {e}")
+            log_query_event(
+                logger,
+                "cancellation_failed",
+                query_id,
+                level=logging.ERROR,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
             return False
+
+        # Log performance metrics
+        end_time = time.perf_counter()
+        duration_ms = (end_time - start_time) * 1000
+        log_performance(logger, "cancel", duration_ms, query_id)
+
         return True
 
     @contract_async(known_err=(ValueError,))
@@ -562,12 +694,21 @@ class QueryRegistry:
         For complete usage examples, see tests in:
         `tests/query_registry/test_registry.py::TestQueryRegistry::test_ttl_edge_cases`
         """
+        start_time = time.perf_counter()
+
+        logger.info(
+            "TTL cleanup started",
+            extra={"action": "ttl_cleanup_started"},
+        )
+
         now = datetime.now(UTC)
         deleted_count = 0
         tasks_to_cancel: list[asyncio.Task[Any]] = []
 
         async with self._lock:
             expired_ids: list[str] = []
+            total_queries = len(self._store)
+
             for query_id, record in self._store.items():
                 if record.ttl_expires_at and record.ttl_expires_at <= now:
                     expired_ids.append(query_id)
@@ -580,8 +721,25 @@ class QueryRegistry:
                         tasks_to_cancel.append(record.runtime.task)
                         _ = record.runtime.task.cancel()
 
+            logger.info(
+                f"Found {len(expired_ids)} expired queries out of {total_queries}",
+                extra={
+                    "action": "expired_queries_identified",
+                    "expired_count": len(expired_ids),
+                    "total_count": total_queries,
+                    "expired_query_ids": expired_ids,
+                },
+            )
+
         # Wait for cancelled tasks outside of lock BEFORE closing connections
         if tasks_to_cancel:
+            logger.info(
+                f"Cancelling {len(tasks_to_cancel)} tasks for expired queries",
+                extra={
+                    "action": "tasks_cancellation_started",
+                    "task_count": len(tasks_to_cancel),
+                },
+            )
             _ = await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
 
         # Safely close connections and remove from store
@@ -592,8 +750,46 @@ class QueryRegistry:
                     # Close connection after tasks are completed
                     if record.runtime and record.runtime.connection:
                         await self._close_connection_safely(record.runtime.connection)
+                        logger.info(
+                            f"Connection closed for expired query {query_id}",
+                            extra={
+                                "action": "connection_closed",
+                                "query_id": query_id,
+                            },
+                        )
                     del self._store[query_id]
                     deleted_count += 1
+
+                    logger.info(
+                        f"Expired query removed: {query_id}",
+                        extra={
+                            "action": "expired_query_removed",
+                            "query_id": query_id,
+                        },
+                    )
+
+        # Log performance metrics and summary
+        end_time = time.perf_counter()
+        duration_ms = (end_time - start_time) * 1000
+
+        logger.info(
+            f"TTL cleanup completed: removed {deleted_count} expired queries",
+            extra={
+                "action": "ttl_cleanup_completed",
+                "removed_count": deleted_count,
+                "duration_ms": duration_ms,
+            },
+        )
+
+        log_performance(
+            logger,
+            "prune_expired",
+            duration_ms,
+            extra_data={
+                "removed_count": deleted_count,
+                "remaining_count": len(self._store),
+            },
+        )
 
         return deleted_count
 
@@ -628,9 +824,18 @@ class QueryRegistry:
         For complete usage examples, see tests in:
         `tests/query_registry/test_registry.py::TestQueryRegistry::test_close_cleanup`
         """
+        start_time = time.perf_counter()
+
+        logger.info(
+            "QueryRegistry shutdown initiated",
+            extra={"action": "shutdown_initiated"},
+        )
+
         async with self._lock:
             # Cancel all running tasks and collect them for waiting
             tasks_to_wait: list[asyncio.Task[Any]] = []
+            active_queries = len(self._store)
+
             for record in self._store.values():
                 if (
                     record.runtime
@@ -640,18 +845,67 @@ class QueryRegistry:
                     _ = record.runtime.task.cancel()
                     tasks_to_wait.append(record.runtime.task)
 
+            logger.info(
+                f"Cancelling {len(tasks_to_wait)} active tasks out of {active_queries} queries",
+                extra={
+                    "action": "tasks_cancellation",
+                    "active_tasks": len(tasks_to_wait),
+                    "total_queries": active_queries,
+                },
+            )
+
         # Wait for all tasks to complete outside of lock BEFORE closing connections
         if tasks_to_wait:
+            logger.info(
+                "Waiting for cancelled tasks to complete",
+                extra={"action": "tasks_cleanup_wait"},
+            )
             _ = await asyncio.gather(*tasks_to_wait, return_exceptions=True)
 
         # Safely close connections and clear store
         async with self._lock:
+            connections_closed = 0
+
             for record in self._store.values():
                 # Close all connections after tasks are completed
                 if record.runtime and record.runtime.connection:
                     await self._close_connection_safely(record.runtime.connection)
+                    connections_closed += 1
 
             self._store.clear()
+
+            logger.info(
+                f"Closed {connections_closed} connections and cleared {active_queries} query records",
+                extra={
+                    "action": "resources_cleaned",
+                    "connections_closed": connections_closed,
+                    "records_cleared": active_queries,
+                },
+            )
+
+        # Log performance metrics and final summary
+        end_time = time.perf_counter()
+        duration_ms = (end_time - start_time) * 1000
+
+        logger.info(
+            "QueryRegistry shutdown completed",
+            extra={
+                "action": "shutdown_completed",
+                "duration_ms": duration_ms,
+                "cleaned_queries": active_queries,
+                "cleaned_connections": connections_closed,
+            },
+        )
+
+        log_performance(
+            logger,
+            "close",
+            duration_ms,
+            extra_data={
+                "cleaned_queries": active_queries,
+                "cleaned_connections": connections_closed,
+            },
+        )
 
     async def _execute_async_sync(self, query_id: str, sql: str) -> str:
         """Execute execute_async in sync thread and return sfqid."""
@@ -750,21 +1004,47 @@ class QueryRegistry:
 
     async def _handle_timeout(self, query_id: str) -> None:
         """Handle query timeout."""
+        log_query_event(logger, "timeout_detected", query_id, level=logging.WARNING)
+
         async with self._lock:
             record = self._store.get(query_id)
             if record:
                 record.mark_as_timeout()
 
+        log_query_event(logger, "timeout_marked", query_id, level=logging.WARNING)
+
     async def _handle_completion(self, query_id: str) -> None:
         """Handle query completion."""
+        start_time = time.perf_counter()
+
+        log_query_event(logger, "completion_handling_started", query_id)
+
         async with self._lock:
             record = self._store.get(query_id)
             if not record or not record.runtime:
+                logger.info(
+                    f"No record or runtime found for query {query_id}",
+                    extra={
+                        "action": "completion_handling_skipped",
+                        "query_id": query_id,
+                        "reason": "no_record_or_runtime",
+                    },
+                )
                 return
 
             sfqid = record.get_sfqid()
             conn = record.get_connection()
             max_rows = record.options.max_inline_rows
+
+        logger.info(
+            f"Fetching results for query {query_id}",
+            extra={
+                "action": "results_fetching_started",
+                "query_id": query_id,
+                "sfqid": sfqid,
+                "max_rows": max_rows,
+            },
+        )
 
         if sfqid and conn:
             try:
@@ -788,9 +1068,26 @@ class QueryRegistry:
                         row_count=row_count,
                     )
 
+                log_query_event(
+                    logger,
+                    "completion_success",
+                    query_id,
+                    row_count=row_count,
+                    column_count=len(columns),
+                    retrieved_rows=len(rows),
+                )
+
             except Exception as e:
                 # Set failed status but keep record for debugging
                 await self._set_failed(query_id, e)
+                log_query_event(
+                    logger,
+                    "completion_failed",
+                    query_id,
+                    level=logging.ERROR,
+                    error_type=type(e).__name__,
+                    error_message=str(e),
+                )
                 logger.error(f"Query {query_id} completion failed: {e}")
             finally:
                 # Close connection after getting results
@@ -801,8 +1098,31 @@ class QueryRegistry:
                         await self._close_connection_safely(record.runtime.connection)
                         record.runtime.connection = None
 
+                        logger.debug(
+                            f"Connection closed after completion for query {query_id}",
+                            extra={
+                                "action": "connection_closed",
+                                "query_id": query_id,
+                                "context": "completion",
+                            },
+                        )
+
+        # Log performance metrics
+        end_time = time.perf_counter()
+        duration_ms = (end_time - start_time) * 1000
+        log_performance(logger, "handle_completion", duration_ms, query_id)
+
     async def _set_failed(self, query_id: str, error: Exception) -> None:
         """Set query to failed status."""
+        log_query_event(
+            logger,
+            "query_failed",
+            query_id,
+            level=logging.ERROR,
+            error_type=type(error).__name__,
+            error_message=str(error),
+        )
+
         async with self._lock:
             record = self._store.get(query_id)
             if record:
@@ -810,6 +1130,16 @@ class QueryRegistry:
 
     async def _cleanup_failed_query(self, query_id: str, error: Exception) -> None:
         """Clean up resources for a failed query and remove from store."""
+        logger.error(
+            f"Query {query_id} startup failed, performing cleanup",
+            extra={
+                "action": "startup_failure_cleanup",
+                "query_id": query_id,
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+            },
+        )
+
         async with self._lock:
             record = self._store.get(query_id)
             if record:
@@ -845,7 +1175,14 @@ class QueryRegistry:
         except asyncio.CancelledError:
             pass  # Expected exception when task is cancelled
         except Exception as e:
-            logger.warning(f"Task cancellation resulted in unexpected error: {e}")
+            logger.warning(
+                f"Task cancellation resulted in unexpected error: {e}",
+                extra={
+                    "action": "task_cancellation_error",
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                },
+            )
 
     async def _close_connection_safely(self, connection: SnowflakeConnection) -> None:
         """
@@ -888,7 +1225,15 @@ def _sync_check_query_status(connection: SnowflakeConnection, sfqid: str) -> boo
         status = connection.get_query_status_throw_if_error(sfqid)
         return connection.is_still_running(status)
     except Exception as e:
-        logger.error(f"Error checking query status: {e}")
+        logger.error(
+            f"Error checking query status: {e}",
+            extra={
+                "action": "status_check_error",
+                "sfqid": sfqid,
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+            },
+        )
         raise
 
 
@@ -939,6 +1284,15 @@ def _sync_get_query_results(
                 rows.append(row_dict)
                 count += 1
     except Exception as e:
-        logger.error(f"Error getting results: {e}")
+        logger.error(
+            f"Error getting results: {e}",
+            extra={
+                "action": "results_fetch_error",
+                "sfqid": sfqid,
+                "max_rows": max_rows,
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+            },
+        )
         raise
     return rows, columns, count
