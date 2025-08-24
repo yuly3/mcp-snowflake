@@ -10,15 +10,18 @@ from pydantic_settings import SettingsConfigDict
 
 from mcp_snowflake.context import ServerContext
 from mcp_snowflake.settings import Settings, SnowflakeSettings
-from mcp_snowflake.snowflake_client import SnowflakeClient
 
 
 @pytest.fixture
-def mock_snowflake_client() -> SnowflakeClient:
-    """Create a mock SnowflakeClient for testing."""
-    mock_executor = Mock(spec=ThreadPoolExecutor)
-    mock_settings = Mock(spec=SnowflakeSettings)
-    return SnowflakeClient(mock_executor, mock_settings)
+def mock_thread_pool_executor() -> ThreadPoolExecutor:
+    """Create a mock ThreadPoolExecutor for testing."""
+    return Mock(spec=ThreadPoolExecutor)
+
+
+@pytest.fixture
+def mock_snowflake_settings() -> SnowflakeSettings:
+    """Create a mock SnowflakeSettings for testing."""
+    return Mock(spec=SnowflakeSettings)
 
 
 @pytest.fixture
@@ -45,7 +48,8 @@ password = "test"  # nosec
 
 
 def test_build_tools_respects_settings(
-    mock_snowflake_client: SnowflakeClient,
+    mock_thread_pool_executor: ThreadPoolExecutor,
+    mock_snowflake_settings: SnowflakeSettings,
     base_settings: Settings,
 ) -> None:
     """Test that build_tools only registers enabled tools."""
@@ -56,7 +60,8 @@ def test_build_tools_respects_settings(
 
     server_context = ServerContext()
     server_context.prepare(
-        mock_snowflake_client,
+        mock_thread_pool_executor,
+        mock_snowflake_settings,
         base_settings.tools,
     )
 

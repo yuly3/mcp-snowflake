@@ -1,7 +1,7 @@
 """Server context for managing Snowflake tools and client."""
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING
+from concurrent.futures import ThreadPoolExecutor
 
 from cattrs_converter import JsonImmutableConverter
 
@@ -14,7 +14,8 @@ from .adapter import (
     ListViewsEffectHandler,
     SampleTableDataEffectHandler,
 )
-from .settings import ToolsSettings
+from .settings import SnowflakeSettings, ToolsSettings
+from .snowflake_client import SnowflakeClient
 from .tool import (
     AnalyzeTableStatisticsTool,
     DescribeTableTool,
@@ -25,9 +26,6 @@ from .tool import (
     SampleTableDataTool,
     Tool,
 )
-
-if TYPE_CHECKING:
-    from .snowflake_client import SnowflakeClient
 
 
 class ServerContext:
@@ -41,7 +39,8 @@ class ServerContext:
 
     def prepare(
         self,
-        snowflake_client: "SnowflakeClient",
+        thread_pool_executor: ThreadPoolExecutor,
+        snowflake_settings: SnowflakeSettings,
         tools_settings: ToolsSettings,
     ) -> None:
         """Prepare the server context with client and tools.
@@ -53,7 +52,10 @@ class ServerContext:
         tools_settings : ToolsSettings
             Configuration specifying which tools should be enabled.
         """
-        self._snowflake_client = snowflake_client
+        self._snowflake_client = SnowflakeClient(
+            thread_pool_executor,
+            snowflake_settings,
+        )
 
         all_tools: list[Tool] = [
             AnalyzeTableStatisticsTool(

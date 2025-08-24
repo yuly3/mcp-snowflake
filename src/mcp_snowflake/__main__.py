@@ -21,7 +21,6 @@ from pydantic_settings import SettingsConfigDict
 from .cli import Cli
 from .context import ServerContext
 from .settings import Settings
-from .snowflake_client import SnowflakeClient
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -69,10 +68,8 @@ async def main() -> None:
 
     with ThreadPoolExecutor(thread_name_prefix="mcp-snowflake") as executor:
         server_context.prepare(
-            SnowflakeClient(
-                executor,
-                settings.snowflake,
-            ),
+            executor,
+            settings.snowflake,
             settings.tools,
         )
 
