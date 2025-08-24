@@ -268,13 +268,24 @@ class QueryRegistry:
             # Mark cancel requested
             record.request_cancellation()
 
-            # Cancel polling task if exists
+            # Cancel polling task if exists - extract task for safe cancellation
+            task_to_cancel = None
             if (
                 record.runtime
                 and record.runtime.task
                 and not record.runtime.task.done()
             ):
+                task_to_cancel = record.runtime.task
                 _ = record.runtime.task.cancel()
+
+        # Cancel task outside of lock to avoid blocking
+        if task_to_cancel:
+            try:
+                await task_to_cancel
+            except asyncio.CancelledError:
+                pass  # Expected when cancelled
+            except Exception as e:
+                logger.warning(f"Unexpected error during task cancellation: {e}")
 
         try:
             # Execute cancel query with new connection
@@ -549,23 +560,29 @@ class QueryRegistry:
         """
         now = datetime.now(UTC)
         deleted_count = 0
+        tasks_to_cancel: list[asyncio.Task[Any]] = []
 
         async with self._lock:
             expired_ids: list[str] = []
             for query_id, record in self._store.items():
                 if record.ttl_expires_at and record.ttl_expires_at <= now:
                     expired_ids.append(query_id)
-                    # Cancel any running tasks
+                    # Collect tasks for cancellation outside the lock
                     if (
                         record.runtime
                         and record.runtime.task
                         and not record.runtime.task.done()
                     ):
+                        tasks_to_cancel.append(record.runtime.task)
                         _ = record.runtime.task.cancel()
 
             for query_id in expired_ids:
                 del self._store[query_id]
                 deleted_count += 1
+
+        # Wait for cancelled tasks outside of lock
+        if tasks_to_cancel:
+            _ = await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
 
         return deleted_count
 
@@ -601,7 +618,8 @@ class QueryRegistry:
         `tests/query_registry/test_registry.py::TestQueryRegistry::test_close_cleanup`
         """
         async with self._lock:
-            # Cancel all running tasks
+            # Cancel all running tasks and collect them for waiting
+            tasks_to_wait: list[asyncio.Task[Any]] = []
             for record in self._store.values():
                 if (
                     record.runtime
@@ -609,19 +627,13 @@ class QueryRegistry:
                     and not record.runtime.task.done()
                 ):
                     _ = record.runtime.task.cancel()
-
-            # Wait for tasks to complete
-            tasks = [
-                record.runtime.task
-                for record in self._store.values()
-                if record.runtime
-                and record.runtime.task
-                and not record.runtime.task.done()
-            ]
-            if tasks:
-                _ = await asyncio.gather(*tasks, return_exceptions=True)
+                    tasks_to_wait.append(record.runtime.task)
 
             self._store.clear()
+
+        # Wait for all tasks to complete outside of lock
+        if tasks_to_wait:
+            _ = await asyncio.gather(*tasks_to_wait, return_exceptions=True)
 
     async def _execute_async_sync(self, query_id: str, sql: str) -> str:
         """Execute execute_async in sync thread and return sfqid."""
@@ -765,10 +777,10 @@ class QueryRegistry:
             finally:
                 # Close connection after getting results
                 async with self._lock:
-                    record = self._store[query_id]
-                    if record.runtime and record.runtime.connection:
-                        with contextlib.suppress(Exception):
-                            record.runtime.connection.close()
+                    # Use get() instead of direct access
+                    record = self._store.get(query_id)
+                    if record and record.runtime and record.runtime.connection:
+                        await self._close_connection_safely(record.runtime.connection)
                         record.runtime.connection = None
 
     async def _set_failed(self, query_id: str, error: Exception) -> None:
@@ -783,24 +795,51 @@ class QueryRegistry:
         async with self._lock:
             record = self._store.get(query_id)
             if record:
-                # Cancel any running task
-                if (
-                    record.runtime
-                    and record.runtime.task
-                    and not record.runtime.task.done()
-                ):
-                    _ = record.runtime.task.cancel()
+                # Cancel any running task and wait for completion
+                if record.runtime and record.runtime.task:
+                    await self._cancel_task_safely(record.runtime.task)
 
                 # Close any connection
                 if record.runtime and record.runtime.connection:
-                    with contextlib.suppress(Exception):
-                        record.runtime.connection.close()
+                    await self._close_connection_safely(record.runtime.connection)
                     record.runtime.connection = None
 
                 # Remove from store (don't keep failed startup queries)
                 del self._store[query_id]
 
         logger.error(f"Query {query_id} startup failed and cleaned up: {error}")
+
+    async def _cancel_task_safely(self, task: asyncio.Task[Any]) -> None:
+        """
+        Cancel task safely and wait for completion.
+
+        Parameters
+        ----------
+        task : asyncio.Task[Any]
+            Task to cancel
+        """
+        if task.done():
+            return
+
+        _ = task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass  # Expected exception when task is cancelled
+        except Exception as e:
+            logger.warning(f"Task cancellation resulted in unexpected error: {e}")
+
+    async def _close_connection_safely(self, connection: SnowflakeConnection) -> None:
+        """
+        Close connection safely.
+
+        Parameters
+        ----------
+        connection : SnowflakeConnection
+            Connection to close
+        """
+        with contextlib.suppress(Exception):
+            connection.close()
 
 
 def _sync_execute_query(

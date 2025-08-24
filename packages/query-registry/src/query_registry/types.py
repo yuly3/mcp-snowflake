@@ -4,7 +4,7 @@ Type definitions for QueryRegistry system.
 
 import asyncio
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -123,11 +123,9 @@ class QueryRecord:
         task : asyncio.Task | None, optional
             Asyncio task for polling
         """
-        from datetime import UTC
-        from datetime import datetime as dt
 
         self.status = QueryStatus.RUNNING
-        self.started_at = started_at or dt.now(UTC)
+        self.started_at = started_at or datetime.now(UTC)
 
         if self.runtime is None:
             self.runtime = QueryRuntime()
@@ -161,11 +159,9 @@ class QueryRecord:
         finished_at : datetime | None, optional
             When the query finished. Uses current UTC time if None.
         """
-        from datetime import UTC
-        from datetime import datetime as dt
 
         self.status = QueryStatus.SUCCEEDED
-        self.finished_at = finished_at or dt.now(UTC)
+        self.finished_at = finished_at or datetime.now(UTC)
 
         if rows is not None:
             self.result_inline = rows
@@ -192,11 +188,9 @@ class QueryRecord:
         finished_at : datetime | None, optional
             When the query failed. Uses current UTC time if None.
         """
-        from datetime import UTC
-        from datetime import datetime as dt
 
         self.status = QueryStatus.FAILED
-        self.finished_at = finished_at or dt.now(UTC)
+        self.finished_at = finished_at or datetime.now(UTC)
 
         if isinstance(error, Exception):
             self.error = ErrorInfo(
@@ -215,11 +209,9 @@ class QueryRecord:
         finished_at : datetime | None, optional
             When the query was canceled. Uses current UTC time if None.
         """
-        from datetime import UTC
-        from datetime import datetime as dt
 
         self.status = QueryStatus.CANCELED
-        self.finished_at = finished_at or dt.now(UTC)
+        self.finished_at = finished_at or datetime.now(UTC)
 
     def mark_as_timeout(
         self,
@@ -237,11 +229,9 @@ class QueryRecord:
         message : str, default="Query execution exceeded timeout limit"
             Timeout error message
         """
-        from datetime import UTC
-        from datetime import datetime as dt
 
         self.status = QueryStatus.TIMEOUT
-        self.finished_at = finished_at or dt.now(UTC)
+        self.finished_at = finished_at or datetime.now(UTC)
         self.error = ErrorInfo(
             type="TimeoutError",
             message=message,
