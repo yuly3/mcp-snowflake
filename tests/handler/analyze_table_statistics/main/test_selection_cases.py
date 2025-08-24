@@ -5,11 +5,15 @@ from typing import Any
 import pytest
 
 from kernel.table_metadata import DataBase, Schema, Table, TableInfo
-from mcp_snowflake.adapter.analyze_table_statistics_handler import (
+from mcp_snowflake.adapter.analyze_table_statistics_handler.result_parser import (
+    parse_statistics_result,
+)
+from mcp_snowflake.adapter.analyze_table_statistics_handler.sql_generator import (
     generate_statistics_sql,
 )
 from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
+    TableStatisticsParseResult,
     handle_analyze_table_statistics,
 )
 
@@ -116,7 +120,7 @@ class TestColumnSelection:
                 table: Table,
                 columns_to_analyze: Any,
                 top_k_limit: int,
-            ) -> dict[str, Any]:
+            ) -> TableStatisticsParseResult:
                 """Execute statistics query and track the top_k_limit."""
                 # Simulate SQL generation and execution for verification
                 query = generate_statistics_sql(
@@ -130,7 +134,7 @@ class TestColumnSelection:
 
                 if not query_result:
                     raise ValueError("No data returned from statistics query")
-                return query_result[0]
+                return parse_statistics_result(query_result[0], columns_to_analyze)
 
         mock_effect = MockEffectWithQueryTracking()
 

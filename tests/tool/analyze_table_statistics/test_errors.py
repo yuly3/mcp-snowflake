@@ -1,5 +1,8 @@
 """Test for AnalyzeTableStatisticsTool - Error Cases."""
 
+from types import SimpleNamespace
+from typing import Any
+
 import mcp.types as types
 import pytest
 from snowflake.connector import (
@@ -12,6 +15,11 @@ from snowflake.connector import (
 
 from cattrs_converter import JsonImmutableConverter
 from expression.contract import ContractViolationError
+from kernel.table_metadata import TableColumn
+from mcp_snowflake.adapter.analyze_table_statistics_handler.result_parser import (
+    parse_statistics_result,
+)
+from mcp_snowflake.handler.analyze_table_statistics import TableStatisticsParseResult
 from mcp_snowflake.tool.analyze_table_statistics import AnalyzeTableStatisticsTool
 
 from ...mock_effect_handler import MockAnalyzeTableStatistics
@@ -322,10 +330,6 @@ class TestAnalyzeTableStatisticsToolErrors:
         json_converter: JsonImmutableConverter,
     ) -> None:
         """Test that StatisticsResultParseError is properly mapped to user-friendly message."""
-        from types import SimpleNamespace
-        from typing import Any
-
-        from kernel.table_metadata import TableColumn
 
         # Mock effect that returns result causing parse error
         class MockEffectWithBadResult:
@@ -351,11 +355,11 @@ class TestAnalyzeTableStatisticsToolErrors:
                 database: Any,  # noqa: ARG002
                 schema: Any,  # noqa: ARG002
                 table: Any,  # noqa: ARG002
-                columns_to_analyze: Any,  # noqa: ARG002
+                columns_to_analyze: Any,
                 top_k_limit: Any,  # noqa: ARG002
-            ) -> dict[str, Any]:
+            ) -> TableStatisticsParseResult:
                 # Return result with invalid TOP_VALUES JSON
-                return {
+                result_row = {
                     "TOTAL_ROWS": 1000,
                     "STRING_STATUS_COUNT": 1000,
                     "STRING_STATUS_NULL_COUNT": 0,
@@ -364,6 +368,7 @@ class TestAnalyzeTableStatisticsToolErrors:
                     "STRING_STATUS_DISTINCT": 3,
                     "STRING_STATUS_TOP_VALUES": "invalid_json",  # This will cause parse error
                 }
+                return parse_statistics_result(result_row, columns_to_analyze)
 
         tool = AnalyzeTableStatisticsTool(
             json_converter=json_converter,

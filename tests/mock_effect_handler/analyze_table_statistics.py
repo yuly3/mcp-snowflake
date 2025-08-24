@@ -5,6 +5,12 @@ from typing import Any
 
 from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import DataBase, Schema, Table, TableInfo
+from mcp_snowflake.adapter.analyze_table_statistics_handler.result_parser import (
+    parse_statistics_result,
+)
+from mcp_snowflake.handler.analyze_table_statistics.models import (
+    TableStatisticsParseResult,
+)
 
 
 class MockAnalyzeTableStatistics:
@@ -45,18 +51,21 @@ class MockAnalyzeTableStatistics:
         database: DataBase,  # noqa: ARG002
         schema: Schema,  # noqa: ARG002
         table: Table,  # noqa: ARG002
-        columns_to_analyze: Sequence[StatisticsSupportColumn],  # noqa: ARG002
+        columns_to_analyze: Sequence[StatisticsSupportColumn],
         top_k_limit: int,  # noqa: ARG002
-    ) -> dict[str, Any]:
+    ) -> TableStatisticsParseResult:
         """Mock analyze_table_statistics implementation."""
         if self.should_raise:
             raise self.should_raise
 
         if self.statistics_result is None:
             # Return default statistics result
-            return {
+            statistics_result = {
                 "TOTAL_ROWS": 1000,
                 # Add default column statistics if needed
             }
+        else:
+            statistics_result = self.statistics_result
 
-        return self.statistics_result
+        # Parse the dict result using the moved parser
+        return parse_statistics_result(statistics_result, columns_to_analyze)

@@ -1,5 +1,5 @@
 from collections.abc import Awaitable, Sequence
-from typing import Any, Literal, NotRequired, Protocol, TypedDict
+from typing import Literal, NotRequired, Protocol, TypedDict
 
 import attrs
 from attrs import validators
@@ -129,8 +129,8 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
         table: Table,
         columns_to_analyze: Sequence[StatisticsSupportColumn],
         top_k_limit: int,
-    ) -> Awaitable[dict[str, Any]]:
-        """Execute statistics query and return the single result row.
+    ) -> Awaitable[TableStatisticsParseResult]:
+        """Execute statistics query and return the parsed statistics result.
 
         Parameters
         ----------
@@ -147,8 +147,8 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
 
         Returns
         -------
-        Awaitable[dict[str, Any]]
-            Single row of statistics query results
+        Awaitable[TableStatisticsParseResult]
+            Parsed statistics containing total_rows and column statistics
 
         Raises
         ------
@@ -164,6 +164,8 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
             Referential integrity constraint violations
         NotSupportedError
             When an unsupported database feature is used
+        StatisticsResultParseError
+            If the statistics result parsing fails
         """
         ...
 

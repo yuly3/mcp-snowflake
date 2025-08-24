@@ -3,7 +3,6 @@
 import logging
 
 from ._column_analysis import select_and_classify_columns
-from ._result_parser import parse_statistics_result
 from ._types import ClassifiedColumns
 from .models import (
     AnalyzeTableStatisticsArgs,
@@ -88,7 +87,7 @@ async def handle_analyze_table_statistics(
 
     # Continue with supported columns processing
 
-    result_row = await effect.analyze_table_statistics(
+    parsed = await effect.analyze_table_statistics(
         args.database,
         args.schema_,
         args.table_,
@@ -96,9 +95,7 @@ async def handle_analyze_table_statistics(
         args.top_k_limit,
     )
 
-    # Parse statistics and build structured response
-    parsed = parse_statistics_result(result_row, supported_columns)
-
+    # Build structured response using parsed result
     response: AnalyzeTableStatisticsJsonResponse = {
         "table_statistics": {
             "table_info": {

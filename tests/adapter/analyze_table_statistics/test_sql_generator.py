@@ -2,7 +2,7 @@
 
 from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import DataBase, Schema, Table, TableColumn
-from mcp_snowflake.adapter.analyze_table_statistics_handler import (
+from mcp_snowflake.adapter.analyze_table_statistics_handler.sql_generator import (
     generate_statistics_sql,
 )
 

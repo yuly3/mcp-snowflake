@@ -9,7 +9,7 @@ from expression import option
 from expression.contract import contract
 from kernel.statistics_support_column import StatisticsSupportColumn
 
-from .models import (
+from ...handler.analyze_table_statistics.models import (
     BooleanStatsDict,
     DateStatsDict,
     NumericStatsDict,

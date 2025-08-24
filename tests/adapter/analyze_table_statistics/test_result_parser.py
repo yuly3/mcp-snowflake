@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, cast
 import pytest
 
 from kernel.table_metadata import TableColumn
-from mcp_snowflake.handler.analyze_table_statistics._result_parser import (
+from mcp_snowflake.adapter.analyze_table_statistics_handler.result_parser import (
     parse_statistics_result,
 )
 from mcp_snowflake.handler.analyze_table_statistics.models import (
@@ -13,7 +13,9 @@ from mcp_snowflake.handler.analyze_table_statistics.models import (
     TopValue,
 )
 
-from ._utils import convert_to_statistics_support_columns
+from ...handler.analyze_table_statistics._utils import (
+    convert_to_statistics_support_columns,
+)
 
 if TYPE_CHECKING:
     from mcp_snowflake.handler.analyze_table_statistics.models import (
