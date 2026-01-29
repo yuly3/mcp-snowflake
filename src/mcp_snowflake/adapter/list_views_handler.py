@@ -18,12 +18,23 @@ class ListViewsEffectHandler:
         """Initialize with SnowflakeClient."""
         self.client = client
 
-    async def list_views(self, database: DataBase, schema: Schema) -> list[View]:
+    async def list_views(
+        self,
+        database: DataBase,
+        schema: Schema,
+        role: str | None = None,
+        warehouse: str | None = None,
+    ) -> list[View]:
         """Get list of views in a database schema."""
         query = f"SHOW VIEWS IN SCHEMA {quote_ident(database)}.{quote_ident(schema)}"
 
         try:
-            results = await self.client.execute_query(query, timedelta(seconds=10))
+            results = await self.client.execute_query(
+                query,
+                timedelta(seconds=10),
+                role=role,
+                warehouse=warehouse,
+            )
         except Exception:
             logger.exception(
                 "failed to execute list views operation",

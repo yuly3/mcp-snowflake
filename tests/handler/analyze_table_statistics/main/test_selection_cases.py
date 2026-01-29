@@ -106,6 +106,8 @@ class TestColumnSelection:
                 database: DataBase,  # noqa: ARG002
                 schema: Schema,  # noqa: ARG002
                 table: Table,  # noqa: ARG002
+                role: str | None = None,  # noqa: ARG002
+                warehouse: str | None = None,  # noqa: ARG002
             ) -> TableInfo:
                 return table_data
 
@@ -116,6 +118,8 @@ class TestColumnSelection:
                 table: Table,
                 columns_to_analyze: Any,
                 top_k_limit: int,
+                role: str | None = None,  # noqa: ARG002
+                warehouse: str | None = None,  # noqa: ARG002
             ) -> dict[str, Any]:
                 """Execute statistics query and track the top_k_limit."""
                 # Simulate SQL generation and execution for verification

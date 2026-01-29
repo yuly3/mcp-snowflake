@@ -19,14 +19,20 @@ class MockAnalyzeTableStatistics:
         self.table_info = table_info
         self.statistics_result = statistics_result
         self.should_raise = should_raise
+        self.called_with_role: str | None = None
+        self.called_with_warehouse: str | None = None
 
     async def describe_table(
         self,
         database: str,  # noqa: ARG002
         schema: str,  # noqa: ARG002
         table: str,  # noqa: ARG002
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> TableInfo:
         """Mock describe_table implementation."""
+        self.called_with_role = role
+        self.called_with_warehouse = warehouse
         if self.should_raise:
             raise self.should_raise
         if self.table_info is None:
@@ -47,8 +53,12 @@ class MockAnalyzeTableStatistics:
         table: Table,  # noqa: ARG002
         columns_to_analyze: Sequence[StatisticsSupportColumn],  # noqa: ARG002
         top_k_limit: int,  # noqa: ARG002
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> dict[str, Any]:
         """Mock analyze_table_statistics implementation."""
+        self.called_with_role = role
+        self.called_with_warehouse = warehouse
         if self.should_raise:
             raise self.should_raise
 

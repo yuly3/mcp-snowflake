@@ -6,10 +6,12 @@ from pydantic import BaseModel
 
 from kernel.table_metadata import DataBase, Schema
 
+from .session_overrides import SessionOverridesMixin
+
 logger = logging.getLogger(__name__)
 
 
-class ListSchemasArgs(BaseModel):
+class ListSchemasArgs(SessionOverridesMixin, BaseModel):
     database: DataBase
 
 
@@ -27,13 +29,22 @@ class ListSchemasJsonResponse(TypedDict):
 
 
 class EffectListSchemas(Protocol):
-    def list_schemas(self, database: DataBase) -> Awaitable[list[Schema]]:
+    def list_schemas(
+        self,
+        database: DataBase,
+        role: str | None = None,
+        warehouse: str | None = None,
+    ) -> Awaitable[list[Schema]]:
         """List schemas in a database.
 
         Parameters
         ----------
         database : DataBase
             The database name to list schemas from.
+        role : str | None
+            Snowflake role to use for this operation.
+        warehouse : str | None
+            Snowflake warehouse to use for this operation.
 
         Returns
         -------
@@ -91,7 +102,11 @@ async def handle_list_schemas(
     NotSupportedError
         When an unsupported database feature is used
     """
-    schemas = await effect_handler.list_schemas(args.database)
+    schemas = await effect_handler.list_schemas(
+        args.database,
+        role=args.role,
+        warehouse=args.warehouse,
+    )
 
     return ListSchemasJsonResponse(
         schemas_info={

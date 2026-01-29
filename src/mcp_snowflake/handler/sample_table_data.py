@@ -9,6 +9,8 @@ from cattrs_converter import Jsonable, JsonImmutableConverter
 from kernel import DataProcessingResult
 from kernel.table_metadata import DataBase, Schema, Table
 
+from .session_overrides import SessionOverridesMixin
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +33,7 @@ class SampleTableDataJsonResponse(TypedDict):
     sample_data: SampleDataDict
 
 
-class SampleTableDataArgs(BaseModel):
+class SampleTableDataArgs(SessionOverridesMixin, BaseModel):
     database: DataBase
     schema_: Schema = Field(alias="schema")
     table_: Table = Field(alias="table")
@@ -47,6 +49,8 @@ class EffectSampleTableData(Protocol):
         table: Table,
         sample_size: int,
         columns: list[str],
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> Awaitable[list[dict[str, Any]]]:
         """Execute sample table data operation.
 
@@ -62,6 +66,10 @@ class EffectSampleTableData(Protocol):
             Number of sample rows to retrieve.
         columns : list[str]
             List of column names to retrieve (empty list for all columns).
+        role : str | None
+            Snowflake role to use for this operation.
+        warehouse : str | None
+            Snowflake warehouse to use for this operation.
 
         Returns
         -------
@@ -128,6 +136,8 @@ async def handle_sample_table_data(
         args.table_,
         args.sample_size,
         args.columns,
+        role=args.role,
+        warehouse=args.warehouse,
     )
 
     result = DataProcessingResult.from_raw_rows(json_converter, raw_data)

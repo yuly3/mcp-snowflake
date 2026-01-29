@@ -16,6 +16,7 @@ from cattrs_converter import JsonImmutableConverter
 from expression.contract import ContractViolationError
 
 from ..handler import EffectExecuteQuery, ExecuteQueryArgs, handle_execute_query
+from ..handler.session_overrides import SESSION_OVERRIDE_PROPERTIES
 from .base import Tool
 
 
@@ -92,6 +93,7 @@ class ExecuteQueryTool(Tool):
                         "minimum": 1,
                         "maximum": 300,
                     },
+                    **SESSION_OVERRIDE_PROPERTIES,
                 },
                 "required": ["sql"],
             },

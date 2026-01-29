@@ -9,6 +9,7 @@ from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import DataBase, Schema, Table, TableColumn
 
 from ..describe_table import EffectDescribeTable
+from ..session_overrides import SessionOverridesMixin
 
 
 @attrs.define(frozen=True, slots=True)
@@ -19,7 +20,7 @@ class TopValue[T]:
     count: int = attrs.field(validator=[validators.ge(0)])
 
 
-class AnalyzeTableStatisticsArgs(BaseModel):
+class AnalyzeTableStatisticsArgs(SessionOverridesMixin, BaseModel):
     """Arguments for analyzing table statistics."""
 
     database: DataBase
@@ -41,6 +42,8 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
         table: Table,
         columns_to_analyze: Sequence[StatisticsSupportColumn],
         top_k_limit: int,
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> Awaitable[dict[str, Any]]:
         """Execute statistics query and return the single result row.
 
@@ -56,6 +59,10 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
             Column information objects with statistics support
         top_k_limit : int
             Limit for APPROX_TOP_K function
+        role : str | None
+            Snowflake role to use for this operation.
+        warehouse : str | None
+            Snowflake warehouse to use for this operation.
 
         Returns
         -------

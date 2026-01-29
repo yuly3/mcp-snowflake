@@ -15,6 +15,7 @@ from snowflake.connector import (
 from expression.contract import ContractViolationError
 
 from ..handler import EffectListViews, ListViewsArgs, handle_list_views
+from ..handler.session_overrides import SESSION_OVERRIDE_PROPERTIES
 from .base import Tool
 
 
@@ -76,6 +77,7 @@ class ListViewsTool(Tool):
                         "type": "string",
                         "description": "Schema name to retrieve views from",
                     },
+                    **SESSION_OVERRIDE_PROPERTIES,
                 },
                 "required": ["database", "schema"],
             },

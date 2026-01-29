@@ -11,13 +11,19 @@ class MockDescribeTable:
     ) -> None:
         self.table_info = table_info
         self.should_raise = should_raise
+        self.called_with_role: str | None = None
+        self.called_with_warehouse: str | None = None
 
     async def describe_table(
         self,
         database: str,  # noqa: ARG002
         schema: str,  # noqa: ARG002
         table: str,  # noqa: ARG002
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> TableInfo:
+        self.called_with_role = role
+        self.called_with_warehouse = warehouse
         if self.should_raise:
             raise self.should_raise
         if self.table_info is None:

@@ -20,6 +20,7 @@ from ..handler import (
     SampleTableDataArgs,
     handle_sample_table_data,
 )
+from ..handler.session_overrides import SESSION_OVERRIDE_PROPERTIES
 from .base import Tool
 
 
@@ -105,6 +106,7 @@ class SampleTableDataTool(Tool):
                         "items": {"type": "string"},
                         "description": "List of column names to retrieve (if not specified, all columns will be retrieved)",
                     },
+                    **SESSION_OVERRIDE_PROPERTIES,
                 },
                 "required": ["database", "schema", "table"],
             },

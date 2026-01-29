@@ -17,6 +17,13 @@ class ExecuteQueryEffectHandler:
         self,
         query: str,
         query_timeout: timedelta | None = None,
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> list[dict[str, Any]]:
         """Execute a SQL query and return results."""
-        return await self.client.execute_query(query, query_timeout)
+        return await self.client.execute_query(
+            query,
+            query_timeout,
+            role=role,
+            warehouse=warehouse,
+        )

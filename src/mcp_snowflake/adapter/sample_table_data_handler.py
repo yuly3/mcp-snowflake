@@ -25,6 +25,8 @@ class SampleTableDataEffectHandler:
         table: Table,
         sample_size: int,
         columns: list[str],
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> list[dict[str, Any]]:
         """Retrieve sample data from a Snowflake table using SAMPLE ROW clause.
 
@@ -40,6 +42,10 @@ class SampleTableDataEffectHandler:
             Number of sample rows to retrieve
         columns : list[str] | None
             List of column names to select (if None, selects all columns)
+        role : str | None
+            Snowflake role to use for this operation.
+        warehouse : str | None
+            Snowflake warehouse to use for this operation.
 
         Returns
         -------
@@ -63,4 +69,9 @@ class SampleTableDataEffectHandler:
         )
 
         timeout = timedelta(seconds=60)
-        return await self.client.execute_query(query, timeout)
+        return await self.client.execute_query(
+            query,
+            timeout,
+            role=role,
+            warehouse=warehouse,
+        )

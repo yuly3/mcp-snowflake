@@ -11,6 +11,7 @@ from kernel import DataProcessingResult
 
 from ..sql_analyzer import SQLWriteDetector
 from ..stopwatch import StopWatch
+from .session_overrides import SessionOverridesMixin
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class ExecuteQueryJsonResponse(TypedDict):
     query_result: QueryResultDict
 
 
-class ExecuteQueryArgs(BaseModel):
+class ExecuteQueryArgs(SessionOverridesMixin, BaseModel):
     sql: str
     timeout_seconds: int = Field(default=30, ge=1)
 
@@ -41,6 +42,8 @@ class EffectExecuteQuery(Protocol):
         self,
         query: str,
         query_timeout: timedelta | None = None,
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> Awaitable[list[dict[str, Any]]]:
         """Execute SQL query operation.
 
@@ -50,6 +53,10 @@ class EffectExecuteQuery(Protocol):
             SQL query to execute (read operations only).
         query_timeout : timedelta | None
             Query timeout duration, by default None.
+        role : str | None
+            Snowflake role to use for this operation.
+        warehouse : str | None
+            Snowflake warehouse to use for this operation.
 
         Returns
         -------
@@ -121,6 +128,8 @@ async def handle_execute_query(
     raw_data = await effect_handler.execute_query(
         args.sql,
         timedelta(seconds=args.timeout_seconds),
+        role=args.role,
+        warehouse=args.warehouse,
     )
 
     execution_time_ms = int(stopwatch.elapsed_ms())

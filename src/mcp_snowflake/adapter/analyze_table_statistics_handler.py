@@ -31,6 +31,8 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
         table: Table,
         columns_to_analyze: Sequence[StatisticsSupportColumn],
         top_k_limit: int,
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> dict[str, Any]:
         """Execute statistics query and return the single result row.
 
@@ -46,6 +48,10 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
             Column information objects with statistics support
         top_k_limit : int
             Limit for APPROX_TOP_K function
+        role : str | None
+            Snowflake role to use for this operation.
+        warehouse : str | None
+            Snowflake warehouse to use for this operation.
 
         Returns
         -------
@@ -76,7 +82,11 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
         )
 
         try:
-            query_result = await self.client.execute_query(stats_sql)
+            query_result = await self.client.execute_query(
+                stats_sql,
+                role=role,
+                warehouse=warehouse,
+            )
         except Exception:
             column_properties = [
                 {"name": col.base.name, "type": col.statistics_type.type_name}

@@ -11,11 +11,17 @@ class MockListSchemas:
     ) -> None:
         self.result_data = result_data
         self.should_raise = should_raise
+        self.called_with_role: str | None = None
+        self.called_with_warehouse: str | None = None
 
     async def list_schemas(
         self,
         database: DataBase,  # noqa: ARG002
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> list[Schema]:
+        self.called_with_role = role
+        self.called_with_warehouse = warehouse
         if self.should_raise:
             raise self.should_raise
         if self.result_data is None:

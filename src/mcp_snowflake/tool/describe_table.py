@@ -15,6 +15,7 @@ from snowflake.connector import (
 from expression.contract import ContractViolationError
 
 from ..handler import DescribeTableArgs, EffectDescribeTable, handle_describe_table
+from ..handler.session_overrides import SESSION_OVERRIDE_PROPERTIES
 from .base import Tool
 
 
@@ -80,6 +81,7 @@ class DescribeTableTool(Tool):
                         "type": "string",
                         "description": "Name of the table to describe",
                     },
+                    **SESSION_OVERRIDE_PROPERTIES,
                 },
                 "required": ["database", "schema", "table"],
             },

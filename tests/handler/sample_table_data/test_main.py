@@ -28,6 +28,8 @@ class MockEffectSampleTableData:
         table: Table,  # noqa: ARG002
         sample_size: int,  # noqa: ARG002
         columns: list[str],  # noqa: ARG002
+        role: str | None = None,  # noqa: ARG002
+        warehouse: str | None = None,  # noqa: ARG002
     ) -> list[dict[str, Any]]:
         if self.should_raise:
             raise self.should_raise

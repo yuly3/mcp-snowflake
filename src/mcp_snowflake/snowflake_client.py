@@ -57,12 +57,19 @@ class SnowflakeClient:
         self,
         query: str,
         timeout: timedelta,
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> list[dict[str, Any]]:
         """Execute a query synchronously and return results."""
         with self._get_connection() as conn, conn.cursor(DictCursor) as cursor:
             timeout_seconds = int(timeout.total_seconds())
             try:
                 _ = cursor.execute("begin")
+                # Apply session overrides if specified
+                if role is not None:
+                    _ = cursor.execute(f"USE ROLE {role}")
+                if warehouse is not None:
+                    _ = cursor.execute(f"USE WAREHOUSE {warehouse}")
                 _ = cursor.execute(query, timeout=timeout_seconds)
                 return cast("list[dict[str, Any]]", cursor.fetchall())
             except ProgrammingError as e:
@@ -94,6 +101,8 @@ class SnowflakeClient:
         self,
         query: str,
         query_timeout: timedelta | None = None,
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> list[dict[str, Any]]:
         """Execute a SQL query and return results.
 
@@ -103,6 +112,12 @@ class SnowflakeClient:
             SQL query to execute
         query_timeout : timedelta | None, optional
             Query timeout, by default 30 seconds
+        role : str | None, optional
+            Snowflake role to use for this query. If specified, executes
+            USE ROLE before the query.
+        warehouse : str | None, optional
+            Snowflake warehouse to use for this query. If specified, executes
+            USE WAREHOUSE before the query.
 
         Returns
         -------
@@ -130,7 +145,5 @@ class SnowflakeClient:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
             self.thread_pool_executor,
-            self._execute_query_sync,
-            query,
-            query_timeout,
+            lambda: self._execute_query_sync(query, query_timeout, role, warehouse),
         )

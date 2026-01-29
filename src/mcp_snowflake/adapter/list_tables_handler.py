@@ -18,12 +18,23 @@ class ListTablesEffectHandler:
         """Initialize with SnowflakeClient."""
         self.client = client
 
-    async def list_tables(self, database: DataBase, schema: Schema) -> list[Table]:
+    async def list_tables(
+        self,
+        database: DataBase,
+        schema: Schema,
+        role: str | None = None,
+        warehouse: str | None = None,
+    ) -> list[Table]:
         """Get list of tables in a database schema."""
         query = f"SHOW TABLES IN SCHEMA {quote_ident(database)}.{quote_ident(schema)}"
 
         try:
-            results = await self.client.execute_query(query, timedelta(seconds=10))
+            results = await self.client.execute_query(
+                query,
+                timedelta(seconds=10),
+                role=role,
+                warehouse=warehouse,
+            )
         except Exception:
             logger.exception(
                 "failed to execute list tables operation",

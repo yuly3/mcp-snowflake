@@ -6,10 +6,12 @@ from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, View
 
+from .session_overrides import SessionOverridesMixin
+
 logger = logging.getLogger(__name__)
 
 
-class ListViewsArgs(BaseModel):
+class ListViewsArgs(SessionOverridesMixin, BaseModel):
     database: DataBase
     schema_: Schema = Field(alias="schema")
 
@@ -29,7 +31,13 @@ class ListViewsJsonResponse(TypedDict):
 
 
 class EffectListViews(Protocol):
-    def list_views(self, database: DataBase, schema: Schema) -> Awaitable[list[View]]:
+    def list_views(
+        self,
+        database: DataBase,
+        schema: Schema,
+        role: str | None = None,
+        warehouse: str | None = None,
+    ) -> Awaitable[list[View]]:
         """List views in a database schema.
 
         Parameters
@@ -38,6 +46,10 @@ class EffectListViews(Protocol):
             The database name to list views from.
         schema : Schema
             The schema name to list views from.
+        role : str | None
+            Snowflake role to use for this operation.
+        warehouse : str | None
+            Snowflake warehouse to use for this operation.
 
         Returns
         -------
@@ -95,7 +107,12 @@ async def handle_list_views(
     NotSupportedError
         When an unsupported database feature is used
     """
-    views = await effect_handler.list_views(args.database, args.schema_)
+    views = await effect_handler.list_views(
+        args.database,
+        args.schema_,
+        role=args.role,
+        warehouse=args.warehouse,
+    )
 
     return ListViewsJsonResponse(
         views_info={

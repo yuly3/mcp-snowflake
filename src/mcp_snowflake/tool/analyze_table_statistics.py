@@ -25,6 +25,7 @@ from ..handler.analyze_table_statistics import (
     ColumnDoesNotExist,
     NoSupportedColumns,
 )
+from ..handler.session_overrides import SESSION_OVERRIDE_PROPERTIES
 from .base import Tool
 
 
@@ -134,6 +135,7 @@ class AnalyzeTableStatisticsTool(Tool):
                         "default": 10,
                         "description": "Number of top values to retrieve for string columns",
                     },
+                    **SESSION_OVERRIDE_PROPERTIES,
                 },
                 "required": ["database", "schema", "table"],
             },

@@ -60,6 +60,8 @@ class TestSnowflakeClient:
             mock_sync.assert_called_once_with(
                 "SELECT * FROM test",
                 timedelta(seconds=30),
+                None,
+                None,
             )
 
     @pytest.mark.asyncio
@@ -85,6 +87,8 @@ class TestSnowflakeClient:
             mock_sync.assert_called_once_with(
                 "SELECT COUNT(*) as count FROM test",
                 custom_timeout,
+                None,
+                None,
             )
 
     @pytest.mark.asyncio
@@ -217,6 +221,8 @@ class TestSnowflakeClient:
             mock_sync.assert_called_once_with(
                 "SELECT * FROM empty_table",
                 timedelta(seconds=30),
+                None,
+                None,
             )
 
     @pytest.mark.asyncio
@@ -236,6 +242,8 @@ class TestSnowflakeClient:
             mock_sync.assert_called_once_with(
                 "SELECT * FROM large_table",
                 timedelta(seconds=30),
+                None,
+                None,
             )
 
     def test_get_connection_parameters(self, client: SnowflakeClient) -> None:

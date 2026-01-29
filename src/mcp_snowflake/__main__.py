@@ -24,9 +24,11 @@ from .adapter import (
     AnalyzeTableStatisticsEffectHandler,
     DescribeTableEffectHandler,
     ExecuteQueryEffectHandler,
+    ListRolesEffectHandler,
     ListSchemasEffectHandler,
     ListTablesEffectHandler,
     ListViewsEffectHandler,
+    ListWarehousesEffectHandler,
     SampleTableDataEffectHandler,
 )
 from .cli import Cli
@@ -36,9 +38,11 @@ from .tool import (
     AnalyzeTableStatisticsTool,
     DescribeTableTool,
     ExecuteQueryTool,
+    ListRolesTool,
     ListSchemasTool,
     ListTablesTool,
     ListViewsTool,
+    ListWarehousesTool,
     SampleTableDataTool,
     Tool,
 )
@@ -73,9 +77,11 @@ class SnowflakeServerContext:
                 self.json_converter,
                 ExecuteQueryEffectHandler(self.snowflake_client),
             ),
+            ListRolesTool(ListRolesEffectHandler(self.snowflake_client)),
             ListSchemasTool(ListSchemasEffectHandler(self.snowflake_client)),
             ListTablesTool(ListTablesEffectHandler(self.snowflake_client)),
             ListViewsTool(ListViewsEffectHandler(self.snowflake_client)),
+            ListWarehousesTool(ListWarehousesEffectHandler(self.snowflake_client)),
             SampleTableDataTool(
                 self.json_converter,
                 SampleTableDataEffectHandler(self.snowflake_client),

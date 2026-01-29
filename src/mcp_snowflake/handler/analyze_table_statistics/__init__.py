@@ -65,6 +65,8 @@ async def handle_analyze_table_statistics(
         args.database,
         args.schema_,
         args.table_,
+        role=args.role,
+        warehouse=args.warehouse,
     )
 
     classified_columns = select_and_classify_columns(
@@ -90,6 +92,8 @@ async def handle_analyze_table_statistics(
         args.table_,
         supported_columns,
         args.top_k_limit,
+        role=args.role,
+        warehouse=args.warehouse,
     )
 
     # Parse statistics and build structured response

@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, Table, TableInfo
 
+from .session_overrides import SessionOverridesMixin
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +38,7 @@ class TableJsonResponse(TypedDict):
     table_info: TableInfoDict
 
 
-class DescribeTableArgs(BaseModel):
+class DescribeTableArgs(SessionOverridesMixin, BaseModel):
     database: DataBase
     schema_: Schema = Field(alias="schema")
     table_: Table = Field(alias="table")
@@ -48,6 +50,8 @@ class EffectDescribeTable(Protocol):
         database: DataBase,
         schema: Schema,
         table: Table,
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> Awaitable[TableInfo]:
         """Describe a table in the database.
 
@@ -59,6 +63,10 @@ class EffectDescribeTable(Protocol):
             The schema containing the table.
         table : Table
             The table to describe.
+        role : str | None
+            Snowflake role to use for this operation.
+        warehouse : str | None
+            Snowflake warehouse to use for this operation.
 
         Returns
         -------
@@ -120,6 +128,8 @@ async def handle_describe_table(
         args.database,
         args.schema_,
         args.table_,
+        role=args.role,
+        warehouse=args.warehouse,
     )
 
     columns_dict: list[ColumnDict] = [

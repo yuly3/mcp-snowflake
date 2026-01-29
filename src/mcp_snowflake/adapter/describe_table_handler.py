@@ -23,12 +23,19 @@ class DescribeTableEffectHandler:
         database: DataBase,
         schema: Schema,
         table: Table,
+        role: str | None = None,
+        warehouse: str | None = None,
     ) -> TableInfo:
         """Get table structure information."""
         query = f"DESCRIBE TABLE {fully_qualified(database, schema, table)}"
 
         try:
-            results = await self.client.execute_query(query, timedelta(seconds=10))
+            results = await self.client.execute_query(
+                query,
+                timedelta(seconds=10),
+                role=role,
+                warehouse=warehouse,
+            )
         except Exception:
             logger.exception(
                 "failed to describe table",

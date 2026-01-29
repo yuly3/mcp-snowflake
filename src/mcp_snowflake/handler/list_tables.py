@@ -6,10 +6,12 @@ from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, Table
 
+from .session_overrides import SessionOverridesMixin
+
 logger = logging.getLogger(__name__)
 
 
-class ListTablesArgs(BaseModel):
+class ListTablesArgs(SessionOverridesMixin, BaseModel):
     database: DataBase
     schema_: Schema = Field(alias="schema")
 
@@ -29,7 +31,13 @@ class ListTablesJsonResponse(TypedDict):
 
 
 class EffectListTables(Protocol):
-    def list_tables(self, database: DataBase, schema: Schema) -> Awaitable[list[Table]]:
+    def list_tables(
+        self,
+        database: DataBase,
+        schema: Schema,
+        role: str | None = None,
+        warehouse: str | None = None,
+    ) -> Awaitable[list[Table]]:
         """List tables in a database schema.
 
         Parameters
@@ -38,6 +46,10 @@ class EffectListTables(Protocol):
             The database name to list tables from.
         schema : Schema
             The schema name to list tables from.
+        role : str | None
+            Snowflake role to use for this operation.
+        warehouse : str | None
+            Snowflake warehouse to use for this operation.
 
         Returns
         -------
@@ -95,7 +107,12 @@ async def handle_list_tables(
     NotSupportedError
         When an unsupported database feature is used
     """
-    tables = await effect_handler.list_tables(args.database, args.schema_)
+    tables = await effect_handler.list_tables(
+        args.database,
+        args.schema_,
+        role=args.role,
+        warehouse=args.warehouse,
+    )
 
     return ListTablesJsonResponse(
         tables_info={
