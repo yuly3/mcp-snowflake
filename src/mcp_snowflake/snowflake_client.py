@@ -6,7 +6,7 @@ import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
-from typing import Any, cast
+from typing import Any
 
 from snowflake.connector import (
     DataError,
@@ -64,7 +64,7 @@ class SnowflakeClient:
             try:
                 _ = cursor.execute("begin")
                 _ = cursor.execute(query, timeout=timeout_seconds)
-                return cast("list[dict[str, Any]]", cursor.fetchall())
+                return cursor.fetchall()
             except ProgrammingError as e:
                 if e.errno == 604:
                     # see: https://docs.snowflake.com/ja/developer-guide/python-connector/python-connector-example#using-cursor-to-fetch-values
