@@ -101,3 +101,29 @@ class TestHandleListWarehouses:
         assert len(result["warehouses"]) == 2
         assert result["warehouses"][0]["name"] == "COMPUTE_WH"
         assert result["warehouses"][1]["name"] == "DEV_WH"
+
+    @pytest.mark.asyncio
+    async def test_role_override_passed_to_effect_handler(self) -> None:
+        """Test that role override is passed to effect handler."""
+        # Arrange
+        args = ListWarehousesArgs(role="ANALYST_ROLE")
+        effect_handler = MockListWarehouses()
+
+        # Act
+        _ = await handle_list_warehouses(args, effect_handler)
+
+        # Assert
+        assert effect_handler.last_role == "ANALYST_ROLE"
+
+    @pytest.mark.asyncio
+    async def test_role_override_none_by_default(self) -> None:
+        """Test that role is None when not specified."""
+        # Arrange
+        args = ListWarehousesArgs()
+        effect_handler = MockListWarehouses()
+
+        # Act
+        _ = await handle_list_warehouses(args, effect_handler)
+
+        # Assert
+        assert effect_handler.last_role is None

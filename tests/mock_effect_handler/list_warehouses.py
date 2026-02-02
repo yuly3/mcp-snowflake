@@ -11,8 +11,13 @@ class MockListWarehouses:
     ) -> None:
         self.result_data = result_data
         self.should_raise = should_raise
+        self.last_role: str | None = None
 
-    async def list_warehouses(self) -> list[WarehouseInfoDict]:
+    async def list_warehouses(
+        self,
+        role: str | None = None,
+    ) -> list[WarehouseInfoDict]:
+        self.last_role = role
         if self.should_raise:
             raise self.should_raise
         if self.result_data is None:

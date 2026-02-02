@@ -6,13 +6,13 @@ from typing import Protocol, TypedDict
 
 from pydantic import BaseModel
 
+from .session_overrides import SessionOverridesMixin
+
 logger = logging.getLogger(__name__)
 
 
-class ListWarehousesArgs(BaseModel):
-    """Arguments for list_warehouses operation (no arguments required)."""
-
-    pass
+class ListWarehousesArgs(SessionOverridesMixin, BaseModel):
+    """Arguments for list_warehouses operation."""
 
 
 class WarehouseInfoDict(TypedDict):
@@ -32,8 +32,16 @@ class ListWarehousesJsonResponse(TypedDict):
 
 
 class EffectListWarehouses(Protocol):
-    def list_warehouses(self) -> Awaitable[list[WarehouseInfoDict]]:
+    def list_warehouses(
+        self,
+        role: str | None = None,
+    ) -> Awaitable[list[WarehouseInfoDict]]:
         """List available warehouses in Snowflake.
+
+        Parameters
+        ----------
+        role : str | None
+            Snowflake role to use for this operation.
 
         Returns
         -------
@@ -59,7 +67,7 @@ class EffectListWarehouses(Protocol):
 
 
 async def handle_list_warehouses(
-    args: ListWarehousesArgs,  # noqa: ARG001
+    args: ListWarehousesArgs,
     effect_handler: EffectListWarehouses,
 ) -> ListWarehousesJsonResponse:
     """Handle list_warehouses tool call.
@@ -67,7 +75,7 @@ async def handle_list_warehouses(
     Parameters
     ----------
     args : ListWarehousesArgs
-        The arguments for the list warehouses operation (unused).
+        The arguments for the list warehouses operation.
     effect_handler : EffectListWarehouses
         The effect handler for the list warehouses operation.
 
@@ -91,6 +99,6 @@ async def handle_list_warehouses(
     NotSupportedError
         When an unsupported database feature is used
     """
-    warehouses = await effect_handler.list_warehouses()
+    warehouses = await effect_handler.list_warehouses(role=args.role)
 
     return ListWarehousesJsonResponse(warehouses=warehouses)

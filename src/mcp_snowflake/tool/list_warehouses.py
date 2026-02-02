@@ -73,7 +73,12 @@ class ListWarehousesTool(Tool):
             description="Retrieve a list of available Snowflake warehouses that can be used with the warehouse parameter in other tools",
             inputSchema={
                 "type": "object",
-                "properties": {},
+                "properties": {
+                    "role": {
+                        "type": "string",
+                        "description": "Snowflake role to use for this operation (overrides default)",
+                    },
+                },
                 "required": [],
             },
         )
