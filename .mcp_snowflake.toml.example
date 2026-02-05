@@ -4,10 +4,11 @@
 [snowflake]
 account = "your-account.region"
 user = "your-username"
-password = "your-password"
+password = "your-password"  # Required only when authenticator = "SNOWFLAKE"
 warehouse = "your-warehouse"  # Optional
 role = "your-role"  # Optional
 authenticator = "SNOWFLAKE"  # "SNOWFLAKE" or "externalbrowser"
+client_store_temporary_credential = true  # ID token cache for externalbrowser
 
 # [tools]
 # Enable/disable specific tools (all enabled by default)

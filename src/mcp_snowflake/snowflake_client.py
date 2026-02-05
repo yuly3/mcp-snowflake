@@ -17,6 +17,7 @@ from snowflake.connector import (
     ProgrammingError,
     SnowflakeConnection,
 )
+from snowflake.connector.network import DEFAULT_AUTHENTICATOR
 
 from expression.contract import contract_async
 
@@ -39,13 +40,20 @@ class SnowflakeClient:
 
     def _get_connection(self) -> SnowflakeConnection:
         """Create a Snowflake connection."""
-        conn_params = {
+        conn_params: dict[str, Any] = {
             "account": self.settings.account,
             "user": self.settings.user,
-            "password": self.settings.password.get_secret_value(),
             "warehouse": self.settings.warehouse,
             "role": self.settings.role,
+            "authenticator": self.settings.authenticator,
         }
+
+        if self.settings.authenticator == DEFAULT_AUTHENTICATOR:
+            if self.settings.password is None:
+                raise ValueError("password is required when authenticator is SNOWFLAKE")
+            conn_params["password"] = self.settings.password.get_secret_value()
+        else:
+            conn_params["client_store_temporary_credential"] = self.settings.client_store_temporary_credential
 
         return SnowflakeConnection(
             connection_name=None,

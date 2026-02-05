@@ -1,7 +1,7 @@
 from types import TracebackType
 from typing import Literal
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -16,11 +16,19 @@ class SnowflakeSettings(BaseModel):
     role: str = Field(init=False)
     warehouse: str = Field(init=False)
     user: str = Field(init=False)
-    password: SecretStr = Field(init=False)
+    password: SecretStr | None = Field(default=None, init=False)
     authenticator: Literal["SNOWFLAKE", "externalbrowser"] = Field(
         DEFAULT_AUTHENTICATOR,
         init=False,
     )
+    client_store_temporary_credential: bool = Field(True, init=False)
+
+    @model_validator(mode="after")
+    def validate_authentication_fields(self) -> "SnowflakeSettings":
+        """Validate auth method specific required fields."""
+        if self.authenticator == "SNOWFLAKE" and self.password is None:
+            raise ValueError("snowflake.password is required when authenticator is SNOWFLAKE")
+        return self
 
 
 class ToolsSettings(BaseModel):

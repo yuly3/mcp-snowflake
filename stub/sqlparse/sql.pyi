@@ -184,7 +184,6 @@ class SquareBrackets(TokenList):
 class Assignment(TokenList):
     """An assignment like 'var := val;'"""
 
-
 class If(TokenList):
     """An 'if' clause with possible 'else if' or 'else' parts."""
 
@@ -254,11 +253,8 @@ class Begin(TokenList):
 class Operation(TokenList):
     """Grouping of operations"""
 
-
 class Values(TokenList):
     """Grouping of values"""
 
-
 class Command(TokenList):
     """Grouping of CLI commands."""
-

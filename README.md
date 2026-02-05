@@ -47,10 +47,11 @@ cp .mcp_snowflake.toml.example .mcp_snowflake.toml
 [snowflake]
 account = "your-account.region"
 user = "your-username"
-password = "your-password"
+password = "your-password"  # Required only when authenticator = "SNOWFLAKE"
 warehouse = "your-warehouse"  # Optional
 role = "your-role"  # Optional
 authenticator = "SNOWFLAKE"  # "SNOWFLAKE" or "externalbrowser"
+client_store_temporary_credential = true  # ID token cache for externalbrowser
 
 [tools]
 # Enable/disable specific tools (all enabled by default)
@@ -70,12 +71,13 @@ Set the following environment variables:
 #### Required
 - `SNOWFLAKE__ACCOUNT`: Snowflake account identifier
 - `SNOWFLAKE__USER`: Username
-- `SNOWFLAKE__PASSWORD`: Password
 
 #### Optional
+- `SNOWFLAKE__PASSWORD`: Password (required when `SNOWFLAKE__AUTHENTICATOR=SNOWFLAKE`)
 - `SNOWFLAKE__WAREHOUSE`: Default warehouse
 - `SNOWFLAKE__ROLE`: Default role
 - `SNOWFLAKE__AUTHENTICATOR`: Authentication method ("SNOWFLAKE" or "externalbrowser")
+- `SNOWFLAKE__CLIENT_STORE_TEMPORARY_CREDENTIAL`: Enable ID token cache for browser SSO ("true" or "false", default: "true")
 
 #### Tool Configuration (Optional)
 - `TOOLS__ANALYZE_TABLE_STATISTICS`: Enable/disable analyze_table_statistics tool ("true" or "false", default: "true")
@@ -94,6 +96,7 @@ export SNOWFLAKE__PASSWORD="your-password"
 export SNOWFLAKE__WAREHOUSE="your-warehouse"
 export SNOWFLAKE__ROLE="your-role"
 export SNOWFLAKE__AUTHENTICATOR="SNOWFLAKE"
+export SNOWFLAKE__CLIENT_STORE_TEMPORARY_CREDENTIAL="true"
 ```
 
 For PowerShell (Windows):
@@ -104,6 +107,7 @@ $env:SNOWFLAKE__PASSWORD="your-password"
 $env:SNOWFLAKE__WAREHOUSE="your-warehouse"
 $env:SNOWFLAKE__ROLE="your-role"
 $env:SNOWFLAKE__AUTHENTICATOR="SNOWFLAKE"
+$env:SNOWFLAKE__CLIENT_STORE_TEMPORARY_CREDENTIAL="true"
 
 # Tool configuration (optional)
 $env:TOOLS__EXECUTE_QUERY="false"  # Disable execute_query tool
@@ -112,6 +116,27 @@ $env:TOOLS__ANALYZE_TABLE_STATISTICS="false"  # Disable analyze_table_statistics
 
 > [!NOTE]
 > Environment variables are separated by double underscores (`__`).
+
+### Browser-based SSO (externalbrowser) with ID token cache
+
+To use browser-based SSO, set `authenticator = "externalbrowser"` and keep
+`client_store_temporary_credential = true` (default). The connector stores a temporary
+ID token in secure local storage and can reuse it for subsequent connections.
+
+```toml
+[snowflake]
+account = "your-account.region"
+user = "your-username"
+warehouse = "your-warehouse"
+role = "your-role"
+authenticator = "externalbrowser"
+client_store_temporary_credential = true
+```
+
+Notes:
+- The first connection opens a browser for SSO sign-in.
+- Your Snowflake account must have `ALLOW_ID_TOKEN` enabled.
+- Install this package with `snowflake-connector-python[secure-local-storage]` support.
 
 ## Usage
 
@@ -338,7 +363,8 @@ uv run pytest --doctest-modules .
 
 ### Connection Errors
 - Verify that configuration file or environment variables are correctly set
-- Check that Snowflake account, username, and password are correct
+- Check that Snowflake account and username are correct
+- If `authenticator=SNOWFLAKE`, verify password is set correctly
 - Verify network connectivity
 
 ### Permission Errors

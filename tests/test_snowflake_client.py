@@ -240,9 +240,43 @@ class TestSnowflakeClient:
 
     def test_get_connection_parameters(self, client: SnowflakeClient) -> None:
         """Test that connection parameters are properly configured."""
-        # This tests the _get_connection method indirectly by checking settings
-        assert client.settings.account == "dummy"
-        assert client.settings.user == "dummy"
-        assert client.settings.password.get_secret_value() == "dummy"
-        assert client.settings.warehouse == "dummy"
-        assert client.settings.role == "dummy"
+        assert client.settings.password is not None
+        with patch("mcp_snowflake.snowflake_client.SnowflakeConnection") as mock_connection:
+            _ = client._get_connection()  # noqa: SLF001
+
+            assert mock_connection.called is True
+            _, kwargs = mock_connection.call_args
+            assert kwargs["account"] == "dummy"
+            assert kwargs["user"] == "dummy"
+            assert kwargs["password"] == client.settings.password.get_secret_value()
+            assert kwargs["warehouse"] == "dummy"
+            assert kwargs["role"] == "dummy"
+            assert kwargs["authenticator"] == "SNOWFLAKE"
+            assert "client_store_temporary_credential" not in kwargs
+
+    def test_get_connection_parameters_for_externalbrowser(self, client: SnowflakeClient) -> None:
+        """Test externalbrowser auth uses temporary credential cache."""
+        externalbrowser_settings = client.settings.model_copy(
+            update={
+                "authenticator": "externalbrowser",
+                "password": None,
+                "client_store_temporary_credential": True,
+            }
+        )
+        externalbrowser_client = SnowflakeClient(
+            thread_pool_executor=client.thread_pool_executor,
+            settings=externalbrowser_settings,
+        )
+
+        with patch("mcp_snowflake.snowflake_client.SnowflakeConnection") as mock_connection:
+            _ = externalbrowser_client._get_connection()  # noqa: SLF001
+
+            assert mock_connection.called is True
+            _, kwargs = mock_connection.call_args
+            assert kwargs["account"] == "dummy"
+            assert kwargs["user"] == "dummy"
+            assert kwargs["warehouse"] == "dummy"
+            assert kwargs["role"] == "dummy"
+            assert kwargs["authenticator"] == "externalbrowser"
+            assert kwargs["client_store_temporary_credential"] is True
+            assert "password" not in kwargs

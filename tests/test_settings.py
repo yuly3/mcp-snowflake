@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 from pydantic_settings import SettingsConfigDict
 
 from mcp_snowflake.settings import Settings, ToolsSettings
@@ -15,11 +16,60 @@ def config_path() -> Path:
 
 def test_settings(config_path: Path) -> None:
     settings = Settings.build(SettingsConfigDict(toml_file=config_path))
+    assert settings.snowflake.password is not None
     assert settings.snowflake.account == "dummy"
     assert settings.snowflake.role == "dummy"
     assert settings.snowflake.warehouse == "dummy"
     assert settings.snowflake.user == "dummy"
     assert settings.snowflake.password.get_secret_value() == "dummy"
+    assert settings.snowflake.authenticator == "SNOWFLAKE"
+    assert settings.snowflake.client_store_temporary_credential is True
+
+
+def test_settings_externalbrowser_without_password() -> None:
+    """Test externalbrowser auth can be configured without password."""
+    toml_content = """
+[snowflake]
+account = "test-account"
+role = "test-role"
+warehouse = "test-warehouse"
+user = "test-user"
+authenticator = "externalbrowser"
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        settings = Settings.build(SettingsConfigDict(toml_file=temp_file))
+        assert settings.snowflake.authenticator == "externalbrowser"
+        assert settings.snowflake.password is None
+        assert settings.snowflake.client_store_temporary_credential is True
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_settings_snowflake_auth_requires_password() -> None:
+    """Test SNOWFLAKE auth requires password."""
+    toml_content = """
+[snowflake]
+account = "test-account"
+role = "test-role"
+warehouse = "test-warehouse"
+user = "test-user"
+authenticator = "SNOWFLAKE"
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        with pytest.raises(ValidationError, match="password is required"):
+            _ = Settings.build(SettingsConfigDict(toml_file=temp_file))
+    finally:
+        Path(temp_file).unlink()
 
 
 def test_tools_default_all_enabled() -> None:
