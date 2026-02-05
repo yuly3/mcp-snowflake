@@ -31,9 +31,7 @@ class RowProcessingResult:
     warnings: list[str]
 
     @classmethod
-    def from_raw_row(
-        cls, converter: JsonImmutableConverter, raw_row: dict[str, Any]
-    ) -> "RowProcessingResult":
+    def from_raw_row(cls, converter: JsonImmutableConverter, raw_row: dict[str, Any]) -> "RowProcessingResult":
         processed_row: dict[str, Jsonable] = {}
         warnings: list[str] = []
 

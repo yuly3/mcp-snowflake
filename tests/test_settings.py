@@ -89,9 +89,7 @@ password = "test"
         temp_file = f.name
 
     try:
-        settings = Settings.build(
-            SettingsConfigDict(toml_file=temp_file, env_nested_delimiter="__")
-        )
+        settings = Settings.build(SettingsConfigDict(toml_file=temp_file, env_nested_delimiter="__"))
 
         # Check that environment variables override defaults
         assert settings.tools.list_tables is False

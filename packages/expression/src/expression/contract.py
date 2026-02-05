@@ -60,9 +60,7 @@ class ContractViolationError(Exception):
             parts.append(f"in function '{self.function_name}'")
 
         if self.original_exception:
-            parts.append(
-                f"caused by {type(self.original_exception).__name__}: {self.original_exception}"
-            )
+            parts.append(f"caused by {type(self.original_exception).__name__}: {self.original_exception}")
 
         return " ".join(parts)
 

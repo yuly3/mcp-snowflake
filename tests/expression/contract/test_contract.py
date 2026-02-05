@@ -136,9 +136,7 @@ class TestContract:
             return result
 
         # Normal operation
-        result = process_data(
-            {"a": 1, "b": 2}, 3, "arg1", "arg2", flag1=True, flag2=False
-        )
+        result = process_data({"a": 1, "b": 2}, 3, "arg1", "arg2", flag1=True, flag2=False)
         expected = {"a": 3, "b": 6, "args_count": 2, "kwargs_count": 2}
         assert result == expected
 
@@ -320,8 +318,6 @@ class TestMapErrEnhanced:
             result = a / b
             return round(result, precision)
 
-        expected_pattern = (
-            r"Error in divide_with_context: args=\(10, 0\), kwargs={'precision': 3}"
-        )
+        expected_pattern = r"Error in divide_with_context: args=\(10, 0\), kwargs={'precision': 3}"
         with pytest.raises(ContractViolationError, match=expected_pattern):
             _ = divide_with_context(10, 0, precision=3)

@@ -12,9 +12,7 @@ class TestListTablesArgs:
 
     def test_valid_args(self) -> None:
         """Test valid arguments."""
-        args = ListTablesArgs.model_validate(
-            {"database": "test_db", "schema": "test_schema"}
-        )
+        args = ListTablesArgs.model_validate({"database": "test_db", "schema": "test_schema"})
         assert args.database == "test_db"
         assert args.schema_ == "test_schema"
 
@@ -53,9 +51,7 @@ class TestHandleListTables:
     async def test_successful_list_tables(self) -> None:
         """Test successful table listing."""
         # Arrange
-        args = ListTablesArgs.model_validate(
-            {"database": "test_db", "schema": "test_schema"}
-        )
+        args = ListTablesArgs.model_validate({"database": "test_db", "schema": "test_schema"})
         mock_tables = [Table("table1"), Table("table2"), Table("table3")]
         effect_handler = MockListTables(result_data=mock_tables)
 
@@ -72,9 +68,7 @@ class TestHandleListTables:
     async def test_empty_tables_list(self) -> None:
         """Test when no tables are returned."""
         # Arrange
-        args = ListTablesArgs.model_validate(
-            {"database": "empty_db", "schema": "empty_schema"}
-        )
+        args = ListTablesArgs.model_validate({"database": "empty_db", "schema": "empty_schema"})
         effect_handler = MockListTables(result_data=[])
 
         # Act
@@ -90,9 +84,7 @@ class TestHandleListTables:
     async def test_effect_handler_exception(self) -> None:
         """Test exception handling from effect handler."""
         # Arrange
-        args = ListTablesArgs.model_validate(
-            {"database": "error_db", "schema": "error_schema"}
-        )
+        args = ListTablesArgs.model_validate({"database": "error_db", "schema": "error_schema"})
         error_message = "Connection failed"
         effect_handler = MockListTables(should_raise=Exception(error_message))
 
@@ -104,12 +96,8 @@ class TestHandleListTables:
     async def test_with_standard_table_names(self) -> None:
         """Test with typical table names."""
         # Arrange
-        args = ListTablesArgs.model_validate(
-            {"database": "production_db", "schema": "public"}
-        )
-        effect_handler = MockListTables(
-            result_data=[Table("users"), Table("orders"), Table("products")]
-        )
+        args = ListTablesArgs.model_validate({"database": "production_db", "schema": "public"})
+        effect_handler = MockListTables(result_data=[Table("users"), Table("orders"), Table("products")])
 
         # Act
         result = await handle_list_tables(args, effect_handler)
@@ -124,9 +112,7 @@ class TestHandleListTables:
     async def test_single_table(self) -> None:
         """Test with single table result."""
         # Arrange
-        args = ListTablesArgs.model_validate(
-            {"database": "single_db", "schema": "single_schema"}
-        )
+        args = ListTablesArgs.model_validate({"database": "single_db", "schema": "single_schema"})
         effect_handler = MockListTables(result_data=[Table("ONLY_TABLE")])
 
         # Act
@@ -142,12 +128,8 @@ class TestHandleListTables:
     async def test_case_sensitive_table_names(self) -> None:
         """Test with case-sensitive table names."""
         # Arrange
-        args = ListTablesArgs.model_validate(
-            {"database": "case_db", "schema": "case_schema"}
-        )
-        effect_handler = MockListTables(
-            result_data=[Table("MyTable"), Table("my_table"), Table("MY_TABLE")]
-        )
+        args = ListTablesArgs.model_validate({"database": "case_db", "schema": "case_schema"})
+        effect_handler = MockListTables(result_data=[Table("MyTable"), Table("my_table"), Table("MY_TABLE")])
 
         # Act
         result = await handle_list_tables(args, effect_handler)

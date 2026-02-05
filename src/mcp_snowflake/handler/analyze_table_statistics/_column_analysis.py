@@ -32,9 +32,7 @@ def select_and_classify_columns(
     # Filter columns if specified
     if requested_columns:
         requested_columns_set = set(requested_columns)
-        columns_to_analyze = [
-            col for col in all_columns if col.name in requested_columns_set
-        ]
+        columns_to_analyze = [col for col in all_columns if col.name in requested_columns_set]
         if len(columns_to_analyze) != len(requested_columns):
             found_columns = {col.name for col in columns_to_analyze}
             not_found_columns = requested_columns_set - found_columns

@@ -6,18 +6,19 @@ from contextlib import contextmanager
 
 SPLIT_REGEX = ...
 LINE_MATCH = ...
-def split_unquoted_newlines(stmt): # -> list[str]:
+
+def split_unquoted_newlines(stmt):  # -> list[str]:
     """Split a string on all unquoted newlines.
 
     Unlike str.splitlines(), this will ignore CR/LF/CR+LF if the requisite
     character is inside of a string."""
     ...
 
-def remove_quotes(val): # -> None:
+def remove_quotes(val):  # -> None:
     """Helper that removes surrounding quotes from strings."""
     ...
 
-def recurse(*cls): # -> Callable[..., Callable[..., None]]:
+def recurse(*cls):  # -> Callable[..., Callable[..., None]]:
     """Function decorator to help with recursion
 
     :param cls: Classes to not recurse over
@@ -25,7 +26,7 @@ def recurse(*cls): # -> Callable[..., Callable[..., None]]:
     """
     ...
 
-def imt(token, i=..., m=..., t=...): # -> bool:
+def imt(token, i=..., m=..., t=...):  # -> bool:
     """Helper function to simplify comparisons Instance, Match and TokenType
     :param token:
     :param i: Class or Tuple/List of Classes
@@ -35,15 +36,13 @@ def imt(token, i=..., m=..., t=...): # -> bool:
     """
     ...
 
-def consume(iterator, n): # -> None:
+def consume(iterator, n):  # -> None:
     """Advance the iterator n-steps ahead. If n is none, consume entirely."""
     ...
 
 @contextmanager
-def offset(filter_, n=...): # -> Generator[None, Any, None]:
+def offset(filter_, n=...):  # -> Generator[None, Any, None]:
     ...
-
 @contextmanager
-def indent(filter_, n=...): # -> Generator[None, Any, None]:
+def indent(filter_, n=...):  # -> Generator[None, Any, None]:
     ...
-

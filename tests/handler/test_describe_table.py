@@ -49,9 +49,7 @@ class TestDescribeTableArgs:
 
     def test_empty_strings(self) -> None:
         """Test empty string arguments."""
-        args = DescribeTableArgs(
-            database=DataBase(""), schema=Schema(""), table=Table("")
-        )
+        args = DescribeTableArgs(database=DataBase(""), schema=Schema(""), table=Table(""))
         assert args.database == DataBase("")
         assert args.schema_ == Schema("")
         assert args.table_ == Table("")
@@ -161,9 +159,7 @@ class TestHandleDescribeTable:
     ) -> None:
         """Test successful table description scenarios with parametrized variants."""
         # Arrange
-        args = DescribeTableArgs(
-            database=DataBase(database), schema=Schema(schema), table=Table(table)
-        )
+        args = DescribeTableArgs(database=DataBase(database), schema=Schema(schema), table=Table(table))
         mock_table_data = TableInfo(
             database=DataBase(database),
             schema=Schema(schema),
@@ -182,38 +178,24 @@ class TestHandleDescribeTable:
         assert table_info["database"] == database, f"[{label}] Database mismatch"
         assert table_info["schema"] == schema, f"[{label}] Schema mismatch"
         assert table_info["name"] == table, f"[{label}] Table name mismatch"
-        assert table_info["column_count"] == len(columns_spec), (
-            f"[{label}] Column count mismatch"
-        )
+        assert table_info["column_count"] == len(columns_spec), f"[{label}] Column count mismatch"
 
         # Scenario-specific validations
         if expectations.get("empty"):
             assert table_info["columns"] == [], f"[{label}] Expected empty columns"
         else:
-            assert len(table_info["columns"]) == len(columns_spec), (
-                f"[{label}] Column list length mismatch"
-            )
+            assert len(table_info["columns"]) == len(columns_spec), f"[{label}] Column list length mismatch"
 
         if expectations.get("all_nullable"):
             for column in table_info["columns"]:
-                assert column["nullable"] is True, (
-                    f"[{label}] Column {column['name']} should be nullable"
-                )
+                assert column["nullable"] is True, f"[{label}] Column {column['name']} should be nullable"
 
         if expectations.get("all_required"):
             for column in table_info["columns"]:
-                assert column["nullable"] is False, (
-                    f"[{label}] Column {column['name']} should be required"
-                )
+                assert column["nullable"] is False, f"[{label}] Column {column['name']} should be required"
 
         if expectations.get("has_nullable") and expectations.get("has_required"):
             nullable_cols = [col for col in table_info["columns"] if col["nullable"]]
-            required_cols = [
-                col for col in table_info["columns"] if not col["nullable"]
-            ]
-            assert len(nullable_cols) > 0, (
-                f"[{label}] Expected at least one nullable column"
-            )
-            assert len(required_cols) > 0, (
-                f"[{label}] Expected at least one required column"
-            )
+            required_cols = [col for col in table_info["columns"] if not col["nullable"]]
+            assert len(nullable_cols) > 0, f"[{label}] Expected at least one nullable column"
+            assert len(required_cols) > 0, f"[{label}] Expected at least one required column"

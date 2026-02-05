@@ -326,9 +326,7 @@ class TestDescribeTableTool:
         assert text_col["data_type"] == "VARCHAR(16777216)"
         assert text_col["comment"] == "Long text column"
 
-        boolean_col = next(
-            (col for col in columns if col["name"] == "BOOLEAN_COL"), None
-        )
+        boolean_col = next((col for col in columns if col["name"] == "BOOLEAN_COL"), None)
         assert boolean_col is not None
         assert boolean_col["data_type"] == "BOOLEAN"
         assert boolean_col["default_value"] is None

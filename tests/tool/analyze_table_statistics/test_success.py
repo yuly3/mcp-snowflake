@@ -159,9 +159,7 @@ class TestAnalyzeTableStatisticsToolSuccess:
         # First content should be summary
         assert isinstance(result[0], types.TextContent)
         summary_text = result[0].text
-        assert (
-            "Table Statistics Analysis: test_db.test_schema.test_table" in summary_text
-        )
+        assert "Table Statistics Analysis: test_db.test_schema.test_table" in summary_text
         assert "5,000 total rows" in summary_text
         assert "Successfully analyzed" in summary_text
 

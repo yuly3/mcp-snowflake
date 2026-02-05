@@ -81,10 +81,7 @@ class AnalyzeTableStatisticsTool(Tool):
                     text = f"Error: Columns not found in table: {', '.join(not_existed_columns)}"
                 case NoSupportedColumns(unsupported_columns=unsupported_columns):
                     # No supported columns case
-                    unsupported_list = [
-                        f"{col.name}({col.data_type.raw_type})"
-                        for col in unsupported_columns
-                    ]
+                    unsupported_list = [f"{col.name}({col.data_type.raw_type})" for col in unsupported_columns]
                     text = f"Error: No supported columns for statistics. Unsupported columns: {', '.join(unsupported_list)}"
                 case response:
                     # Successful case - build summary and JSON response
@@ -161,14 +158,10 @@ def _build_summary_text(response: AnalyzeTableStatisticsJsonResponse) -> str:
     column_stats = stats["column_statistics"]
 
     # Count column types
-    numeric_count = sum(
-        1 for s in column_stats.values() if s["column_type"] == "numeric"
-    )
+    numeric_count = sum(1 for s in column_stats.values() if s["column_type"] == "numeric")
     string_count = sum(1 for s in column_stats.values() if s["column_type"] == "string")
     date_count = sum(1 for s in column_stats.values() if s["column_type"] == "date")
-    boolean_count = sum(
-        1 for s in column_stats.values() if s["column_type"] == "boolean"
-    )
+    boolean_count = sum(1 for s in column_stats.values() if s["column_type"] == "boolean")
 
     summary_lines = [
         f"Table Statistics Analysis: {table_info['database']}.{table_info['schema']}.{table_info['table']}",
@@ -185,18 +178,14 @@ def _build_summary_text(response: AnalyzeTableStatisticsJsonResponse) -> str:
     # Add unsupported columns note if any exist
     unsupported_columns = stats.get("unsupported_columns")
     if unsupported_columns:
-        summary_lines.extend(
-            [
-                "",
-                f"Note: Some columns were not analyzed due to unsupported data types. {len(unsupported_columns)} column(s) skipped.",
-            ]
-        )
-
-    summary_lines.extend(
-        [
+        summary_lines.extend([
             "",
-            "Full statistical details are provided in the JSON response below.",
-        ]
-    )
+            f"Note: Some columns were not analyzed due to unsupported data types. {len(unsupported_columns)} column(s) skipped.",
+        ])
+
+    summary_lines.extend([
+        "",
+        "Full statistical details are provided in the JSON response below.",
+    ])
 
     return "\n".join(summary_lines)

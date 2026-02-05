@@ -1,4 +1,3 @@
-# Exclude a variety of commonly ignored directories.
 exclude = [
     ".bzr",
     ".direnv",
@@ -25,12 +24,11 @@ exclude = [
     "dist",
     "node_modules",
     "site-packages",
-    "stub",
     "venv",
 ]
 
 indent-width = 4
-line-length = 88
+line-length = 119
 
 target-version = "py313"
 
@@ -57,6 +55,7 @@ select = [
     "FBT002",
     "FLY",
     "FURB",
+    "G010",
     "G2",
     "I",
     "INP001",
@@ -71,6 +70,7 @@ select = [
     "PIE",
     "PLC01",
     "PLC02",
+    "PLC0415",
     "PLE",
     "PLR01",
     "PLR02",
@@ -88,6 +88,7 @@ select = [
     "SIM",
     "SLF",
     "TC",
+    "TID253",
     "TRY2",
     "TRY3",
     "UP",
@@ -113,40 +114,31 @@ unfixable = [
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
+# 複数行stringの暗黙的concatを許すか
 flake8-implicit-str-concat.allow-multiline = false
 
-[lint.mccabe]
-max-complexity = 15
+# 遅延importを強制するmodule
+flake8-tidy-imports.banned-module-level-imports = [
+    "lightgbm",
+    "scipy",
+    "xgboost",
+]
 
 [lint.pydocstyle]
 convention = "numpy"
 
+[lint.mccabe]
+max-complexity = 15
+
 [format]
-# Like Black, use double quotes for strings.
-quote-style = "double"
+preview = true
 
-# Like Black, indent with spaces, rather than tabs.
-indent-style = "space"
-
-# Like Black, respect magic trailing commas.
-skip-magic-trailing-comma = false
-
-# Like Black, automatically detect the appropriate line ending.
-line-ending = "auto"
-
-# Enable auto-formatting of code examples in docstrings. Markdown,
-# reStructuredText code/literal blocks and doctests are all supported.
-#
-# This is currently disabled by default, but it is planned for this
-# to be opt-out in the future.
 docstring-code-format = false
-
-# Set the line length limit used when formatting code snippets in
-# docstrings.
-#
-# This only has an effect when the `docstring-code-format` setting is
-# enabled.
 docstring-code-line-length = "dynamic"
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"
+skip-magic-trailing-comma = false
 
 [lint.isort]
 known-first-party = [

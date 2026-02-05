@@ -42,9 +42,7 @@ class TestAnalyzeTableStatisticsToolErrors:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert result[0].type == "text"
-        assert (
-            "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
-        )
+        assert "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
 
     @pytest.mark.asyncio
     async def test_perform_with_invalid_arguments(
@@ -62,9 +60,7 @@ class TestAnalyzeTableStatisticsToolErrors:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert result[0].type == "text"
-        assert (
-            "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
-        )
+        assert "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_dict_arguments(
@@ -81,9 +77,7 @@ class TestAnalyzeTableStatisticsToolErrors:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert result[0].type == "text"
-        assert (
-            "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
-        )
+        assert "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
 
     @pytest.mark.asyncio
     async def test_perform_with_invalid_top_k_limit(
@@ -106,9 +100,7 @@ class TestAnalyzeTableStatisticsToolErrors:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert result[0].type == "text"
-        assert (
-            "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
-        )
+        assert "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
 
         # Test with top_k_limit below minimum
         arguments = {
@@ -122,9 +114,7 @@ class TestAnalyzeTableStatisticsToolErrors:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert result[0].type == "text"
-        assert (
-            "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
-        )
+        assert "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
 
     @pytest.mark.asyncio
     async def test_perform_with_invalid_columns_type(
@@ -147,9 +137,7 @@ class TestAnalyzeTableStatisticsToolErrors:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert result[0].type == "text"
-        assert (
-            "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
-        )
+        assert "Error: Invalid arguments for analyze_table_statistics:" in result[0].text
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -209,9 +197,7 @@ class TestAnalyzeTableStatisticsToolErrors:
     ) -> None:
         """Test exception during describe_table operation."""
         # Test that exceptions from describe_table are also handled properly
-        mock_effect = MockAnalyzeTableStatistics(
-            should_raise=ProgrammingError("Table does not exist")
-        )
+        mock_effect = MockAnalyzeTableStatistics(should_raise=ProgrammingError("Table does not exist"))
         tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
@@ -234,9 +220,7 @@ class TestAnalyzeTableStatisticsToolErrors:
     ) -> None:
         """Test exception during analyze_table_statistics operation."""
         # Test that exceptions from analyze_table_statistics are handled properly
-        mock_effect = MockAnalyzeTableStatistics(
-            should_raise=OperationalError("Statistics analysis failed")
-        )
+        mock_effect = MockAnalyzeTableStatistics(should_raise=OperationalError("Statistics analysis failed"))
         tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
@@ -258,9 +242,7 @@ class TestAnalyzeTableStatisticsToolErrors:
         json_converter: JsonImmutableConverter,
     ) -> None:
         """Test timeout error handling."""
-        mock_effect = MockAnalyzeTableStatistics(
-            should_raise=TimeoutError("Query execution timeout after 30 seconds")
-        )
+        mock_effect = MockAnalyzeTableStatistics(should_raise=TimeoutError("Query execution timeout after 30 seconds"))
         tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
@@ -282,9 +264,7 @@ class TestAnalyzeTableStatisticsToolErrors:
         json_converter: JsonImmutableConverter,
     ) -> None:
         """Test data error handling."""
-        mock_effect = MockAnalyzeTableStatistics(
-            should_raise=DataError("Invalid data format in column")
-        )
+        mock_effect = MockAnalyzeTableStatistics(should_raise=DataError("Invalid data format in column"))
         tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
@@ -306,9 +286,7 @@ class TestAnalyzeTableStatisticsToolErrors:
         json_converter: JsonImmutableConverter,
     ) -> None:
         """Test contract violation error handling."""
-        mock_effect = MockAnalyzeTableStatistics(
-            should_raise=ContractViolationError("Unexpected contract violation")
-        )
+        mock_effect = MockAnalyzeTableStatistics(should_raise=ContractViolationError("Unexpected contract violation"))
         tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
 
         arguments = {
@@ -386,7 +364,7 @@ class TestAnalyzeTableStatisticsToolErrors:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert result[0].type == "text"
-        assert (
-            "Error: Snowflake returned unexpected result format:" in result[0].text
-        ), f"Expected parse error message but got: {result[0].text!r}"
+        assert "Error: Snowflake returned unexpected result format:" in result[0].text, (
+            f"Expected parse error message but got: {result[0].text!r}"
+        )
         assert "Failed to parse STRING_STATUS_TOP_VALUES JSON" in result[0].text

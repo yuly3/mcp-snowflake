@@ -41,9 +41,7 @@ def test_tool_name_unique() -> None:
     tool_names = [tool.name for tool in tools]
 
     # Check for uniqueness
-    assert len(tool_names) == len(set(tool_names)), (
-        f"Duplicate tool names found: {tool_names}"
-    )
+    assert len(tool_names) == len(set(tool_names)), f"Duplicate tool names found: {tool_names}"
 
 
 def test_settings_keys_match_tool_names() -> None:

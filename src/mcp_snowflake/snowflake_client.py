@@ -68,12 +68,8 @@ class SnowflakeClient:
             except ProgrammingError as e:
                 if e.errno == 604:
                     # see: https://docs.snowflake.com/ja/developer-guide/python-connector/python-connector-example#using-cursor-to-fetch-values
-                    logger.exception(
-                        f"Query execution timed out after {timeout_seconds} seconds"
-                    )
-                    raise TimeoutError(
-                        f"Query execution timed out after {timeout_seconds} seconds"
-                    ) from e
+                    logger.exception(f"Query execution timed out after {timeout_seconds} seconds")
+                    raise TimeoutError(f"Query execution timed out after {timeout_seconds} seconds") from e
                 logger.exception("Query execution error")
                 raise
             except Exception:

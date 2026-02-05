@@ -104,13 +104,8 @@ class TestGenerateStatisticsSQL:
         assert 'COUNT("created_date") as date_created_date_count' in sql
         assert 'MIN("created_date") as date_created_date_min' in sql
         assert 'MAX("created_date") as date_created_date_max' in sql
-        assert (
-            'DATEDIFF(\'day\', MIN("created_date"), MAX("created_date")) as date_created_date_range_days'
-            in sql
-        )
-        assert (
-            'APPROX_COUNT_DISTINCT("created_date") as date_created_date_distinct' in sql
-        )
+        assert 'DATEDIFF(\'day\', MIN("created_date"), MAX("created_date")) as date_created_date_range_days' in sql
+        assert 'APPROX_COUNT_DISTINCT("created_date") as date_created_date_distinct' in sql
 
     def test_mixed_column_types(self) -> None:
         """Test SQL generation with mixed column types."""
@@ -251,18 +246,9 @@ class TestGenerateStatisticsSQL:
 
         # Check boolean-specific aggregations
         assert 'COUNT("is_active") as boolean_is_active_count' in sql
-        assert (
-            'SUM(CASE WHEN "is_active" IS NULL THEN 1 ELSE 0 END) as boolean_is_active_null_count'
-            in sql
-        )
-        assert (
-            'SUM(CASE WHEN "is_active" = TRUE THEN 1 ELSE 0 END) as boolean_is_active_true_count'
-            in sql
-        )
-        assert (
-            'SUM(CASE WHEN "is_active" = FALSE THEN 1 ELSE 0 END) as boolean_is_active_false_count'
-            in sql
-        )
+        assert 'SUM(CASE WHEN "is_active" IS NULL THEN 1 ELSE 0 END) as boolean_is_active_null_count' in sql
+        assert 'SUM(CASE WHEN "is_active" = TRUE THEN 1 ELSE 0 END) as boolean_is_active_true_count' in sql
+        assert 'SUM(CASE WHEN "is_active" = FALSE THEN 1 ELSE 0 END) as boolean_is_active_false_count' in sql
 
         # Check percentage calculations with DIV0NULL
         assert (

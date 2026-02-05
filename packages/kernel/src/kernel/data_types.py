@@ -44,9 +44,7 @@ NormalizedSnowflakeDataType = Literal[
     # Structured data types (for Iceberg)
     "MAP",
 ]
-NORMALIZED_SNOWFLAKE_DATA_TYPES: frozenset[str] = frozenset(
-    NormalizedSnowflakeDataType.__args__
-)
+NORMALIZED_SNOWFLAKE_DATA_TYPES: frozenset[str] = frozenset(NormalizedSnowflakeDataType.__args__)
 ALIAS_MAPPING = {
     "NUMERIC": "DECIMAL",
     "INTEGER": "INT",
@@ -145,9 +143,7 @@ class SnowflakeDataType:
 
     def is_supported_for_statistics(self) -> bool:
         """Check if the data type is supported for statistical analysis"""
-        return (
-            self.is_numeric() or self.is_string() or self.is_date() or self.is_boolean()
-        )
+        return self.is_numeric() or self.is_string() or self.is_date() or self.is_boolean()
 
 
 @attrs.define(frozen=True)
@@ -155,9 +151,7 @@ class StatisticsSupportDataType:
     """Statistics-specific data type classification."""
 
     snowflake_type: SnowflakeDataType
-    _classification: Literal["numeric", "string", "date", "boolean"] = attrs.field(
-        init=False
-    )
+    _classification: Literal["numeric", "string", "date", "boolean"] = attrs.field(init=False)
 
     def __attrs_post_init__(self) -> None:
         """Initialize classification based on snowflake_type."""
@@ -170,9 +164,7 @@ class StatisticsSupportDataType:
         elif self.snowflake_type.is_boolean():
             classification = "boolean"
         else:
-            raise ValueError(
-                f"Unsupported Snowflake data type for statistics: {self.snowflake_type.raw_type}"
-            )
+            raise ValueError(f"Unsupported Snowflake data type for statistics: {self.snowflake_type.raw_type}")
         object.__setattr__(self, "_classification", classification)
 
     @property

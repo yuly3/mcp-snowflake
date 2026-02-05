@@ -56,9 +56,7 @@ def assert_tabular_json(
 
     # Handle both row_count and actual_rows fields
     actual_count = data.get("row_count", data.get("actual_rows", -1))
-    assert actual_count == expected_row_count, (
-        f"Row count mismatch in {key}: {actual_count} != {expected_row_count}"
-    )
+    assert actual_count == expected_row_count, f"Row count mismatch in {key}: {actual_count} != {expected_row_count}"
 
     return data
 

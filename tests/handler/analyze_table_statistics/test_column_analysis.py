@@ -104,9 +104,7 @@ class TestSelectAndClassifyColumns:
         unsupported_columns = result.unsupported_columns
 
         assert len(supported_columns) == 2
-        assert all(
-            isinstance(col, StatisticsSupportColumn) for col in supported_columns
-        )
+        assert all(isinstance(col, StatisticsSupportColumn) for col in supported_columns)
         assert len(unsupported_columns) == 0
 
     def test_classify_requested_columns_with_mixed_support(self) -> None:

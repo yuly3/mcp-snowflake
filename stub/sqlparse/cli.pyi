@@ -14,9 +14,8 @@ Why does this file exist, and why not put this in __main__?
     there's no ``sqlparse.__main__`` in ``sys.modules``.
   Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
 """
-def create_parser(): # -> ArgumentParser:
-    ...
 
-def main(args=...): # -> Literal[1, 0]:
+def create_parser():  # -> ArgumentParser:
     ...
-
+def main(args=...):  # -> Literal[1, 0]:
+    ...

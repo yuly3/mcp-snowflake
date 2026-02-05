@@ -121,24 +121,14 @@ class TestHandleSampleTableData:
         sample_data_obj = result["sample_data"]
 
         # Common assertions
-        assert sample_data_obj["database"] == "test_db", (
-            f"[{case_id}] Database mismatch"
-        )
-        assert sample_data_obj["schema"] == "test_schema", (
-            f"[{case_id}] Schema mismatch"
-        )
+        assert sample_data_obj["database"] == "test_db", f"[{case_id}] Database mismatch"
+        assert sample_data_obj["schema"] == "test_schema", f"[{case_id}] Schema mismatch"
         assert sample_data_obj["table"] == "test_table", f"[{case_id}] Table mismatch"
-        assert sample_data_obj["sample_size"] == sample_size, (
-            f"[{case_id}] Sample size mismatch"
-        )
+        assert sample_data_obj["sample_size"] == sample_size, f"[{case_id}] Sample size mismatch"
 
         # Expected value assertions
-        assert sample_data_obj["actual_rows"] == expected["actual_rows"], (
-            f"[{case_id}] Actual rows mismatch"
-        )
-        assert sample_data_obj["columns"] == expected["columns"], (
-            f"[{case_id}] Columns mismatch"
-        )
+        assert sample_data_obj["actual_rows"] == expected["actual_rows"], f"[{case_id}] Actual rows mismatch"
+        assert sample_data_obj["columns"] == expected["columns"], f"[{case_id}] Columns mismatch"
 
         # Conditional assertions based on expected keys
         if "warnings_len" in expected:
@@ -147,23 +137,18 @@ class TestHandleSampleTableData:
             )
 
         if "warnings_contains" in expected:
-            assert any(
-                expected["warnings_contains"] in warning
-                for warning in sample_data_obj["warnings"]
-            ), f"[{case_id}] Warning content not found"
+            assert any(expected["warnings_contains"] in warning for warning in sample_data_obj["warnings"]), (
+                f"[{case_id}] Warning content not found"
+            )
 
         if "mutated_field" in expected:
             column_name, expected_value = expected["mutated_field"]
             actual_value = sample_data_obj["rows"][0][column_name]
-            assert actual_value == expected_value, (
-                f"[{case_id}] Mutated field {column_name} mismatch"
-            )
+            assert actual_value == expected_value, f"[{case_id}] Mutated field {column_name} mismatch"
 
         # For non-empty cases, verify rows structure
         if expected["actual_rows"] > 0 and "mutated_field" not in expected:
-            assert sample_data_obj["rows"] == sample_data, (
-                f"[{case_id}] Rows content mismatch"
-            )
+            assert sample_data_obj["rows"] == sample_data, f"[{case_id}] Rows content mismatch"
 
     @pytest.mark.asyncio
     async def test_error_handling(self, json_converter: JsonImmutableConverter) -> None:

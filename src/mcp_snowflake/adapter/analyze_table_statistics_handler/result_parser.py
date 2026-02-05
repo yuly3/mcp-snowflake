@@ -74,15 +74,9 @@ def parse_statistics_result(
                     min=float(option.unwrap_or(result_row[f"{prefix}_MIN"], 0.0)),
                     max=float(option.unwrap_or(result_row[f"{prefix}_MAX"], 0.0)),
                     avg=float(option.unwrap_or(result_row[f"{prefix}_AVG"], 0.0)),
-                    percentile_25=float(
-                        option.unwrap_or(result_row[f"{prefix}_Q1"], 0.0)
-                    ),
-                    percentile_50=float(
-                        option.unwrap_or(result_row[f"{prefix}_MEDIAN"], 0.0)
-                    ),
-                    percentile_75=float(
-                        option.unwrap_or(result_row[f"{prefix}_Q3"], 0.0)
-                    ),
+                    percentile_25=float(option.unwrap_or(result_row[f"{prefix}_Q1"], 0.0)),
+                    percentile_50=float(option.unwrap_or(result_row[f"{prefix}_MEDIAN"], 0.0)),
+                    percentile_75=float(option.unwrap_or(result_row[f"{prefix}_Q3"], 0.0)),
                 )
             case "string":
                 # Parse APPROX_TOP_K result from JSON string
@@ -93,16 +87,10 @@ def parse_statistics_result(
                         f"{prefix}_TOP_VALUES is required for string column but was None",
                         extra={"column": col_name, "prefix": prefix},
                     )
-                    raise StatisticsResultParseError(
-                        f"{prefix}_TOP_VALUES is required for string column but was None"
-                    )
+                    raise StatisticsResultParseError(f"{prefix}_TOP_VALUES is required for string column but was None")
 
                 try:
-                    raw_values = (
-                        cast("list[Any]", json.loads(top_values_raw))
-                        if top_values_raw
-                        else []
-                    )
+                    raw_values = cast("list[Any]", json.loads(top_values_raw)) if top_values_raw else []
                 except (json.JSONDecodeError, TypeError) as e:
                     logger.error(
                         f"Failed to parse {prefix}_TOP_VALUES JSON",
@@ -154,12 +142,8 @@ def parse_statistics_result(
                     null_count=result_row[f"{prefix}_NULL_COUNT"],
                     true_count=result_row[f"{prefix}_TRUE_COUNT"],
                     false_count=result_row[f"{prefix}_FALSE_COUNT"],
-                    true_percentage=float(
-                        option.unwrap_or(result_row[f"{prefix}_TRUE_PERCENTAGE"], 0.0)
-                    ),
-                    false_percentage=float(
-                        option.unwrap_or(result_row[f"{prefix}_FALSE_PERCENTAGE"], 0.0)
-                    ),
+                    true_percentage=float(option.unwrap_or(result_row[f"{prefix}_TRUE_PERCENTAGE"], 0.0)),
+                    false_percentage=float(option.unwrap_or(result_row[f"{prefix}_FALSE_PERCENTAGE"], 0.0)),
                     true_percentage_with_nulls=float(
                         option.unwrap_or(
                             result_row[f"{prefix}_TRUE_PERCENTAGE_WITH_NULLS"],
@@ -216,9 +200,7 @@ def parse_top_values[T](
                 f"Invalid top_values element structure for column {column_name}",
                 extra={"column": column_name, "invalid_item": item},
             )
-            raise StatisticsResultParseError(
-                f"Invalid top_values element for column {column_name}: {item!r}"
-            )
+            raise StatisticsResultParseError(f"Invalid top_values element for column {column_name}: {item!r}")
 
         value_raw, count_raw = cast("list[Any]", item)
 
@@ -233,9 +215,7 @@ def parse_top_values[T](
                     "item": item,
                 },
             )
-            raise StatisticsResultParseError(
-                f"Invalid top_values element for column {column_name}: {item!r}"
-            )
+            raise StatisticsResultParseError(f"Invalid top_values element for column {column_name}: {item!r}")
 
         # Check and convert count
         try:
@@ -251,9 +231,7 @@ def parse_top_values[T](
                     "error": str(e),
                 },
             )
-            raise StatisticsResultParseError(
-                f"Invalid top_values element for column {column_name}: {item!r}"
-            ) from e
+            raise StatisticsResultParseError(f"Invalid top_values element for column {column_name}: {item!r}") from e
         top_values.append(top_value)
 
     return top_values

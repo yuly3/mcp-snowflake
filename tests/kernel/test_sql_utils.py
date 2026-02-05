@@ -49,28 +49,17 @@ class TestFullyQualified:
 
     def test_fully_qualified_with_schema(self) -> None:
         """Three-part identifier should quote each part as needed."""
-        assert (
-            fully_qualified(DataBase("MYDB"), Schema("MYSCHEMA"), Table("MYTABLE"))
-            == "MYDB.MYSCHEMA.MYTABLE"
-        )
+        assert fully_qualified(DataBase("MYDB"), Schema("MYSCHEMA"), Table("MYTABLE")) == "MYDB.MYSCHEMA.MYTABLE"
         assert (
             fully_qualified(DataBase("my_db"), Schema("my_schema"), Table("my_table"))
             == '"my_db"."my_schema"."my_table"'
         )
-        assert (
-            fully_qualified(DataBase("DB"), Schema("schema name"), Table("TABLE"))
-            == 'DB."schema name".TABLE'
-        )
+        assert fully_qualified(DataBase("DB"), Schema("schema name"), Table("TABLE")) == 'DB."schema name".TABLE'
 
     def test_fully_qualified_without_schema(self) -> None:
         """Two-part identifier when schema is None."""
-        assert (
-            fully_qualified(DataBase("MYDB"), None, Table("MYTABLE")) == "MYDB.MYTABLE"
-        )
-        assert (
-            fully_qualified(DataBase("my_db"), None, Table("my_table"))
-            == '"my_db"."my_table"'
-        )
+        assert fully_qualified(DataBase("MYDB"), None, Table("MYTABLE")) == "MYDB.MYTABLE"
+        assert fully_qualified(DataBase("my_db"), None, Table("my_table")) == '"my_db"."my_table"'
 
     def test_fully_qualified_escaping(self) -> None:
         """Identifiers with quotes should be properly escaped."""

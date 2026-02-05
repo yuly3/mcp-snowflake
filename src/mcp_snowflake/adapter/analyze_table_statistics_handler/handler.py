@@ -83,8 +83,7 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
             query_result = await self.client.execute_query(stats_sql)
         except Exception:
             column_properties = [
-                {"name": col.base.name, "type": col.statistics_type.type_name}
-                for col in columns_to_analyze
+                {"name": col.base.name, "type": col.statistics_type.type_name} for col in columns_to_analyze
             ]
             logger.exception(
                 "failed to analyze table statistics",

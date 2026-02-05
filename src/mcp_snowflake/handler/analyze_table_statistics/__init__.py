@@ -112,8 +112,7 @@ async def handle_analyze_table_statistics(
     # Add unsupported_columns if any exist
     if unsupported_columns:
         response["table_statistics"]["unsupported_columns"] = [
-            {"name": col.name, "data_type": col.data_type.raw_type}
-            for col in unsupported_columns
+            {"name": col.name, "data_type": col.data_type.raw_type} for col in unsupported_columns
         ]
 
     return response

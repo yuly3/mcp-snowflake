@@ -218,9 +218,7 @@ class TestMapErrEnhancedAsync:
             # Create a detailed error message using the arguments
             args_info = f"args={args}" if args else "no args"
             kwargs_info = f"kwargs={kwargs}" if kwargs else "no kwargs"
-            detailed_message = (
-                f"Async error in {fn.__name__}: {args_info}, {kwargs_info}"
-            )
+            detailed_message = f"Async error in {fn.__name__}: {args_info}, {kwargs_info}"
             raise ContractViolationError(detailed_message) from err
 
         @contract_async(map_err=argument_aware_map_err)
@@ -250,12 +248,8 @@ class TestMapErrEnhancedAsync:
             kwargs: dict[str, Any],  # noqa: ARG001
         ) -> NoReturn:
             # Verify that the function is indeed async
-            assert inspect.iscoroutinefunction(fn), (
-                f"{fn.__name__} should be a coroutine function"
-            )
-            raise ContractViolationError(
-                f"Logged error in async {fn.__name__}"
-            ) from err
+            assert inspect.iscoroutinefunction(fn), f"{fn.__name__} should be a coroutine function"
+            raise ContractViolationError(f"Logged error in async {fn.__name__}") from err
 
         @contract_async(map_err=logging_map_err)
         async def async_function_with_error() -> int:

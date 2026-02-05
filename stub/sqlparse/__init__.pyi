@@ -19,9 +19,7 @@ def parse(sql: str, encoding: str = ...) -> tuple[sql.Statement, ...]:
     """
     ...
 
-def parsestream(
-    stream: Any, encoding: str = ...
-) -> Generator[sql.Statement, None, None]:
+def parsestream(stream: Any, encoding: str = ...) -> Generator[sql.Statement, None, None]:
     """Parses sql statements from file-like object.
 
     :param stream: A file-like object.
