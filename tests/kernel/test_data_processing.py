@@ -1,5 +1,7 @@
 """Tests for data processing module."""
 
+from threading import Lock
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -30,7 +32,6 @@ class TestProcessRowData:
         converter: JsonImmutableConverter,
     ) -> None:
         """Test processing a single row with unsupported data type."""
-        from threading import Lock
 
         raw_row = {"id": 1, "name": "Alice", "lock": Lock()}
 

@@ -6,4 +6,4 @@ from sqlparse.engine import grouping
 from sqlparse.engine.filter_stack import FilterStack
 from sqlparse.engine.statement_splitter import StatementSplitter
 
-__all__ = ["grouping", "FilterStack", "StatementSplitter"]
+__all__ = ["FilterStack", "StatementSplitter", "grouping"]

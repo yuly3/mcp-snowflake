@@ -62,7 +62,6 @@ def group_functions(tlist):  # -> None:
 @recurse(sql.Identifier)
 def group_order(tlist):  # -> None:
     """Group together Identifier and Asc/Desc token"""
-    ...
 
 @recurse()
 def align_comments(tlist):  # -> None:

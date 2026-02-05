@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import Callable
 from typing import Any, NoReturn
 
@@ -239,7 +240,6 @@ class TestMapErrEnhancedAsync:
     @pytest.mark.asyncio
     async def test_async_function_signature_preservation(self) -> None:
         """Test that contract_async preserves the async nature of functions."""
-        import inspect
 
         def logging_map_err(
             err: Exception,

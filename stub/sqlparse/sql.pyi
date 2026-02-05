@@ -4,17 +4,16 @@ sqlparse SQL module type stubs.
 This module contains classes representing syntactical elements of SQL.
 """
 
-from typing import Any, Generator, Iterator
+from collections.abc import Generator, Iterator
+from typing import Any
 
 class NameAliasMixin:
     """Implements get_real_name and get_alias."""
     def get_real_name(self) -> str | None:
         """Return the real name (object name) of this identifier."""
-        ...
 
     def get_alias(self) -> str | None:
         """Return the alias for this identifier or ``None``."""
-        ...
 
 class Token:
     """Base class for all other classes in this module.
@@ -63,7 +62,6 @@ class TokenList(Token):
         if *skip_cm* is ``True`` (default: ``False``), comments are
         ignored too.
         """
-        ...
 
     def token_next_by(
         self, i: Any = ..., m: Any = ..., t: Any = ..., idx: int = ..., end: int | None = ...
@@ -79,7 +77,6 @@ class TokenList(Token):
         If *skip_cm* is ``True`` comments are ignored.
         ``None`` is returned if there's no previous token.
         """
-        ...
 
     def token_next(
         self, idx, skip_ws=..., skip_cm=..., _reverse=...
@@ -90,31 +87,24 @@ class TokenList(Token):
         If *skip_cm* is ``True`` comments are ignored.
         ``None`` is returned if there's no next token.
         """
-        ...
 
     def token_index(self, token, start=...):  # -> int:
         """Return list index of token."""
-        ...
 
     def group_tokens(self, grp_cls, start, end, include_end=..., extend=...):
         """Replace tokens by an instance of *grp_cls*."""
-        ...
 
     def insert_before(self, where, token):  # -> None:
         """Inserts *token* before *where*."""
-        ...
 
     def insert_after(self, where, token, skip_ws=...):  # -> None:
         """Inserts *token* after *where*."""
-        ...
 
     def has_alias(self):  # -> bool:
         """Returns ``True`` if an alias is present."""
-        ...
 
     def get_alias(self):  # -> None:
         """Returns the alias for this identifier or ``None``."""
-        ...
 
     def get_name(self):  # -> None:
         """Returns the name of this identifier.
@@ -123,18 +113,15 @@ class TokenList(Token):
         be considered as the name under which the object corresponding to
         this identifier is known within the current statement.
         """
-        ...
 
     def get_real_name(self):  # -> None:
         """Returns the real name (object name) of this identifier."""
-        ...
 
     def get_parent_name(self):  # -> None:
         """Return name of the parent object if any.
 
         A parent object is identified by the first occurring dot.
         """
-        ...
 
 class Statement(TokenList):
     """Represent a SQL statement."""
@@ -149,7 +136,6 @@ class Statement(TokenList):
         Whitespaces and comments at the beginning of the statement
         are ignored.
         """
-        ...
 
 class Identifier(NameAliasMixin, TokenList):
     """Represents an identifier.
@@ -158,19 +144,15 @@ class Identifier(NameAliasMixin, TokenList):
     """
     def is_wildcard(self):  # -> bool:
         """Return ``True`` if this identifier contains a wildcard."""
-        ...
 
     def get_typecast(self):  # -> None:
         """Returns the typecast or ``None`` of this object as a string."""
-        ...
 
     def get_ordering(self):  # -> None:
         """Returns the ordering or ``None`` as uppercase string."""
-        ...
 
     def get_array_indices(self):  # -> Generator[Any | list[Any], Any, None]:
         """Returns an iterator of index token lists"""
-        ...
 
 class IdentifierList(TokenList):
     """A list of :class:`~sqlparse.sql.Identifier`\'s."""
@@ -179,7 +161,6 @@ class IdentifierList(TokenList):
 
         Whitespaces and punctuations are not included in this generator.
         """
-        ...
 
 class TypedLiteral(TokenList):
     """A typed literal, such as "date '2001-09-28'" or "interval '2 hours'"."""
@@ -203,7 +184,6 @@ class SquareBrackets(TokenList):
 class Assignment(TokenList):
     """An assignment like 'var := val;'"""
 
-    ...
 
 class If(TokenList):
     """An 'if' clause with possible 'else if' or 'else' parts."""
@@ -256,17 +236,14 @@ class Case(TokenList):
 
         If an ELSE exists condition is None.
         """
-        ...
 
 class Function(NameAliasMixin, TokenList):
     """A function or procedure call."""
     def get_parameters(self):  # -> Generator[Any, Any, None] | list[Any]:
         """Return a list of parameters."""
-        ...
 
     def get_window(self):  # -> None:
         """Return the window if it exists."""
-        ...
 
 class Begin(TokenList):
     """A BEGIN/END block."""
@@ -277,14 +254,11 @@ class Begin(TokenList):
 class Operation(TokenList):
     """Grouping of operations"""
 
-    ...
 
 class Values(TokenList):
     """Grouping of values"""
 
-    ...
 
 class Command(TokenList):
     """Grouping of CLI commands."""
 
-    ...

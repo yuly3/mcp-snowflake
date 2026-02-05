@@ -141,11 +141,7 @@ class SQLWriteDetector:
             raise SQLAnalysisError("Failed to parse SQL")
 
         # If there are multiple statements, determine as Write if at least one is a Write operation
-        for statement in parsed_statements:
-            if self._is_write_statement(statement):
-                return True
-
-        return False
+        return any(self._is_write_statement(statement) for statement in parsed_statements)
 
     def _is_write_statement(self, statement: sqlparse.sql.Statement) -> bool:
         """Determine whether an individual statement is a Write operation.
@@ -190,7 +186,7 @@ class SQLWriteDetector:
                 return first_keyword not in self.READ_KEYWORDS
 
         # SELECT is clearly a Read operation, other unknown types are considered Write for safety
-        return stmt_type not in ("SELECT",)
+        return stmt_type != "SELECT"
 
     def analyze_sql(self, sql: str) -> SQLAnalysisResult:
         """Return detailed analysis result of SQL.

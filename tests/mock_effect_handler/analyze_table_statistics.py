@@ -58,14 +58,13 @@ class MockAnalyzeTableStatistics:
         if self.should_raise:
             raise self.should_raise
 
-        if self.statistics_result is None:
+        statistics_result = self.statistics_result
+        if statistics_result is None:
             # Return default statistics result
             statistics_result = {
                 "TOTAL_ROWS": 1000,
                 # Add default column statistics if needed
             }
-        else:
-            statistics_result = self.statistics_result
 
         # Parse the dict result using the moved parser
         return parse_statistics_result(statistics_result, columns_to_analyze)

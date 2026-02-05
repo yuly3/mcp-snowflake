@@ -12,11 +12,9 @@ def split_unquoted_newlines(stmt):  # -> list[str]:
 
     Unlike str.splitlines(), this will ignore CR/LF/CR+LF if the requisite
     character is inside of a string."""
-    ...
 
 def remove_quotes(val):  # -> None:
     """Helper that removes surrounding quotes from strings."""
-    ...
 
 def recurse(*cls):  # -> Callable[..., Callable[..., None]]:
     """Function decorator to help with recursion
@@ -24,7 +22,6 @@ def recurse(*cls):  # -> Callable[..., Callable[..., None]]:
     :param cls: Classes to not recurse over
     :return: function
     """
-    ...
 
 def imt(token, i=..., m=..., t=...):  # -> bool:
     """Helper function to simplify comparisons Instance, Match and TokenType
@@ -34,11 +31,9 @@ def imt(token, i=..., m=..., t=...):  # -> bool:
     :param t: TokenType or Tuple/List of TokenTypes
     :return:  bool
     """
-    ...
 
 def consume(iterator, n):  # -> None:
     """Advance the iterator n-steps ahead. If n is none, consume entirely."""
-    ...
 
 @contextmanager
 def offset(filter_, n=...):  # -> Generator[None, Any, None]:

@@ -1,3 +1,5 @@
+import os
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -23,7 +25,6 @@ def test_settings(config_path: Path) -> None:
 def test_tools_default_all_enabled() -> None:
     """Test that all tools are enabled by default when not specified in config."""
     # Create a minimal valid TOML content for testing tools only
-    import tempfile
 
     toml_content = """
 [snowflake]
@@ -50,8 +51,6 @@ password = "test"
         assert settings.tools.list_views is True
         assert settings.tools.sample_table_data is True
     finally:
-        from pathlib import Path
-
         Path(temp_file).unlink()
 
 
@@ -68,8 +67,6 @@ def test_tools_toml_override(config_path: Path) -> None:
 
 def test_tools_env_override() -> None:
     """Test that environment variables can override tool settings."""
-    import os
-    import tempfile
 
     # Create a minimal valid TOML content
     toml_content = """
@@ -101,7 +98,6 @@ password = "test"
         # Clean up environment variables and temp file
         _ = os.environ.pop("TOOLS__LIST_TABLES", None)
         _ = os.environ.pop("TOOLS__EXECUTE_QUERY", None)
-        from pathlib import Path
 
         Path(temp_file).unlink()
 

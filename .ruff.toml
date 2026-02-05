@@ -33,6 +33,10 @@ line-length = 119
 target-version = "py313"
 
 [lint]
+exclude = [
+    "stub/**",
+]
+
 select = [
     "A",
     "ANN0",
@@ -111,13 +115,8 @@ ignore = [
 unfixable = [
 ]
 
-# Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-
-# 複数行stringの暗黙的concatを許すか
 flake8-implicit-str-concat.allow-multiline = false
-
-# 遅延importを強制するmodule
 flake8-tidy-imports.banned-module-level-imports = [
     "lightgbm",
     "scipy",

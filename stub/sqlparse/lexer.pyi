@@ -14,28 +14,23 @@ class Lexer:
     def get_default_instance(cls):  # -> Self:
         """Returns the lexer instance used internally
         by the sqlparse core functions."""
-        ...
 
     def default_initialization(self):  # -> None:
         """Initialize the lexer with default dictionaries.
         Useful if you need to revert custom syntax settings."""
-        ...
 
     def clear(self):  # -> None:
         """Clear all syntax configurations.
         Useful if you want to load a reduced set of syntax configurations.
         After this call, regexps and keyword dictionaries need to be loaded
         to make the lexer functional again."""
-        ...
 
     def set_SQL_REGEX(self, SQL_REGEX):  # -> None:
         """Set the list of regex that will parse the SQL."""
-        ...
 
     def add_keywords(self, keywords):  # -> None:
         """Add keyword dictionaries. Keywords are looked up in the same order
         that dictionaries were added."""
-        ...
 
     def is_keyword(self, value):  # -> tuple[Any, Any] | tuple[Any | _TokenType, Any]:
         """Checks for a keyword.
@@ -43,7 +38,6 @@ class Lexer:
         If the given value is in one of the KEYWORDS_* dictionary
         it's considered a keyword. Otherwise, tokens.Name is returned.
         """
-        ...
 
     def get_tokens(
         self, text, encoding=...
@@ -60,7 +54,6 @@ class Lexer:
 
         ``stack`` is the initial stack (default: ``['root']``)
         """
-        ...
 
 def tokenize(
     sql, encoding=...
@@ -70,4 +63,3 @@ def tokenize(
     Tokenize *sql* using the :class:`Lexer` and return a 2-tuple stream
     of ``(token type, value)`` items.
     """
-    ...
