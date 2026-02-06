@@ -14,7 +14,7 @@ from .adapter import (
     ListViewsEffectHandler,
     SampleTableDataEffectHandler,
 )
-from .settings import SnowflakeSettings, ToolsSettings
+from .settings import ExecuteQuerySettings, SnowflakeSettings, ToolsSettings
 from .snowflake_client import SnowflakeClient
 from .tool import (
     AnalyzeTableStatisticsTool,
@@ -42,6 +42,7 @@ class ServerContext:
         thread_pool_executor: ThreadPoolExecutor,
         snowflake_settings: SnowflakeSettings,
         tools_settings: ToolsSettings,
+        execute_query_settings: ExecuteQuerySettings,
     ) -> None:
         """Prepare the server context with client and tools.
 
@@ -66,6 +67,7 @@ class ServerContext:
             ExecuteQueryTool(
                 self._json_converter,
                 ExecuteQueryEffectHandler(self._snowflake_client),
+                timeout_seconds_max=execute_query_settings.timeout_seconds_max,
             ),
             ListSchemasTool(ListSchemasEffectHandler(self._snowflake_client)),
             ListTablesTool(ListTablesEffectHandler(self._snowflake_client)),

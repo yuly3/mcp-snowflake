@@ -15,7 +15,12 @@ from snowflake.connector import (
 from cattrs_converter import JsonImmutableConverter
 from expression.contract import ContractViolationError
 
-from ..handler import EffectExecuteQuery, ExecuteQueryArgs, handle_execute_query
+from ..handler import (
+    DEFAULT_TIMEOUT_SECONDS,
+    EffectExecuteQuery,
+    ExecuteQueryArgs,
+    handle_execute_query,
+)
 from .base import Tool
 
 
@@ -24,9 +29,11 @@ class ExecuteQueryTool(Tool):
         self,
         json_converter: JsonImmutableConverter,
         effect_handler: EffectExecuteQuery,
+        timeout_seconds_max: int = 300,
     ) -> None:
         self.json_converter = json_converter
         self.effect_handler = effect_handler
+        self.timeout_seconds_max = timeout_seconds_max
 
     @property
     def name(self) -> str:
@@ -36,8 +43,15 @@ class ExecuteQueryTool(Tool):
         self,
         arguments: Mapping[str, Any] | None,
     ) -> Sequence[types.Content]:
+        payload = dict(arguments or {})
+        if "timeout_seconds" not in payload:
+            payload["timeout_seconds"] = min(DEFAULT_TIMEOUT_SECONDS, self.timeout_seconds_max)
+
         try:
-            args = ExecuteQueryArgs.model_validate(arguments or {})
+            args = ExecuteQueryArgs.model_validate(
+                payload,
+                context={"timeout_seconds_max": self.timeout_seconds_max},
+            )
         except ValidationError as e:
             return [
                 types.TextContent(
@@ -75,6 +89,7 @@ class ExecuteQueryTool(Tool):
 
     @property
     def definition(self) -> types.Tool:
+        default_timeout = min(DEFAULT_TIMEOUT_SECONDS, self.timeout_seconds_max)
         return types.Tool(
             name=self.name,
             description="Execute a read-only SQL query and return the results. Only SELECT, SHOW, DESCRIBE, EXPLAIN and similar read operations are allowed.",
@@ -87,10 +102,10 @@ class ExecuteQueryTool(Tool):
                     },
                     "timeout_seconds": {
                         "type": "integer",
-                        "description": "Query timeout in seconds (default: 30)",
-                        "default": 30,
+                        "description": f"Query timeout in seconds (default: {default_timeout}, max: {self.timeout_seconds_max})",
+                        "default": default_timeout,
                         "minimum": 1,
-                        "maximum": 300,
+                        "maximum": self.timeout_seconds_max,
                     },
                 },
                 "required": ["sql"],

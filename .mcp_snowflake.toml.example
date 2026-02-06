@@ -19,3 +19,7 @@ client_store_temporary_credential = true  # ID token cache for externalbrowser
 # list_tables = true
 # list_views = true
 # sample_table_data = true
+
+# [execute_query]
+# Maximum value accepted by execute_query.timeout_seconds
+# timeout_seconds_max = 300  # Optional (max: 3600)

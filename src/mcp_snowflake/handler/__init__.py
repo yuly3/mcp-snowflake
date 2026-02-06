@@ -9,6 +9,7 @@ from .describe_table import (
     handle_describe_table,
 )
 from .execute_query import (
+    DEFAULT_TIMEOUT_SECONDS,
     EffectExecuteQuery,
     ExecuteQueryArgs,
     handle_execute_query,
@@ -23,6 +24,7 @@ from .sample_table_data import (
 )
 
 __all__ = [
+    "DEFAULT_TIMEOUT_SECONDS",
     "AnalyzeTableStatisticsArgs",
     "DescribeTableArgs",
     "EffectAnalyzeTableStatistics",

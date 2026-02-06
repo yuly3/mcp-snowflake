@@ -63,6 +63,7 @@ def test_build_tools_respects_settings(
         mock_thread_pool_executor,
         mock_snowflake_settings,
         base_settings.tools,
+        base_settings.execute_query,
     )
 
     registered_tool_names = set(server_context.tool_names())

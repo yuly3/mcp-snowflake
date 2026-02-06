@@ -62,9 +62,16 @@ class ToolsSettings(BaseModel):
         return enabled_tools
 
 
+class ExecuteQuerySettings(BaseModel):
+    """Settings for execute_query tool behavior."""
+
+    timeout_seconds_max: int = Field(300, ge=1, le=3600, init=False)
+
+
 class Settings(BaseSettings):
     snowflake: SnowflakeSettings = Field(default_factory=SnowflakeSettings)
     tools: ToolsSettings = Field(default_factory=ToolsSettings)
+    execute_query: ExecuteQuerySettings = Field(default_factory=ExecuteQuerySettings)
 
     @classmethod
     def settings_customise_sources(

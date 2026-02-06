@@ -24,6 +24,7 @@ def test_settings(config_path: Path) -> None:
     assert settings.snowflake.password.get_secret_value() == "dummy"
     assert settings.snowflake.authenticator == "SNOWFLAKE"
     assert settings.snowflake.client_store_temporary_credential is True
+    assert settings.execute_query.timeout_seconds_max == 300
 
 
 def test_settings_externalbrowser_without_password() -> None:
@@ -100,6 +101,56 @@ password = "test"
         assert settings.tools.list_tables is True
         assert settings.tools.list_views is True
         assert settings.tools.sample_table_data is True
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_execute_query_timeout_max_toml_override() -> None:
+    """Test that TOML config can override execute_query timeout max."""
+    toml_content = """
+[snowflake]
+account = "test"
+role = "test"
+warehouse = "test"
+user = "test"
+password = "test"
+
+[execute_query]
+timeout_seconds_max = 1800
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        settings = Settings.build(SettingsConfigDict(toml_file=temp_file))
+        assert settings.execute_query.timeout_seconds_max == 1800
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_execute_query_timeout_max_greater_than_one_hour_fails() -> None:
+    """Test that timeout max above one hour fails validation at startup."""
+    toml_content = """
+[snowflake]
+account = "test"
+role = "test"
+warehouse = "test"
+user = "test"
+password = "test"
+
+[execute_query]
+timeout_seconds_max = 3601
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        with pytest.raises(ValidationError, match="less than or equal to 3600"):
+            _ = Settings.build(SettingsConfigDict(toml_file=temp_file))
     finally:
         Path(temp_file).unlink()
 

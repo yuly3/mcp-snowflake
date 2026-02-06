@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import Any, Protocol, TypedDict
 
 from more_itertools import first
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationInfo, model_validator
 
 from cattrs_converter import Jsonable, JsonImmutableConverter
 from kernel import DataProcessingResult
@@ -13,6 +13,9 @@ from ..sql_analyzer import SQLWriteDetector
 from ..stopwatch import StopWatch
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_TIMEOUT_SECONDS = 30
+DEFAULT_TIMEOUT_SECONDS_MAX = 300
 
 
 class QueryResultDict(TypedDict):
@@ -33,7 +36,18 @@ class ExecuteQueryJsonResponse(TypedDict):
 
 class ExecuteQueryArgs(BaseModel):
     sql: str
-    timeout_seconds: int = Field(default=30, ge=1)
+    timeout_seconds: int = Field(default=DEFAULT_TIMEOUT_SECONDS, ge=1)
+
+    @model_validator(mode="after")
+    def validate_timeout_seconds_max(self, info: ValidationInfo) -> "ExecuteQueryArgs":
+        max_timeout = DEFAULT_TIMEOUT_SECONDS_MAX
+        if isinstance(info.context, dict) and "timeout_seconds_max" in info.context:
+            max_timeout = int(info.context["timeout_seconds_max"])
+
+        if self.timeout_seconds > max_timeout:
+            msg = f"timeout_seconds must be less than or equal to {max_timeout}"
+            raise ValueError(msg)
+        return self
 
 
 class EffectExecuteQuery(Protocol):

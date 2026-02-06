@@ -29,6 +29,22 @@ class TestExecuteQueryArgs:
         assert args.sql == "SELECT 1"
         assert args.timeout_seconds == 60
 
+    def test_valid_args_with_timeout_max_context(self) -> None:
+        """Test timeout validation with custom max timeout from context."""
+        args = ExecuteQueryArgs.model_validate(
+            {"sql": "SELECT 1", "timeout_seconds": 120},
+            context={"timeout_seconds_max": 120},
+        )
+        assert args.timeout_seconds == 120
+
+    def test_timeout_exceeds_timeout_max_context(self) -> None:
+        """Test validation error when timeout exceeds custom max timeout."""
+        with pytest.raises(ValidationError, match="less than or equal to 60"):
+            _ = ExecuteQueryArgs.model_validate(
+                {"sql": "SELECT 1", "timeout_seconds": 61},
+                context={"timeout_seconds_max": 60},
+            )
+
     def test_missing_sql(self) -> None:
         """Test missing sql argument."""
         with pytest.raises(ValidationError):

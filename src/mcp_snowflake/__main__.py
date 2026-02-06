@@ -71,6 +71,7 @@ async def main() -> None:
             executor,
             settings.snowflake,
             settings.tools,
+            settings.execute_query,
         )
 
         logger.info("Snowflake client initialized successfully")

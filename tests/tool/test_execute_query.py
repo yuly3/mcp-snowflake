@@ -51,6 +51,20 @@ class TestExecuteQueryTool:
         properties = input_schema["properties"]
         assert "sql" in properties
         assert "timeout_seconds" in properties
+        assert properties["timeout_seconds"]["maximum"] == 300
+        assert properties["timeout_seconds"]["description"] == "Query timeout in seconds (default: 30, max: 300)"
+
+    def test_definition_property_with_custom_timeout_max(self) -> None:
+        """Test definition property with custom timeout max."""
+        converter = JsonImmutableConverter()
+        mock_effect = MockExecuteQuery()
+        tool = ExecuteQueryTool(converter, mock_effect, timeout_seconds_max=1800)
+        definition = tool.definition
+
+        assert definition.inputSchema is not None
+        timeout = definition.inputSchema["properties"]["timeout_seconds"]
+        assert timeout["maximum"] == 1800
+        assert timeout["description"] == "Query timeout in seconds (default: 30, max: 1800)"
 
     @pytest.mark.asyncio
     async def test_perform_success(self) -> None:
@@ -201,6 +215,20 @@ class TestExecuteQueryTool:
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
         assert "Error: Invalid arguments for execute_query:" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_perform_timeout_exceeds_custom_max(self) -> None:
+        """Test validation error when timeout exceeds configured max."""
+        converter = JsonImmutableConverter()
+        mock_effect = MockExecuteQuery()
+        tool = ExecuteQueryTool(converter, mock_effect, timeout_seconds_max=45)
+
+        result = await tool.perform({"sql": "SELECT 1", "timeout_seconds": 46})
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert "Error: Invalid arguments for execute_query:" in result[0].text
+        assert "less than or equal to 45" in result[0].text
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(

@@ -62,6 +62,10 @@ list_schemas = true  # Optional
 list_tables = true  # Optional
 list_views = true  # Optional
 sample_table_data = true  # Optional
+
+[execute_query]
+# Maximum value accepted by execute_query.timeout_seconds (default: 300, max: 3600)
+timeout_seconds_max = 300  # Optional
 ```
 
 ### Using Environment Variables
@@ -87,6 +91,7 @@ Set the following environment variables:
 - `TOOLS__LIST_TABLES`: Enable/disable list_tables tool ("true" or "false", default: "true")
 - `TOOLS__LIST_VIEWS`: Enable/disable list_views tool ("true" or "false", default: "true")
 - `TOOLS__SAMPLE_TABLE_DATA`: Enable/disable sample_table_data tool ("true" or "false", default: "true")
+- `EXECUTE_QUERY__TIMEOUT_SECONDS_MAX`: Maximum allowed `timeout_seconds` for execute_query (default: 300, max: 3600). Values above 3600 fail server startup.
 
 Example:
 ```bash
@@ -257,7 +262,7 @@ Execute read-only SQL queries and return structured results. Only SELECT, SHOW, 
 
 **Parameters:**
 - `sql` (string, required): SQL query to execute (read operations only)
-- `timeout_seconds` (integer, optional): Query timeout in seconds (default: 30, max: 300)
+- `timeout_seconds` (integer, optional): Query timeout in seconds (default: 30, max: `execute_query.timeout_seconds_max`)
 
 **Example:**
 ```json
