@@ -43,6 +43,35 @@ class TestListViewsArgs:
         assert args.database == "test_db"
         assert args.schema_ == Schema("")
 
+    def test_valid_filter_contains(self) -> None:
+        """Test valid contains filter."""
+        args = ListViewsArgs.model_validate({
+            "database": "test_db",
+            "schema": "test_schema",
+            "filter": {"type": "contains", "value": "ord"},
+        })
+        assert args.filter_ is not None
+        assert args.filter_.type_ == "contains"
+        assert args.filter_.value == "ord"
+
+    def test_invalid_filter_type(self) -> None:
+        """Test invalid filter type."""
+        with pytest.raises(ValidationError):
+            _ = ListViewsArgs.model_validate({
+                "database": "test_db",
+                "schema": "test_schema",
+                "filter": {"type": "starts_with", "value": "ord"},
+            })
+
+    def test_invalid_filter_empty_value(self) -> None:
+        """Test filter with empty value."""
+        with pytest.raises(ValidationError):
+            _ = ListViewsArgs.model_validate({
+                "database": "test_db",
+                "schema": "test_schema",
+                "filter": {"type": "contains", "value": ""},
+            })
+
 
 class TestHandleListViews:
     """Test handle_list_views function."""
@@ -145,3 +174,39 @@ class TestHandleListViews:
         assert views_info["database"] == "case_db"
         assert views_info["schema"] == "case_schema"
         assert views_info["views"] == ["MyView", "my_view", "MY_VIEW"]
+
+    @pytest.mark.asyncio
+    async def test_filter_contains_applies_case_insensitive_match(self) -> None:
+        """Test that contains filter is applied case-insensitively."""
+        # Arrange
+        args = ListViewsArgs.model_validate({
+            "database": "case_db",
+            "schema": "case_schema",
+            "filter": {"type": "contains", "value": "ord"},
+        })
+        effect_handler = MockListViews(result_data=[View("OrderSummary"), View("order_items"), View("CUSTOMERS")])
+
+        # Act
+        result = await handle_list_views(args, effect_handler)
+
+        # Assert
+        views_info = result["views_info"]
+        assert views_info["views"] == ["OrderSummary", "order_items"]
+
+    @pytest.mark.asyncio
+    async def test_filter_contains_with_no_match(self) -> None:
+        """Test contains filter when no names match."""
+        # Arrange
+        args = ListViewsArgs.model_validate({
+            "database": "case_db",
+            "schema": "case_schema",
+            "filter": {"type": "contains", "value": "xyz"},
+        })
+        effect_handler = MockListViews(result_data=[View("OrderSummary"), View("CUSTOMERS")])
+
+        # Act
+        result = await handle_list_views(args, effect_handler)
+
+        # Assert
+        views_info = result["views_info"]
+        assert views_info["views"] == []

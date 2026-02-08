@@ -76,6 +76,23 @@ class ListTablesTool(Tool):
                         "type": "string",
                         "description": "Schema name to retrieve tables from",
                     },
+                    "filter": {
+                        "type": "object",
+                        "description": "Optional filter for table names",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": ["contains"],
+                                "description": "Filter type (currently only contains is supported)",
+                            },
+                            "value": {
+                                "type": "string",
+                                "description": "Substring to match in table names",
+                                "minLength": 1,
+                            },
+                        },
+                        "required": ["type", "value"],
+                    },
                 },
                 "required": ["database", "schema"],
             },

@@ -183,6 +183,9 @@ Retrieve a list of tables from a specified database and schema.
 **Parameters:**
 - `database` (string, required): Database name to retrieve tables from
 - `schema` (string, required): Schema name to retrieve tables from
+- `filter` (object, optional): Name filter
+  - `type` (string, required): Filter type (`contains`)
+  - `value` (string, required): Substring to match in table names (case-insensitive)
 
 **Example:**
 ```json
@@ -190,7 +193,11 @@ Retrieve a list of tables from a specified database and schema.
   "name": "list_tables",
   "arguments": {
     "database": "MY_DATABASE",
-    "schema": "PUBLIC"
+    "schema": "PUBLIC",
+    "filter": {
+      "type": "contains",
+      "value": "order"
+    }
   }
 }
 ```
@@ -201,6 +208,9 @@ Retrieve a list of views from a specified database and schema.
 **Parameters:**
 - `database` (string, required): Database name to retrieve views from
 - `schema` (string, required): Schema name to retrieve views from
+- `filter` (object, optional): Name filter
+  - `type` (string, required): Filter type (`contains`)
+  - `value` (string, required): Substring to match in view names (case-insensitive)
 
 **Example:**
 ```json
@@ -208,7 +218,11 @@ Retrieve a list of views from a specified database and schema.
   "name": "list_views",
   "arguments": {
     "database": "MY_DATABASE",
-    "schema": "PUBLIC"
+    "schema": "PUBLIC",
+    "filter": {
+      "type": "contains",
+      "value": "order"
+    }
   }
 }
 ```

@@ -6,12 +6,15 @@ from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, View
 
+from .name_filter import NameFilter, apply_name_filter
+
 logger = logging.getLogger(__name__)
 
 
 class ListViewsArgs(BaseModel):
     database: DataBase
     schema_: Schema = Field(alias="schema")
+    filter_: NameFilter | None = Field(default=None, alias="filter")
 
 
 class ViewsInfoDict(TypedDict):
@@ -96,11 +99,12 @@ async def handle_list_views(
         When an unsupported database feature is used
     """
     views = await effect_handler.list_views(args.database, args.schema_)
+    filtered_views = apply_name_filter([str(view) for view in views], args.filter_)
 
     return ListViewsJsonResponse(
         views_info={
             "database": str(args.database),
             "schema": str(args.schema_),
-            "views": [str(view) for view in views],
+            "views": filtered_views,
         }
     )

@@ -50,6 +50,10 @@ class TestListViewsTool:
         properties = input_schema["properties"]
         assert "database" in properties
         assert "schema" in properties
+        assert "filter" in properties
+        assert properties["filter"]["type"] == "object"
+        assert set(properties["filter"]["required"]) == {"type", "value"}
+        assert properties["filter"]["properties"]["type"]["enum"] == ["contains"]
 
     @pytest.mark.asyncio
     async def test_perform_success(self) -> None:
@@ -109,6 +113,26 @@ class TestListViewsTool:
         assert views_info["views"] == []
 
     @pytest.mark.asyncio
+    async def test_perform_with_filter(self) -> None:
+        """Test perform with contains filter."""
+        custom_views = [View("ORDERS"), View("ORDER_ITEMS"), View("CUSTOMERS")]
+        mock_effect = MockListViews(result_data=custom_views)
+        tool = ListViewsTool(mock_effect)
+
+        arguments = {
+            "database": "CUSTOM_DB",
+            "schema": "CUSTOM_SCHEMA",
+            "filter": {"type": "contains", "value": "ord"},
+        }
+        result = await tool.perform(arguments)
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        response_data = json.loads(result[0].text)
+        views_info = response_data["views_info"]
+        assert views_info["views"] == ["ORDERS", "ORDER_ITEMS"]
+
+    @pytest.mark.asyncio
     async def test_perform_with_empty_arguments(self) -> None:
         """Test perform with empty arguments."""
         mock_effect = MockListViews()
@@ -153,6 +177,23 @@ class TestListViewsTool:
         tool = ListViewsTool(mock_effect)
 
         arguments = {"database": "TEST_DB"}
+        result = await tool.perform(arguments)
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert result[0].text.startswith("Error: Invalid arguments for list_views:")
+
+    @pytest.mark.asyncio
+    async def test_perform_with_invalid_filter_type(self) -> None:
+        """Test perform with invalid filter type."""
+        mock_effect = MockListViews()
+        tool = ListViewsTool(mock_effect)
+
+        arguments = {
+            "database": "TEST_DB",
+            "schema": "TEST_SCHEMA",
+            "filter": {"type": "starts_with", "value": "ord"},
+        }
         result = await tool.perform(arguments)
 
         assert len(result) == 1

@@ -6,12 +6,15 @@ from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, Table
 
+from .name_filter import NameFilter, apply_name_filter
+
 logger = logging.getLogger(__name__)
 
 
 class ListTablesArgs(BaseModel):
     database: DataBase
     schema_: Schema = Field(alias="schema")
+    filter_: NameFilter | None = Field(default=None, alias="filter")
 
 
 class TablesInfoDict(TypedDict):
@@ -96,11 +99,12 @@ async def handle_list_tables(
         When an unsupported database feature is used
     """
     tables = await effect_handler.list_tables(args.database, args.schema_)
+    filtered_tables = apply_name_filter([str(table) for table in tables], args.filter_)
 
     return ListTablesJsonResponse(
         tables_info={
             "database": str(args.database),
             "schema": str(args.schema_),
-            "tables": [str(table) for table in tables],
+            "tables": filtered_tables,
         }
     )

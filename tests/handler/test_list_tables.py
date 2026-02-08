@@ -43,6 +43,35 @@ class TestListTablesArgs:
         assert args.database == "test_db"
         assert args.schema_ == Schema("")
 
+    def test_valid_filter_contains(self) -> None:
+        """Test valid contains filter."""
+        args = ListTablesArgs.model_validate({
+            "database": "test_db",
+            "schema": "test_schema",
+            "filter": {"type": "contains", "value": "ord"},
+        })
+        assert args.filter_ is not None
+        assert args.filter_.type_ == "contains"
+        assert args.filter_.value == "ord"
+
+    def test_invalid_filter_type(self) -> None:
+        """Test invalid filter type."""
+        with pytest.raises(ValidationError):
+            _ = ListTablesArgs.model_validate({
+                "database": "test_db",
+                "schema": "test_schema",
+                "filter": {"type": "starts_with", "value": "ord"},
+            })
+
+    def test_invalid_filter_empty_value(self) -> None:
+        """Test filter with empty value."""
+        with pytest.raises(ValidationError):
+            _ = ListTablesArgs.model_validate({
+                "database": "test_db",
+                "schema": "test_schema",
+                "filter": {"type": "contains", "value": ""},
+            })
+
 
 class TestHandleListTables:
     """Test handle_list_tables function."""
@@ -139,3 +168,39 @@ class TestHandleListTables:
         assert tables_info["database"] == "case_db"
         assert tables_info["schema"] == "case_schema"
         assert tables_info["tables"] == ["MyTable", "my_table", "MY_TABLE"]
+
+    @pytest.mark.asyncio
+    async def test_filter_contains_applies_case_insensitive_match(self) -> None:
+        """Test that contains filter is applied case-insensitively."""
+        # Arrange
+        args = ListTablesArgs.model_validate({
+            "database": "case_db",
+            "schema": "case_schema",
+            "filter": {"type": "contains", "value": "ord"},
+        })
+        effect_handler = MockListTables(result_data=[Table("Orders"), Table("order_items"), Table("CUSTOMERS")])
+
+        # Act
+        result = await handle_list_tables(args, effect_handler)
+
+        # Assert
+        tables_info = result["tables_info"]
+        assert tables_info["tables"] == ["Orders", "order_items"]
+
+    @pytest.mark.asyncio
+    async def test_filter_contains_with_no_match(self) -> None:
+        """Test contains filter when no names match."""
+        # Arrange
+        args = ListTablesArgs.model_validate({
+            "database": "case_db",
+            "schema": "case_schema",
+            "filter": {"type": "contains", "value": "xyz"},
+        })
+        effect_handler = MockListTables(result_data=[Table("Orders"), Table("CUSTOMERS")])
+
+        # Act
+        result = await handle_list_tables(args, effect_handler)
+
+        # Assert
+        tables_info = result["tables_info"]
+        assert tables_info["tables"] == []
