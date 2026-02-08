@@ -11,6 +11,7 @@ A Model Context Protocol (MCP) server that connects to Snowflake databases and e
 - **Execute Query**: Execute read-only SQL queries and return results
 - **Sample Table Data**: Retrieve sample data from a specified table using Snowflake's SAMPLE ROW clause
 - **Analyze Table Statistics**: Generate comprehensive statistical analysis for table columns using Snowflake's high-performance approximation functions (supports numeric, string, date, and boolean columns)
+- **Profile Semi-Structured Columns**: Profile VARIANT/ARRAY/OBJECT columns with sampled flatten-based analysis
 
 ## Installation
 
@@ -61,11 +62,17 @@ execute_query = true  # Optional
 list_schemas = true  # Optional
 list_tables = true  # Optional
 list_views = true  # Optional
+profile_semi_structured_columns = true  # Optional
 sample_table_data = true  # Optional
 
 [execute_query]
 # Maximum value accepted by execute_query.timeout_seconds (default: 300, max: 3600)
 timeout_seconds_max = 300  # Optional
+
+[profile_semi_structured_columns]
+# Query timeouts for semi-structured profiling (default base: 90, path: 180)
+base_query_timeout_seconds = 90  # Optional (max: 3600)
+path_query_timeout_seconds = 180  # Optional (max: 3600, must be >= base_query_timeout_seconds)
 ```
 
 ### Using Environment Variables
@@ -90,8 +97,11 @@ Set the following environment variables:
 - `TOOLS__LIST_SCHEMAS`: Enable/disable list_schemas tool ("true" or "false", default: "true")
 - `TOOLS__LIST_TABLES`: Enable/disable list_tables tool ("true" or "false", default: "true")
 - `TOOLS__LIST_VIEWS`: Enable/disable list_views tool ("true" or "false", default: "true")
+- `TOOLS__PROFILE_SEMI_STRUCTURED_COLUMNS`: Enable/disable profile_semi_structured_columns tool ("true" or "false", default: "true")
 - `TOOLS__SAMPLE_TABLE_DATA`: Enable/disable sample_table_data tool ("true" or "false", default: "true")
 - `EXECUTE_QUERY__TIMEOUT_SECONDS_MAX`: Maximum allowed `timeout_seconds` for execute_query (default: 300, max: 3600). Values above 3600 fail server startup.
+- `PROFILE_SEMI_STRUCTURED_COLUMNS__BASE_QUERY_TIMEOUT_SECONDS`: Base query timeout for profile_semi_structured_columns (default: 90, max: 3600)
+- `PROFILE_SEMI_STRUCTURED_COLUMNS__PATH_QUERY_TIMEOUT_SECONDS`: Path query timeout for profile_semi_structured_columns (default: 180, max: 3600, must be >= base_query_timeout_seconds)
 
 Example:
 ```bash
@@ -160,6 +170,7 @@ uvx mcp-snowflake --config {your-config-path}
 - [`execute_query`](#execute_query) - Execute read-only SQL queries and return structured results
 - [`sample_table_data`](#sample_table_data) - Retrieve sample data from a specified table
 - [`analyze_table_statistics`](#analyze_table_statistics) - Generate comprehensive statistical analysis for table columns
+- [`profile_semi_structured_columns`](#profile_semi_structured_columns) - Profile VARIANT/ARRAY/OBJECT columns and nested paths
 
 #### list_schemas
 Retrieve a list of schemas from a specified database.
@@ -356,6 +367,46 @@ Returns comprehensive statistics tailored to each column type:
 - **String columns**: count, min/max length, distinct count, top K most frequent values
 - **Date columns**: count, min/max dates, date range in days, distinct count
 - **Boolean columns**: count, true/false counts and percentages (both NULL-inclusive and NULL-exclusive)
+
+#### profile_semi_structured_columns
+Profile semi-structured columns (`VARIANT`, `ARRAY`, `OBJECT`) using sampled recursive flatten analysis.
+
+**Parameters:**
+- `database` (string, required): Database name containing the table
+- `schema` (string, required): Schema name containing the table
+- `table` (string, required): Name of the table to profile
+- `columns` (array of strings, optional): Target columns (empty means auto-select all semi-structured columns)
+- `sample_rows` (integer, optional): Sample row count (default: 10000, min: 1, max: 200000)
+- `max_depth` (integer, optional): Maximum recursive path depth (default: 4, min: 1, max: 20)
+- `top_k_limit` (integer, optional): Top-k limit for frequent values and keys (default: 20, min: 1, max: 100)
+- `include_path_stats` (boolean, optional): Include path-level profiling (default: true)
+- `include_value_samples` (boolean, optional): Include path-level top_values samples (default: false)
+
+**Example:**
+```json
+{
+  "name": "profile_semi_structured_columns",
+  "arguments": {
+    "database": "MY_DATABASE",
+    "schema": "PUBLIC",
+    "table": "EVENT_LOGS",
+    "sample_rows": 10000,
+    "max_depth": 4,
+    "top_k_limit": 20,
+    "include_path_stats": true
+  }
+}
+```
+
+**Response Format:**
+- `profile_info`: table metadata, row counts, analyzed columns
+- `column_profiles`: null ratio, top-level type distribution, array length stats, top-level keys top-k
+- `path_profiles`: path-wise type distribution, approx distinct count, null ratio, optional top values
+- `warnings`: sampling/depth-limit and approximation notes
+
+**Timeout Configuration:**
+- `profile_semi_structured_columns.base_query_timeout_seconds` (default: 90)
+- `profile_semi_structured_columns.path_query_timeout_seconds` (default: 180)
 
 ## Development
 

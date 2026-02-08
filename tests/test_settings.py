@@ -25,6 +25,8 @@ def test_settings(config_path: Path) -> None:
     assert settings.snowflake.authenticator == "SNOWFLAKE"
     assert settings.snowflake.client_store_temporary_credential is True
     assert settings.execute_query.timeout_seconds_max == 300
+    assert settings.profile_semi_structured_columns.base_query_timeout_seconds == 90
+    assert settings.profile_semi_structured_columns.path_query_timeout_seconds == 180
 
 
 def test_settings_externalbrowser_without_password() -> None:
@@ -100,6 +102,7 @@ password = "test"
         assert settings.tools.list_schemas is True
         assert settings.tools.list_tables is True
         assert settings.tools.list_views is True
+        assert settings.tools.profile_semi_structured_columns is True
         assert settings.tools.sample_table_data is True
     finally:
         Path(temp_file).unlink()
@@ -150,6 +153,59 @@ timeout_seconds_max = 3601
 
     try:
         with pytest.raises(ValidationError, match="less than or equal to 3600"):
+            _ = Settings.build(SettingsConfigDict(toml_file=temp_file))
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_profile_timeout_toml_override() -> None:
+    """Test that TOML config can override profile tool timeouts."""
+    toml_content = """
+[snowflake]
+account = "test"
+role = "test"
+warehouse = "test"
+user = "test"
+password = "test"
+
+[profile_semi_structured_columns]
+base_query_timeout_seconds = 120
+path_query_timeout_seconds = 300
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        settings = Settings.build(SettingsConfigDict(toml_file=temp_file))
+        assert settings.profile_semi_structured_columns.base_query_timeout_seconds == 120
+        assert settings.profile_semi_structured_columns.path_query_timeout_seconds == 300
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_profile_timeout_path_shorter_than_base_fails() -> None:
+    """Test that path timeout cannot be shorter than base timeout."""
+    toml_content = """
+[snowflake]
+account = "test"
+role = "test"
+warehouse = "test"
+user = "test"
+password = "test"
+
+[profile_semi_structured_columns]
+base_query_timeout_seconds = 300
+path_query_timeout_seconds = 120
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        with pytest.raises(ValidationError, match="must be greater than or equal to"):
             _ = Settings.build(SettingsConfigDict(toml_file=temp_file))
     finally:
         Path(temp_file).unlink()
@@ -214,6 +270,7 @@ def test_enabled_tool_names_default() -> None:
         "list_schemas",
         "list_tables",
         "list_views",
+        "profile_semi_structured_columns",
         "sample_table_data",
     }
 
@@ -228,6 +285,7 @@ def test_enabled_tool_names_partial() -> None:
     tools_settings.describe_table = False
     tools_settings.execute_query = False
     tools_settings.sample_table_data = False
+    tools_settings.profile_semi_structured_columns = False
 
     expected_enabled = {
         "analyze_table_statistics",
@@ -250,6 +308,7 @@ def test_enabled_tool_names_all_disabled() -> None:
     tools_settings.list_schemas = False
     tools_settings.list_tables = False
     tools_settings.list_views = False
+    tools_settings.profile_semi_structured_columns = False
     tools_settings.sample_table_data = False
 
     assert tools_settings.enabled_tool_names() == set()

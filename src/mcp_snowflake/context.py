@@ -12,9 +12,15 @@ from .adapter import (
     ListSchemasEffectHandler,
     ListTablesEffectHandler,
     ListViewsEffectHandler,
+    ProfileSemiStructuredColumnsEffectHandler,
     SampleTableDataEffectHandler,
 )
-from .settings import ExecuteQuerySettings, SnowflakeSettings, ToolsSettings
+from .settings import (
+    ExecuteQuerySettings,
+    ProfileSemiStructuredColumnsSettings,
+    SnowflakeSettings,
+    ToolsSettings,
+)
 from .snowflake_client import SnowflakeClient
 from .tool import (
     AnalyzeTableStatisticsTool,
@@ -23,6 +29,7 @@ from .tool import (
     ListSchemasTool,
     ListTablesTool,
     ListViewsTool,
+    ProfileSemiStructuredColumnsTool,
     SampleTableDataTool,
     Tool,
 )
@@ -43,6 +50,7 @@ class ServerContext:
         snowflake_settings: SnowflakeSettings,
         tools_settings: ToolsSettings,
         execute_query_settings: ExecuteQuerySettings,
+        profile_semi_structured_columns_settings: ProfileSemiStructuredColumnsSettings,
     ) -> None:
         """Prepare the server context with client and tools.
 
@@ -72,6 +80,14 @@ class ServerContext:
             ListSchemasTool(ListSchemasEffectHandler(self._snowflake_client)),
             ListTablesTool(ListTablesEffectHandler(self._snowflake_client)),
             ListViewsTool(ListViewsEffectHandler(self._snowflake_client)),
+            ProfileSemiStructuredColumnsTool(
+                self._json_converter,
+                ProfileSemiStructuredColumnsEffectHandler(
+                    self._snowflake_client,
+                    base_query_timeout_seconds=profile_semi_structured_columns_settings.base_query_timeout_seconds,
+                    path_query_timeout_seconds=profile_semi_structured_columns_settings.path_query_timeout_seconds,
+                ),
+            ),
             SampleTableDataTool(
                 self._json_converter,
                 SampleTableDataEffectHandler(self._snowflake_client),

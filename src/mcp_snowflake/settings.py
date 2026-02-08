@@ -40,6 +40,7 @@ class ToolsSettings(BaseModel):
     list_schemas: bool = Field(True, init=False)
     list_tables: bool = Field(True, init=False)
     list_views: bool = Field(True, init=False)
+    profile_semi_structured_columns: bool = Field(True, init=False)
     sample_table_data: bool = Field(True, init=False)
 
     def enabled_tool_names(self) -> set[str]:
@@ -57,6 +58,8 @@ class ToolsSettings(BaseModel):
             enabled_tools.add("list_tables")
         if self.list_views:
             enabled_tools.add("list_views")
+        if self.profile_semi_structured_columns:
+            enabled_tools.add("profile_semi_structured_columns")
         if self.sample_table_data:
             enabled_tools.add("sample_table_data")
         return enabled_tools
@@ -68,10 +71,31 @@ class ExecuteQuerySettings(BaseModel):
     timeout_seconds_max: int = Field(300, ge=1, le=3600, init=False)
 
 
+class ProfileSemiStructuredColumnsSettings(BaseModel):
+    """Settings for profile_semi_structured_columns tool behavior."""
+
+    base_query_timeout_seconds: int = Field(90, ge=1, le=3600, init=False)
+    path_query_timeout_seconds: int = Field(180, ge=1, le=3600, init=False)
+
+    @model_validator(mode="after")
+    def validate_timeout_relationship(self) -> "ProfileSemiStructuredColumnsSettings":
+        """Validate path timeout is not shorter than base timeout."""
+        if self.path_query_timeout_seconds < self.base_query_timeout_seconds:
+            raise ValueError(
+                "profile_semi_structured_columns.path_query_timeout_seconds "
+                + "must be greater than or equal to "
+                + "profile_semi_structured_columns.base_query_timeout_seconds"
+            )
+        return self
+
+
 class Settings(BaseSettings):
     snowflake: SnowflakeSettings = Field(default_factory=SnowflakeSettings)
     tools: ToolsSettings = Field(default_factory=ToolsSettings)
     execute_query: ExecuteQuerySettings = Field(default_factory=ExecuteQuerySettings)
+    profile_semi_structured_columns: ProfileSemiStructuredColumnsSettings = Field(
+        default_factory=ProfileSemiStructuredColumnsSettings
+    )
 
     @classmethod
     def settings_customise_sources(

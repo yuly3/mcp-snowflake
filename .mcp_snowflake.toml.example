@@ -18,8 +18,14 @@ client_store_temporary_credential = true  # ID token cache for externalbrowser
 # list_schemas = true
 # list_tables = true
 # list_views = true
+# profile_semi_structured_columns = true
 # sample_table_data = true
 
 # [execute_query]
 # Maximum value accepted by execute_query.timeout_seconds
 # timeout_seconds_max = 300  # Optional (max: 3600)
+
+# [profile_semi_structured_columns]
+# Timeouts for semi-structured profiling queries
+# base_query_timeout_seconds = 90   # Optional (max: 3600)
+# path_query_timeout_seconds = 180  # Optional (max: 3600, must be >= base_query_timeout_seconds)

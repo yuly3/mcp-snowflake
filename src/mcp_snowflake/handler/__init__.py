@@ -17,6 +17,11 @@ from .execute_query import (
 from .list_schemas import EffectListSchemas, ListSchemasArgs, handle_list_schemas
 from .list_tables import EffectListTables, ListTablesArgs, handle_list_tables
 from .list_views import EffectListViews, ListViewsArgs, handle_list_views
+from .profile_semi_structured_columns import (
+    EffectProfileSemiStructuredColumns,
+    ProfileSemiStructuredColumnsArgs,
+    handle_profile_semi_structured_columns,
+)
 from .sample_table_data import (
     EffectSampleTableData,
     SampleTableDataArgs,
@@ -33,11 +38,13 @@ __all__ = [
     "EffectListSchemas",
     "EffectListTables",
     "EffectListViews",
+    "EffectProfileSemiStructuredColumns",
     "EffectSampleTableData",
     "ExecuteQueryArgs",
     "ListSchemasArgs",
     "ListTablesArgs",
     "ListViewsArgs",
+    "ProfileSemiStructuredColumnsArgs",
     "SampleTableDataArgs",
     "handle_analyze_table_statistics",
     "handle_describe_table",
@@ -45,5 +52,6 @@ __all__ = [
     "handle_list_schemas",
     "handle_list_tables",
     "handle_list_views",
+    "handle_profile_semi_structured_columns",
     "handle_sample_table_data",
 ]

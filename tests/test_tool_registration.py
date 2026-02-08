@@ -64,6 +64,7 @@ def test_build_tools_respects_settings(
         mock_snowflake_settings,
         base_settings.tools,
         base_settings.execute_query,
+        base_settings.profile_semi_structured_columns,
     )
 
     registered_tool_names = set(server_context.tool_names())
@@ -72,6 +73,7 @@ def test_build_tools_respects_settings(
         "execute_query",
         "list_tables",
         "list_views",
+        "profile_semi_structured_columns",
     }
 
     assert registered_tool_names == expected_enabled

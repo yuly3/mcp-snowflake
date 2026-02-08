@@ -10,6 +10,9 @@ from .execute_query_handler import ExecuteQueryEffectHandler
 from .list_schemas_handler import ListSchemasEffectHandler
 from .list_tables_handler import ListTablesEffectHandler
 from .list_views_handler import ListViewsEffectHandler
+from .profile_semi_structured_columns_handler import (
+    ProfileSemiStructuredColumnsEffectHandler,
+)
 from .sample_table_data_handler import SampleTableDataEffectHandler
 
 __all__ = [
@@ -19,5 +22,6 @@ __all__ = [
     "ListSchemasEffectHandler",
     "ListTablesEffectHandler",
     "ListViewsEffectHandler",
+    "ProfileSemiStructuredColumnsEffectHandler",
     "SampleTableDataEffectHandler",
 ]
