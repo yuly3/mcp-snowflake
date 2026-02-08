@@ -7,6 +7,8 @@ user = "your-username"
 password = "your-password"  # Required only when authenticator = "SNOWFLAKE"
 warehouse = "your-warehouse"  # Optional
 role = "your-role"  # Optional
+# secondary_roles = ["analyst_role", "bi_reader_role"]  # Optional: apply USE SECONDARY ROLES per session
+# secondary_roles = ["NONE"]  # Optional: explicitly disable secondary roles per session
 authenticator = "SNOWFLAKE"  # "SNOWFLAKE" or "externalbrowser"
 client_store_temporary_credential = true  # ID token cache for externalbrowser
 

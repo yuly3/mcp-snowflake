@@ -51,6 +51,8 @@ user = "your-username"
 password = "your-password"  # Required only when authenticator = "SNOWFLAKE"
 warehouse = "your-warehouse"  # Optional
 role = "your-role"  # Optional
+secondary_roles = ["analyst_role", "bi_reader_role"]  # Optional: role names for USE SECONDARY ROLES
+# secondary_roles = ["NONE"]  # Optional: explicitly disable secondary roles
 authenticator = "SNOWFLAKE"  # "SNOWFLAKE" or "externalbrowser"
 client_store_temporary_credential = true  # ID token cache for externalbrowser
 
@@ -79,6 +81,11 @@ base_query_timeout_seconds = 90  # Optional (max: 3600)
 path_query_timeout_seconds = 180  # Optional (max: 3600, must be >= base_query_timeout_seconds)
 ```
 
+`snowflake.secondary_roles` behavior:
+- `null` / omitted: Do not execute `USE SECONDARY ROLES`.
+- `["NONE"]`: Execute `USE SECONDARY ROLES NONE` for each new session.
+- `["ROLE_A", "ROLE_B"]`: Execute `USE SECONDARY ROLES "ROLE_A", "ROLE_B"` for each new session.
+
 ### Using Environment Variables
 
 Set the following environment variables:
@@ -91,6 +98,7 @@ Set the following environment variables:
 - `SNOWFLAKE__PASSWORD`: Password (required when `SNOWFLAKE__AUTHENTICATOR=SNOWFLAKE`)
 - `SNOWFLAKE__WAREHOUSE`: Default warehouse
 - `SNOWFLAKE__ROLE`: Default role
+- `SNOWFLAKE__SECONDARY_ROLES`: JSON array for secondary roles (e.g. `["ROLE_A","ROLE_B"]` or `["NONE"]`)
 - `SNOWFLAKE__AUTHENTICATOR`: Authentication method ("SNOWFLAKE" or "externalbrowser")
 - `SNOWFLAKE__CLIENT_STORE_TEMPORARY_CREDENTIAL`: Enable ID token cache for browser SSO ("true" or "false", default: "true")
 
@@ -115,6 +123,7 @@ export SNOWFLAKE__USER="your-username"
 export SNOWFLAKE__PASSWORD="your-password"
 export SNOWFLAKE__WAREHOUSE="your-warehouse"
 export SNOWFLAKE__ROLE="your-role"
+export SNOWFLAKE__SECONDARY_ROLES='["ROLE_A","ROLE_B"]'
 export SNOWFLAKE__AUTHENTICATOR="SNOWFLAKE"
 export SNOWFLAKE__CLIENT_STORE_TEMPORARY_CREDENTIAL="true"
 ```
@@ -126,6 +135,7 @@ $env:SNOWFLAKE__USER="your-username"
 $env:SNOWFLAKE__PASSWORD="your-password"
 $env:SNOWFLAKE__WAREHOUSE="your-warehouse"
 $env:SNOWFLAKE__ROLE="your-role"
+$env:SNOWFLAKE__SECONDARY_ROLES='["ROLE_A","ROLE_B"]'
 $env:SNOWFLAKE__AUTHENTICATOR="SNOWFLAKE"
 $env:SNOWFLAKE__CLIENT_STORE_TEMPORARY_CREDENTIAL="true"
 
@@ -149,6 +159,7 @@ account = "your-account.region"
 user = "your-username"
 warehouse = "your-warehouse"
 role = "your-role"
+secondary_roles = ["analyst_role"]
 authenticator = "externalbrowser"
 client_store_temporary_credential = true
 ```

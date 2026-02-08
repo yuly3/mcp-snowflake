@@ -24,6 +24,7 @@ def test_settings(config_path: Path) -> None:
     assert settings.snowflake.password.get_secret_value() == "dummy"
     assert settings.snowflake.authenticator == "SNOWFLAKE"
     assert settings.snowflake.client_store_temporary_credential is True
+    assert settings.snowflake.secondary_roles is None
     assert settings.analyze_table_statistics.query_timeout_seconds == 60
     assert settings.execute_query.timeout_seconds_max == 300
     assert settings.profile_semi_structured_columns.base_query_timeout_seconds == 90
@@ -71,6 +72,98 @@ authenticator = "SNOWFLAKE"
 
     try:
         with pytest.raises(ValidationError, match="password is required"):
+            _ = Settings.build(SettingsConfigDict(toml_file=temp_file))
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_settings_secondary_roles_toml_array() -> None:
+    """Test secondary roles can be configured as role name array."""
+    toml_content = """
+[snowflake]
+account = "test-account"
+role = "test-role"
+warehouse = "test-warehouse"
+user = "test-user"
+password = "test-password"
+secondary_roles = ["role_a", "role_b"]
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        settings = Settings.build(SettingsConfigDict(toml_file=temp_file))
+        assert settings.snowflake.secondary_roles == ["role_a", "role_b"]
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_settings_secondary_roles_none_keyword() -> None:
+    """Test secondary roles NONE keyword can be configured explicitly."""
+    toml_content = """
+[snowflake]
+account = "test-account"
+role = "test-role"
+warehouse = "test-warehouse"
+user = "test-user"
+password = "test-password"
+secondary_roles = ["NONE"]
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        settings = Settings.build(SettingsConfigDict(toml_file=temp_file))
+        assert settings.snowflake.secondary_roles == ["NONE"]
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_settings_secondary_roles_empty_fails() -> None:
+    """Test empty secondary roles list fails validation."""
+    toml_content = """
+[snowflake]
+account = "test-account"
+role = "test-role"
+warehouse = "test-warehouse"
+user = "test-user"
+password = "test-password"
+secondary_roles = []
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        with pytest.raises(ValidationError, match="must not be empty"):
+            _ = Settings.build(SettingsConfigDict(toml_file=temp_file))
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_settings_secondary_roles_none_with_role_names_fails() -> None:
+    """Test NONE keyword cannot be mixed with role names."""
+    toml_content = """
+[snowflake]
+account = "test-account"
+role = "test-role"
+warehouse = "test-warehouse"
+user = "test-user"
+password = "test-password"
+secondary_roles = ["NONE", "role_a"]
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        with pytest.raises(ValidationError, match="exactly one value when using ALL or NONE"):
             _ = Settings.build(SettingsConfigDict(toml_file=temp_file))
     finally:
         Path(temp_file).unlink()

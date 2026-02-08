@@ -17,6 +17,7 @@ class SnowflakeSettings(BaseModel):
     warehouse: str = Field(init=False)
     user: str = Field(init=False)
     password: SecretStr | None = Field(default=None, init=False)
+    secondary_roles: list[str] | None = Field(default=None, init=False)
     authenticator: Literal["SNOWFLAKE", "externalbrowser"] = Field(
         DEFAULT_AUTHENTICATOR,
         init=False,
@@ -28,6 +29,23 @@ class SnowflakeSettings(BaseModel):
         """Validate auth method specific required fields."""
         if self.authenticator == "SNOWFLAKE" and self.password is None:
             raise ValueError("snowflake.password is required when authenticator is SNOWFLAKE")
+
+        if self.secondary_roles is not None:
+            if len(self.secondary_roles) == 0:
+                raise ValueError("snowflake.secondary_roles must not be empty when provided")
+
+            normalized = [role.strip() for role in self.secondary_roles]
+            if any(role == "" for role in normalized):
+                raise ValueError("snowflake.secondary_roles must not contain empty values")
+
+            keywords = {"ALL", "NONE"}
+            if any(role.upper() in keywords for role in normalized):
+                if len(normalized) != 1:
+                    raise ValueError("snowflake.secondary_roles must contain exactly one value when using ALL or NONE")
+                normalized = [normalized[0].upper()]
+
+            self.secondary_roles = normalized
+
         return self
 
 

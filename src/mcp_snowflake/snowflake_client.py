@@ -61,6 +61,24 @@ class SnowflakeClient:
             **conn_params,
         )
 
+    @staticmethod
+    def _quote_identifier(identifier: str) -> str:
+        """Quote Snowflake identifier safely."""
+        escaped = identifier.replace('"', '""')
+        return f'"{escaped}"'
+
+    def _build_use_secondary_roles_statement(self) -> str | None:
+        """Build USE SECONDARY ROLES statement from settings."""
+        secondary_roles = self.settings.secondary_roles
+        if secondary_roles is None:
+            return None
+
+        if len(secondary_roles) == 1 and secondary_roles[0] in {"ALL", "NONE"}:
+            return f"USE SECONDARY ROLES {secondary_roles[0]}"
+
+        role_list = ", ".join(self._quote_identifier(role) for role in secondary_roles)
+        return f"USE SECONDARY ROLES {role_list}"
+
     def _execute_query_sync(
         self,
         query: str,
@@ -69,7 +87,10 @@ class SnowflakeClient:
         """Execute a query synchronously and return results."""
         with self._get_connection() as conn, conn.cursor(DictCursor) as cursor:
             timeout_seconds = int(timeout.total_seconds())
+            use_secondary_roles_statement = self._build_use_secondary_roles_statement()
             try:
+                if use_secondary_roles_statement is not None:
+                    _ = cursor.execute(use_secondary_roles_statement)
                 _ = cursor.execute("begin")
                 _ = cursor.execute(query, timeout=timeout_seconds)
                 return cursor.fetchall()
