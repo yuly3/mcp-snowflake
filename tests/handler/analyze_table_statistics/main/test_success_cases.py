@@ -1,5 +1,7 @@
 """Success cases tests for analyze_table_statistics handler."""
 
+from typing import TYPE_CHECKING, cast
+
 import pytest
 
 from kernel.table_metadata import DataBase, Schema, Table
@@ -13,6 +15,9 @@ from .test_fixtures import (
     create_mixed_analysis_result,
     create_test_table_info,
 )
+
+if TYPE_CHECKING:
+    from mcp_snowflake.handler.analyze_table_statistics.models import StringStatsDict
 
 
 class TestSuccessCases:
@@ -65,6 +70,10 @@ class TestSuccessCases:
         assert table_info["table"] == "test_table"
         assert table_info["total_rows"] == 1000
         assert table_info["analyzed_columns"] == 5
+        statistics_metadata = table_stats.get("statistics_metadata")
+        assert statistics_metadata is not None
+        assert statistics_metadata["quality_profile_counting_mode"] == "exact"
+        assert statistics_metadata["distribution_metrics_mode"] == "approximate"
 
         # Check column statistics
         column_stats = table_stats["column_statistics"]
@@ -244,3 +253,81 @@ class TestSuccessCases:
         assert name_stats["min_length"] == 3
         assert name_stats["max_length"] == 20
         assert name_stats["distinct_count_approx"] == 95
+
+    @pytest.mark.asyncio
+    async def test_quality_profile_included_by_default(self) -> None:
+        """Test quality_profile is included in response by default."""
+        table_data = create_test_table_info(
+            [
+                ("name", "VARCHAR(50)", True, 1),
+            ],
+        )
+
+        query_result = {
+            "TOTAL_ROWS": 10,
+            "STRING_NAME_COUNT": 8,
+            "STRING_NAME_NULL_COUNT": 2,
+            "STRING_NAME_MIN_LENGTH": 0,
+            "STRING_NAME_MAX_LENGTH": 20,
+            "STRING_NAME_DISTINCT": 5,
+            "STRING_NAME_TOP_VALUES": '[["John", 4], ["", 2], ["Jane", 2]]',
+            "STRING_NAME_EMPTY_STRING_COUNT": 2,
+        }
+
+        mock_effect = MockAnalyzeTableStatistics(table_data, query_result)
+        args = AnalyzeTableStatisticsArgs(
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
+        )
+
+        result = await handle_analyze_table_statistics(args, mock_effect)
+        assert isinstance(result, dict)
+        name_stats = cast(
+            "StringStatsDict",
+            result["table_statistics"]["column_statistics"]["name"],
+        )
+        quality_profile = name_stats.get("quality_profile")
+        assert quality_profile is not None
+        assert quality_profile["null_count"] == 2
+        assert quality_profile["null_ratio"] == 0.2
+        assert quality_profile["empty_string_count"] == 2
+        assert quality_profile["empty_string_ratio"] == 0.25
+
+        statistics_metadata = result["table_statistics"].get("statistics_metadata")
+        assert statistics_metadata is not None
+        assert statistics_metadata["quality_profile_counting_mode"] == "exact"
+
+    @pytest.mark.asyncio
+    async def test_quality_profile_disabled_keeps_backward_compatible_shape(self) -> None:
+        """Test quality_profile is omitted when include_null_empty_profile is false."""
+        table_data = create_test_table_info(
+            [
+                ("name", "VARCHAR(50)", True, 1),
+            ],
+        )
+
+        query_result = {
+            "TOTAL_ROWS": 10,
+            "STRING_NAME_COUNT": 8,
+            "STRING_NAME_NULL_COUNT": 2,
+            "STRING_NAME_MIN_LENGTH": 0,
+            "STRING_NAME_MAX_LENGTH": 20,
+            "STRING_NAME_DISTINCT": 5,
+            "STRING_NAME_TOP_VALUES": '[["John", 4], ["", 2], ["Jane", 2]]',
+        }
+
+        mock_effect = MockAnalyzeTableStatistics(table_data, query_result)
+        args = AnalyzeTableStatisticsArgs(
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
+            include_null_empty_profile=False,
+            include_blank_string_profile=True,
+        )
+
+        result = await handle_analyze_table_statistics(args, mock_effect)
+        assert isinstance(result, dict)
+        name_stats = result["table_statistics"]["column_statistics"]["name"]
+        assert "quality_profile" not in name_stats
+        assert "statistics_metadata" not in result["table_statistics"]

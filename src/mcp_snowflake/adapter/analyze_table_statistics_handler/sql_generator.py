@@ -12,6 +12,9 @@ def generate_statistics_sql(
     table: Table,
     columns_info: Iterable[StatisticsSupportColumn],
     top_k_limit: int,
+    *,
+    include_null_empty_profile: bool = True,
+    include_blank_string_profile: bool = False,
 ) -> str:
     """Generate SQL query for analyzing table statistics.
 
@@ -27,6 +30,10 @@ def generate_statistics_sql(
         Column information with statistics support guaranteed.
     top_k_limit : int
         Limit for APPROX_TOP_K function.
+    include_null_empty_profile : bool, optional
+        Whether to include null/empty quality profile aggregations.
+    include_blank_string_profile : bool, optional
+        Whether to include TRIM-based blank string aggregations for string columns.
 
     Returns
     -------
@@ -67,6 +74,10 @@ def generate_statistics_sql(
                     f"  APPROX_COUNT_DISTINCT({escaped_col}) as {prefix}_distinct,",
                     f"  APPROX_TOP_K({escaped_col}, {top_k_limit}) as {prefix}_top_values,",
                 ])
+                if include_null_empty_profile:
+                    sql_parts.append(f"  COUNT_IF({escaped_col} = '') as {prefix}_empty_string_count,")
+                    if include_blank_string_profile:
+                        sql_parts.append(f"  COUNT_IF(TRIM({escaped_col}) = '') as {prefix}_blank_string_count,")
             case "date":
                 sql_parts.extend([
                     f"  COUNT({escaped_col}) as {prefix}_count,",

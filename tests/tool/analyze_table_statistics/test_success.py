@@ -46,12 +46,16 @@ class TestAnalyzeTableStatisticsToolSuccess:
         assert "table" in properties
         assert "columns" in properties
         assert "top_k_limit" in properties
+        assert "include_null_empty_profile" in properties
+        assert "include_blank_string_profile" in properties
 
         # Check optional properties defaults
         assert properties["columns"]["default"] == []
         assert properties["top_k_limit"]["default"] == 10
         assert properties["top_k_limit"]["minimum"] == 1
         assert properties["top_k_limit"]["maximum"] == 100
+        assert properties["include_null_empty_profile"]["default"] is True
+        assert properties["include_blank_string_profile"]["default"] is False
 
     @pytest.mark.asyncio
     async def test_perform_success_basic(
@@ -415,3 +419,62 @@ class TestAnalyzeTableStatisticsToolSuccess:
         if "unsupported_columns" in table_stats:
             unsupported = table_stats["unsupported_columns"]
             assert isinstance(unsupported, list)
+
+    @pytest.mark.asyncio
+    async def test_perform_with_blank_string_profile_enabled(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test quality profile fields when blank string profile is enabled."""
+        table_info = TableInfo(
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            name="test_table",
+            column_count=1,
+            columns=[
+                TableColumn(
+                    name="NAME",
+                    data_type="VARCHAR(100)",
+                    nullable=True,
+                    default_value=None,
+                    comment="User name",
+                    ordinal_position=1,
+                ),
+            ],
+        )
+
+        statistics_result = {
+            "TOTAL_ROWS": 10,
+            "STRING_NAME_COUNT": 8,
+            "STRING_NAME_NULL_COUNT": 2,
+            "STRING_NAME_MIN_LENGTH": 0,
+            "STRING_NAME_MAX_LENGTH": 20,
+            "STRING_NAME_DISTINCT": 4,
+            "STRING_NAME_TOP_VALUES": '[["John", 4], ["", 2], ["Jane", 2]]',
+            "STRING_NAME_EMPTY_STRING_COUNT": 2,
+            "STRING_NAME_BLANK_STRING_COUNT": 3,
+        }
+
+        mock_effect = MockAnalyzeTableStatistics(
+            table_info=table_info,
+            statistics_result=statistics_result,
+        )
+        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+
+        arguments = {
+            "database": "test_db",
+            "schema": "test_schema",
+            "table": "test_table",
+            "include_null_empty_profile": True,
+            "include_blank_string_profile": True,
+        }
+        result = await tool.perform(arguments)
+
+        assert len(result) == 2
+        assert isinstance(result[1], types.TextContent)
+        response_data = json.loads(result[1].text)
+        name_stats = response_data["table_statistics"]["column_statistics"]["NAME"]
+        assert "quality_profile" in name_stats
+        assert name_stats["quality_profile"]["null_ratio"] == 0.2
+        assert name_stats["quality_profile"]["empty_string_ratio"] == 0.25
+        assert name_stats["quality_profile"]["blank_string_ratio"] == 0.375

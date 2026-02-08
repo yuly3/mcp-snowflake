@@ -24,6 +24,7 @@ def test_settings(config_path: Path) -> None:
     assert settings.snowflake.password.get_secret_value() == "dummy"
     assert settings.snowflake.authenticator == "SNOWFLAKE"
     assert settings.snowflake.client_store_temporary_credential is True
+    assert settings.analyze_table_statistics.query_timeout_seconds == 60
     assert settings.execute_query.timeout_seconds_max == 300
     assert settings.profile_semi_structured_columns.base_query_timeout_seconds == 90
     assert settings.profile_semi_structured_columns.path_query_timeout_seconds == 180
@@ -129,6 +130,56 @@ timeout_seconds_max = 1800
     try:
         settings = Settings.build(SettingsConfigDict(toml_file=temp_file))
         assert settings.execute_query.timeout_seconds_max == 1800
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_analyze_table_statistics_timeout_toml_override() -> None:
+    """Test that TOML config can override analyze_table_statistics timeout."""
+    toml_content = """
+[snowflake]
+account = "test"
+role = "test"
+warehouse = "test"
+user = "test"
+password = "test"
+
+[analyze_table_statistics]
+query_timeout_seconds = 120
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        settings = Settings.build(SettingsConfigDict(toml_file=temp_file))
+        assert settings.analyze_table_statistics.query_timeout_seconds == 120
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_analyze_table_statistics_timeout_greater_than_one_hour_fails() -> None:
+    """Test that analyze_table_statistics timeout above one hour fails validation."""
+    toml_content = """
+[snowflake]
+account = "test"
+role = "test"
+warehouse = "test"
+user = "test"
+password = "test"
+
+[analyze_table_statistics]
+query_timeout_seconds = 3601
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        with pytest.raises(ValidationError, match="less than or equal to 3600"):
+            _ = Settings.build(SettingsConfigDict(toml_file=temp_file))
     finally:
         Path(temp_file).unlink()
 

@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Sequence
+from datetime import timedelta
 
 from kernel.statistics_support_column import StatisticsSupportColumn
 from kernel.table_metadata import DataBase, Schema, Table
@@ -22,9 +23,14 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
     EffectAnalyzeTableStatistics protocol.
     """
 
-    def __init__(self, client: SnowflakeClient) -> None:
+    def __init__(
+        self,
+        client: SnowflakeClient,
+        query_timeout_seconds: int = 60,
+    ) -> None:
         """Initialize with SnowflakeClient."""
         super().__init__(client)
+        self.query_timeout = timedelta(seconds=query_timeout_seconds)
 
     async def analyze_table_statistics(
         self,
@@ -33,6 +39,9 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
         table: Table,
         columns_to_analyze: Sequence[StatisticsSupportColumn],
         top_k_limit: int,
+        *,
+        include_null_empty_profile: bool,
+        include_blank_string_profile: bool,
     ) -> TableStatisticsParseResult:
         """Execute statistics query and return the parsed result.
 
@@ -48,6 +57,10 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
             Column information objects with statistics support
         top_k_limit : int
             Limit for APPROX_TOP_K function
+        include_null_empty_profile : bool
+            Whether to include quality profile in response
+        include_blank_string_profile : bool
+            Whether to include TRIM-based blank string profile for string columns
 
         Returns
         -------
@@ -77,10 +90,12 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
             table,
             columns_to_analyze,
             top_k_limit,
+            include_null_empty_profile=include_null_empty_profile,
+            include_blank_string_profile=include_blank_string_profile,
         )
 
         try:
-            query_result = await self.client.execute_query(stats_sql)
+            query_result = await self.client.execute_query(stats_sql, self.query_timeout)
         except Exception:
             column_properties = [
                 {"name": col.base.name, "type": col.statistics_type.type_name} for col in columns_to_analyze
@@ -93,10 +108,18 @@ class AnalyzeTableStatisticsEffectHandler(DescribeTableEffectHandler):
                     "table": table,
                     "columns": column_properties,
                     "top_k_limit": top_k_limit,
+                    "include_null_empty_profile": include_null_empty_profile,
+                    "include_blank_string_profile": include_blank_string_profile,
+                    "query_timeout_seconds": int(self.query_timeout.total_seconds()),
                     "query": stats_sql,
                 },
             )
             raise
 
         result_row = query_result[0]
-        return parse_statistics_result(result_row, columns_to_analyze)
+        return parse_statistics_result(
+            result_row,
+            columns_to_analyze,
+            include_null_empty_profile=include_null_empty_profile,
+            include_blank_string_profile=include_blank_string_profile,
+        )

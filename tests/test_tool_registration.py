@@ -2,7 +2,9 @@
 
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
 
 import pytest
@@ -10,6 +12,12 @@ from pydantic_settings import SettingsConfigDict
 
 from mcp_snowflake.context import ServerContext
 from mcp_snowflake.settings import Settings, SnowflakeSettings
+from mcp_snowflake.tool import AnalyzeTableStatisticsTool
+
+if TYPE_CHECKING:
+    from mcp_snowflake.adapter.analyze_table_statistics_handler.handler import (
+        AnalyzeTableStatisticsEffectHandler,
+    )
 
 
 @pytest.fixture
@@ -63,6 +71,7 @@ def test_build_tools_respects_settings(
         mock_thread_pool_executor,
         mock_snowflake_settings,
         base_settings.tools,
+        base_settings.analyze_table_statistics,
         base_settings.execute_query,
         base_settings.profile_semi_structured_columns,
     )
@@ -81,3 +90,27 @@ def test_build_tools_respects_settings(
     # Verify disabled tools are not present
     disabled_tools = {"describe_table", "list_schemas", "sample_table_data"}
     assert registered_tool_names.isdisjoint(disabled_tools)
+
+
+def test_analyze_table_statistics_timeout_setting_is_applied(
+    mock_thread_pool_executor: ThreadPoolExecutor,
+    mock_snowflake_settings: SnowflakeSettings,
+    base_settings: Settings,
+) -> None:
+    """Test analyze_table_statistics timeout config is propagated to effect handler."""
+    base_settings.analyze_table_statistics.query_timeout_seconds = 180
+
+    server_context = ServerContext()
+    server_context.prepare(
+        mock_thread_pool_executor,
+        mock_snowflake_settings,
+        base_settings.tools,
+        base_settings.analyze_table_statistics,
+        base_settings.execute_query,
+        base_settings.profile_semi_structured_columns,
+    )
+
+    tool = server_context.tool("analyze_table_statistics")
+    assert isinstance(tool, AnalyzeTableStatisticsTool)
+    effect_handler = cast("AnalyzeTableStatisticsEffectHandler", tool.effect_handler)
+    assert effect_handler.query_timeout == timedelta(seconds=180)

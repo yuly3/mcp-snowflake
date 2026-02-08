@@ -11,10 +11,12 @@ from kernel.statistics_support_column import StatisticsSupportColumn
 
 from ...handler.analyze_table_statistics.models import (
     BooleanStatsDict,
+    ColumnQualityProfileDict,
     DateStatsDict,
     NumericStatsDict,
     StatisticsResultParseError,
     StatsDict,
+    StringQualityProfileDict,
     StringStatsDict,
     TableStatisticsParseResult,
     TopValue,
@@ -27,6 +29,9 @@ logger = logging.getLogger(__name__)
 def parse_statistics_result(
     result_row: Mapping[str, Any],
     columns_info: Iterable[StatisticsSupportColumn],
+    *,
+    include_null_empty_profile: bool = True,
+    include_blank_string_profile: bool = False,
 ) -> TableStatisticsParseResult:
     """Parse the statistics query result into structured column statistics.
 
@@ -36,6 +41,10 @@ def parse_statistics_result(
         Single result row from statistics query.
     columns_info : Iterable[StatisticsSupportColumn]
         Column information with statistics support guaranteed.
+    include_null_empty_profile : bool, optional
+        Whether to include quality profile in parsed column stats.
+    include_blank_string_profile : bool, optional
+        Whether to include blank string profile in string quality profile.
 
     Returns
     -------
@@ -65,11 +74,13 @@ def parse_statistics_result(
 
         match col_type:
             case "numeric":
+                count = int(result_row[f"{prefix}_COUNT"])
+                null_count = int(result_row[f"{prefix}_NULL_COUNT"])
                 stats = NumericStatsDict(
                     column_type="numeric",
                     data_type=data_type,
-                    count=result_row[f"{prefix}_COUNT"],
-                    null_count=result_row[f"{prefix}_NULL_COUNT"],
+                    count=count,
+                    null_count=null_count,
                     distinct_count_approx=result_row[f"{prefix}_DISTINCT"],
                     min=float(option.unwrap_or(result_row[f"{prefix}_MIN"], 0.0)),
                     max=float(option.unwrap_or(result_row[f"{prefix}_MAX"], 0.0)),
@@ -78,6 +89,11 @@ def parse_statistics_result(
                     percentile_50=float(option.unwrap_or(result_row[f"{prefix}_MEDIAN"], 0.0)),
                     percentile_75=float(option.unwrap_or(result_row[f"{prefix}_Q3"], 0.0)),
                 )
+                if include_null_empty_profile:
+                    stats["quality_profile"] = ColumnQualityProfileDict(
+                        null_count=null_count,
+                        null_ratio=_safe_ratio(null_count, total_rows),
+                    )
             case "string":
                 # Parse APPROX_TOP_K result from JSON string
                 top_values_raw = result_row[f"{prefix}_TOP_VALUES"]
@@ -109,37 +125,62 @@ def parse_statistics_result(
                     str,
                     col_name,
                 )
+                count = int(result_row[f"{prefix}_COUNT"])
+                null_count = int(result_row[f"{prefix}_NULL_COUNT"])
 
                 stats = StringStatsDict(
                     column_type="string",
                     data_type=data_type,
-                    count=result_row[f"{prefix}_COUNT"],
-                    null_count=result_row[f"{prefix}_NULL_COUNT"],
+                    count=count,
+                    null_count=null_count,
                     distinct_count_approx=result_row[f"{prefix}_DISTINCT"],
                     min_length=result_row[f"{prefix}_MIN_LENGTH"] or 0,
                     max_length=result_row[f"{prefix}_MAX_LENGTH"] or 0,
                     top_values=top_values,
                 )
+                if include_null_empty_profile:
+                    non_null_rows = count
+                    empty_string_count = int(result_row.get(f"{prefix}_EMPTY_STRING_COUNT", 0) or 0)
+                    quality_profile = StringQualityProfileDict(
+                        null_count=null_count,
+                        null_ratio=_safe_ratio(null_count, total_rows),
+                        empty_string_count=empty_string_count,
+                        empty_string_ratio=_safe_ratio(empty_string_count, non_null_rows),
+                    )
+                    if include_blank_string_profile:
+                        blank_string_count = int(result_row.get(f"{prefix}_BLANK_STRING_COUNT", 0) or 0)
+                        quality_profile["blank_string_count"] = blank_string_count
+                        quality_profile["blank_string_ratio"] = _safe_ratio(blank_string_count, non_null_rows)
+                    stats["quality_profile"] = quality_profile
             case "date":
                 min_date = result_row[f"{prefix}_MIN"]
                 max_date = result_row[f"{prefix}_MAX"]
+                count = int(result_row[f"{prefix}_COUNT"])
+                null_count = int(result_row[f"{prefix}_NULL_COUNT"])
 
                 stats = DateStatsDict(
                     column_type="date",
                     data_type=data_type,
-                    count=result_row[f"{prefix}_COUNT"],
-                    null_count=result_row[f"{prefix}_NULL_COUNT"],
+                    count=count,
+                    null_count=null_count,
                     distinct_count_approx=result_row[f"{prefix}_DISTINCT"],
                     min_date=str(option.unwrap_or(min_date, "")),
                     max_date=str(option.unwrap_or(max_date, "")),
                     date_range_days=result_row[f"{prefix}_RANGE_DAYS"] or 0,
                 )
+                if include_null_empty_profile:
+                    stats["quality_profile"] = ColumnQualityProfileDict(
+                        null_count=null_count,
+                        null_ratio=_safe_ratio(null_count, total_rows),
+                    )
             case "boolean":
+                count = int(result_row[f"{prefix}_COUNT"])
+                null_count = int(result_row[f"{prefix}_NULL_COUNT"])
                 stats = BooleanStatsDict(
                     column_type="boolean",
                     data_type=data_type,
-                    count=result_row[f"{prefix}_COUNT"],
-                    null_count=result_row[f"{prefix}_NULL_COUNT"],
+                    count=count,
+                    null_count=null_count,
                     true_count=result_row[f"{prefix}_TRUE_COUNT"],
                     false_count=result_row[f"{prefix}_FALSE_COUNT"],
                     true_percentage=float(option.unwrap_or(result_row[f"{prefix}_TRUE_PERCENTAGE"], 0.0)),
@@ -157,6 +198,11 @@ def parse_statistics_result(
                         )
                     ),
                 )
+                if include_null_empty_profile:
+                    stats["quality_profile"] = ColumnQualityProfileDict(
+                        null_count=null_count,
+                        null_ratio=_safe_ratio(null_count, total_rows),
+                    )
 
         column_statistics[col_name] = stats
 
@@ -235,3 +281,10 @@ def parse_top_values[T](
         top_values.append(top_value)
 
     return top_values
+
+
+def _safe_ratio(numerator: int, denominator: int) -> float:
+    """Return ratio with 0.0 fallback for zero denominator."""
+    if denominator <= 0:
+        return 0.0
+    return float(numerator) / float(denominator)

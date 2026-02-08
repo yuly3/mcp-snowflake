@@ -134,6 +134,16 @@ class AnalyzeTableStatisticsTool(Tool):
                         "default": 10,
                         "description": "Number of top values to retrieve for string columns",
                     },
+                    "include_null_empty_profile": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Include per-column quality profile (NULL ratio for all types and empty string ratio for STRING columns)",
+                    },
+                    "include_blank_string_profile": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": "When quality profile is enabled, include TRIM-based blank string profile for STRING columns",
+                    },
                 },
                 "required": ["database", "schema", "table"],
             },

@@ -93,6 +93,8 @@ async def handle_analyze_table_statistics(
         args.table_,
         supported_columns,
         args.top_k_limit,
+        include_null_empty_profile=args.include_null_empty_profile,
+        include_blank_string_profile=args.include_blank_string_profile,
     )
 
     # Build structured response using parsed result
@@ -108,6 +110,12 @@ async def handle_analyze_table_statistics(
             "column_statistics": parsed.column_statistics,
         }
     }
+
+    if args.include_null_empty_profile:
+        response["table_statistics"]["statistics_metadata"] = {
+            "quality_profile_counting_mode": "exact",
+            "distribution_metrics_mode": "approximate",
+        }
 
     # Add unsupported_columns if any exist
     if unsupported_columns:

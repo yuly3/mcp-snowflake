@@ -44,6 +44,23 @@ class NumericStatsDict(TypedDict):
     percentile_25: float
     percentile_50: float  # median
     percentile_75: float
+    quality_profile: NotRequired["ColumnQualityProfileDict"]
+
+
+class ColumnQualityProfileDict(TypedDict):
+    """Common quality profile for all supported column types."""
+
+    null_count: int
+    null_ratio: float
+
+
+class StringQualityProfileDict(ColumnQualityProfileDict):
+    """Quality profile for string columns."""
+
+    empty_string_count: int
+    empty_string_ratio: float
+    blank_string_count: NotRequired[int]
+    blank_string_ratio: NotRequired[float]
 
 
 class StringStatsDict(TypedDict):
@@ -58,6 +75,7 @@ class StringStatsDict(TypedDict):
     max_length: int
     top_values: list[TopValue[str]]
     """List of TopValue instances with value and count pairs"""
+    quality_profile: NotRequired[StringQualityProfileDict]
 
 
 class DateStatsDict(TypedDict):
@@ -71,6 +89,7 @@ class DateStatsDict(TypedDict):
     min_date: str
     max_date: str
     date_range_days: int
+    quality_profile: NotRequired["ColumnQualityProfileDict"]
 
 
 class BooleanStatsDict(TypedDict):
@@ -90,6 +109,7 @@ class BooleanStatsDict(TypedDict):
     """Includes NULL values"""
     false_percentage_with_nulls: float
     """Includes NULL values"""
+    quality_profile: NotRequired["ColumnQualityProfileDict"]
 
 
 StatsDict = NumericStatsDict | StringStatsDict | DateStatsDict | BooleanStatsDict
@@ -105,6 +125,10 @@ class AnalyzeTableStatisticsArgs(BaseModel):
     """Empty list means all columns"""
     top_k_limit: int = Field(default=10, ge=1, le=100)
     """Number of most frequent values to retrieve"""
+    include_null_empty_profile: bool = Field(default=True)
+    """Include quality profile (null ratio for all types, empty string ratio for string)."""
+    include_blank_string_profile: bool = Field(default=False)
+    """Include blank string profile (TRIM(value)='') for string columns."""
 
 
 @attrs.define(frozen=True, slots=True)
@@ -129,6 +153,9 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
         table: Table,
         columns_to_analyze: Sequence[StatisticsSupportColumn],
         top_k_limit: int,
+        *,
+        include_null_empty_profile: bool,
+        include_blank_string_profile: bool,
     ) -> Awaitable[TableStatisticsParseResult]:
         """Execute statistics query and return the parsed statistics result.
 
@@ -144,6 +171,10 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
             Column information objects with statistics support
         top_k_limit : int
             Limit for APPROX_TOP_K function
+        include_null_empty_profile : bool
+            Whether to include quality profile in response
+        include_blank_string_profile : bool
+            Whether to include TRIM-based blank string profile for string columns
 
         Returns
         -------
@@ -187,12 +218,20 @@ class TableInfoDict(TypedDict):
     analyzed_columns: int
 
 
+class StatisticsMetadataDict(TypedDict):
+    """TypedDict for statistics calculation metadata."""
+
+    quality_profile_counting_mode: Literal["exact"]
+    distribution_metrics_mode: Literal["approximate"]
+
+
 class TableStatisticsDict(TypedDict):
     """TypedDict for the complete table statistics response."""
 
     table_info: TableInfoDict
     column_statistics: dict[str, StatsDict]
     unsupported_columns: NotRequired[list[UnsupportedColumnDict]]
+    statistics_metadata: NotRequired[StatisticsMetadataDict]
 
 
 class AnalyzeTableStatisticsJsonResponse(TypedDict):

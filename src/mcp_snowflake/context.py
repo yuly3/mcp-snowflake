@@ -16,6 +16,7 @@ from .adapter import (
     SampleTableDataEffectHandler,
 )
 from .settings import (
+    AnalyzeTableStatisticsSettings,
     ExecuteQuerySettings,
     ProfileSemiStructuredColumnsSettings,
     SnowflakeSettings,
@@ -49,6 +50,7 @@ class ServerContext:
         thread_pool_executor: ThreadPoolExecutor,
         snowflake_settings: SnowflakeSettings,
         tools_settings: ToolsSettings,
+        analyze_table_statistics_settings: AnalyzeTableStatisticsSettings,
         execute_query_settings: ExecuteQuerySettings,
         profile_semi_structured_columns_settings: ProfileSemiStructuredColumnsSettings,
     ) -> None:
@@ -69,7 +71,10 @@ class ServerContext:
         all_tools: list[Tool] = [
             AnalyzeTableStatisticsTool(
                 self._json_converter,
-                AnalyzeTableStatisticsEffectHandler(self._snowflake_client),
+                AnalyzeTableStatisticsEffectHandler(
+                    self._snowflake_client,
+                    query_timeout_seconds=analyze_table_statistics_settings.query_timeout_seconds,
+                ),
             ),
             DescribeTableTool(DescribeTableEffectHandler(self._snowflake_client)),
             ExecuteQueryTool(

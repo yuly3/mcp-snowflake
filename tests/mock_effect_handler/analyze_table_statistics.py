@@ -53,6 +53,9 @@ class MockAnalyzeTableStatistics:
         table: Table,  # noqa: ARG002
         columns_to_analyze: Sequence[StatisticsSupportColumn],
         top_k_limit: int,  # noqa: ARG002
+        *,
+        include_null_empty_profile: bool,
+        include_blank_string_profile: bool,
     ) -> TableStatisticsParseResult:
         """Mock analyze_table_statistics implementation."""
         if self.should_raise:
@@ -67,4 +70,9 @@ class MockAnalyzeTableStatistics:
             }
 
         # Parse the dict result using the moved parser
-        return parse_statistics_result(statistics_result, columns_to_analyze)
+        return parse_statistics_result(
+            statistics_result,
+            columns_to_analyze,
+            include_null_empty_profile=include_null_empty_profile,
+            include_blank_string_profile=include_blank_string_profile,
+        )

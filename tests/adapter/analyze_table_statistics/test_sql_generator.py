@@ -80,6 +80,7 @@ class TestGenerateStatisticsSQL:
         assert 'MAX(LENGTH("status")) as string_status_max_length' in sql
         assert 'APPROX_COUNT_DISTINCT("status") as string_status_distinct' in sql
         assert 'APPROX_TOP_K("status", 5) as string_status_top_values' in sql
+        assert "COUNT_IF(\"status\" = '') as string_status_empty_string_count" in sql
 
     def test_date_column_sql(self) -> None:
         """Test SQL generation for date columns."""
@@ -269,3 +270,81 @@ class TestGenerateStatisticsSQL:
             'ROUND(DIV0NULL(SUM(CASE WHEN "is_active" = FALSE THEN 1 ELSE 0 END) * 100.0, COUNT(*)), 2) as boolean_is_active_false_percentage_with_nulls'
             in sql
         )
+
+    def test_blank_string_profile_sql_when_enabled(self) -> None:
+        """Test SQL generation includes blank string profile when enabled."""
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
+
+        sql = generate_statistics_sql(
+            DataBase("TEST_DB"),
+            Schema("TEST_SCHEMA"),
+            Table("TEST_TABLE"),
+            _convert_to_statistics_support_columns(columns_info),
+            10,
+            include_null_empty_profile=True,
+            include_blank_string_profile=True,
+        )
+
+        assert "COUNT_IF(\"status\" = '') as string_status_empty_string_count" in sql
+        assert "COUNT_IF(TRIM(\"status\") = '') as string_status_blank_string_count" in sql
+
+    def test_no_empty_blank_string_profile_sql_when_disabled(self) -> None:
+        """Test SQL generation excludes empty/blank quality profile when disabled."""
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+        ]
+
+        sql = generate_statistics_sql(
+            DataBase("TEST_DB"),
+            Schema("TEST_SCHEMA"),
+            Table("TEST_TABLE"),
+            _convert_to_statistics_support_columns(columns_info),
+            10,
+            include_null_empty_profile=False,
+            include_blank_string_profile=True,
+        )
+
+        assert "empty_string_count" not in sql
+        assert "blank_string_count" not in sql
+
+    def test_non_string_columns_do_not_include_empty_blank_profile_sql(self) -> None:
+        """Test SQL generation for non-string columns does not include empty/blank profile."""
+        columns_info = [
+            TableColumn(
+                name="price",
+                data_type="NUMBER(10,2)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+            TableColumn(
+                name="is_active",
+                data_type="BOOLEAN",
+                nullable=False,
+                ordinal_position=2,
+            ),
+        ]
+
+        sql = generate_statistics_sql(
+            DataBase("TEST_DB"),
+            Schema("TEST_SCHEMA"),
+            Table("TEST_TABLE"),
+            _convert_to_statistics_support_columns(columns_info),
+            10,
+            include_null_empty_profile=True,
+            include_blank_string_profile=True,
+        )
+
+        assert "empty_string_count" not in sql
+        assert "blank_string_count" not in sql

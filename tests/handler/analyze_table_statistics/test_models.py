@@ -24,6 +24,8 @@ class TestAnalyzeTableStatisticsArgs:
         assert args.table_ == Table("test_table")
         assert args.columns == []
         assert args.top_k_limit == 10
+        assert args.include_null_empty_profile is True
+        assert args.include_blank_string_profile is False
 
     def test_with_columns(self) -> None:
         """Test with specific columns."""
@@ -44,6 +46,18 @@ class TestAnalyzeTableStatisticsArgs:
             top_k_limit=50,
         )
         assert args.top_k_limit == 50
+
+    def test_with_quality_profile_options(self) -> None:
+        """Test with quality profile options."""
+        args = AnalyzeTableStatisticsArgs(
+            database=DataBase("test_db"),
+            schema=Schema("test_schema"),
+            table=Table("test_table"),
+            include_null_empty_profile=False,
+            include_blank_string_profile=True,
+        )
+        assert args.include_null_empty_profile is False
+        assert args.include_blank_string_profile is True
 
     def test_top_k_limit_validation(self) -> None:
         """Test top_k_limit validation boundaries."""

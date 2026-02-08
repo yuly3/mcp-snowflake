@@ -25,6 +25,10 @@ client_store_temporary_credential = true  # ID token cache for externalbrowser
 # Maximum value accepted by execute_query.timeout_seconds
 # timeout_seconds_max = 300  # Optional (max: 3600)
 
+# [analyze_table_statistics]
+# Timeout for analyze_table_statistics query
+# query_timeout_seconds = 60  # Optional (max: 3600)
+
 # [profile_semi_structured_columns]
 # Timeouts for semi-structured profiling queries
 # base_query_timeout_seconds = 90   # Optional (max: 3600)

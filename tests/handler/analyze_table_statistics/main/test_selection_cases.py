@@ -120,6 +120,9 @@ class TestColumnSelection:
                 table: Table,
                 columns_to_analyze: Any,
                 top_k_limit: int,
+                *,
+                include_null_empty_profile: bool,
+                include_blank_string_profile: bool,
             ) -> TableStatisticsParseResult:
                 """Execute statistics query and track the top_k_limit."""
                 # Simulate SQL generation and execution for verification
@@ -129,12 +132,19 @@ class TestColumnSelection:
                     table,
                     columns_to_analyze,
                     top_k_limit,
+                    include_null_empty_profile=include_null_empty_profile,
+                    include_blank_string_profile=include_blank_string_profile,
                 )
                 executed_queries.append(query)
 
                 if not query_result:
                     raise ValueError("No data returned from statistics query")
-                return parse_statistics_result(query_result[0], columns_to_analyze)
+                return parse_statistics_result(
+                    query_result[0],
+                    columns_to_analyze,
+                    include_null_empty_profile=include_null_empty_profile,
+                    include_blank_string_profile=include_blank_string_profile,
+                )
 
         mock_effect = MockEffectWithQueryTracking()
 

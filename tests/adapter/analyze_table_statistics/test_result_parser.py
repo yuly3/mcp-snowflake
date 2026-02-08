@@ -567,3 +567,156 @@ class TestParseStatisticsResult:
                 result_row,
                 convert_to_statistics_support_columns(columns_info),
             )
+
+    def test_parse_quality_profile_for_string_column(self) -> None:
+        """Test quality_profile parsing for string column."""
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=True,
+                ordinal_position=1,
+            ),
+        ]
+
+        result_row = {
+            "TOTAL_ROWS": 10,
+            "STRING_STATUS_COUNT": 8,
+            "STRING_STATUS_NULL_COUNT": 2,
+            "STRING_STATUS_MIN_LENGTH": 0,
+            "STRING_STATUS_MAX_LENGTH": 10,
+            "STRING_STATUS_DISTINCT": 4,
+            "STRING_STATUS_TOP_VALUES": '[["active", 4], ["", 2], ["pending", 2]]',
+            "STRING_STATUS_EMPTY_STRING_COUNT": 2,
+        }
+
+        parsed = parse_statistics_result(
+            result_row,
+            convert_to_statistics_support_columns(columns_info),
+        )
+        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
+        quality_profile = status_stats.get("quality_profile")
+        assert quality_profile is not None
+        assert quality_profile["null_count"] == 2
+        assert quality_profile["null_ratio"] == 0.2
+        assert quality_profile["empty_string_count"] == 2
+        assert quality_profile["empty_string_ratio"] == 0.25
+        assert "blank_string_count" not in quality_profile
+
+    def test_parse_quality_profile_with_blank_string_enabled(self) -> None:
+        """Test blank string quality profile parsing for string column."""
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=True,
+                ordinal_position=1,
+            ),
+        ]
+
+        result_row = {
+            "TOTAL_ROWS": 10,
+            "STRING_STATUS_COUNT": 8,
+            "STRING_STATUS_NULL_COUNT": 2,
+            "STRING_STATUS_MIN_LENGTH": 0,
+            "STRING_STATUS_MAX_LENGTH": 10,
+            "STRING_STATUS_DISTINCT": 4,
+            "STRING_STATUS_TOP_VALUES": '[["active", 4], ["", 2], ["pending", 2]]',
+            "STRING_STATUS_EMPTY_STRING_COUNT": 2,
+            "STRING_STATUS_BLANK_STRING_COUNT": 3,
+        }
+
+        parsed = parse_statistics_result(
+            result_row,
+            convert_to_statistics_support_columns(columns_info),
+            include_null_empty_profile=True,
+            include_blank_string_profile=True,
+        )
+        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
+        quality_profile = status_stats.get("quality_profile")
+        assert quality_profile is not None
+        assert quality_profile.get("blank_string_count") == 3
+        assert quality_profile.get("blank_string_ratio") == 0.375
+
+    def test_parse_quality_profile_ratio_zero_denominator(self) -> None:
+        """Test ratio fallback to 0.0 when denominator is zero."""
+        columns_info = [
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=True,
+                ordinal_position=1,
+            ),
+        ]
+
+        result_row = {
+            "TOTAL_ROWS": 0,
+            "STRING_STATUS_COUNT": 0,
+            "STRING_STATUS_NULL_COUNT": 0,
+            "STRING_STATUS_MIN_LENGTH": None,
+            "STRING_STATUS_MAX_LENGTH": None,
+            "STRING_STATUS_DISTINCT": 0,
+            "STRING_STATUS_TOP_VALUES": "[]",
+            "STRING_STATUS_EMPTY_STRING_COUNT": 0,
+            "STRING_STATUS_BLANK_STRING_COUNT": 0,
+        }
+
+        parsed = parse_statistics_result(
+            result_row,
+            convert_to_statistics_support_columns(columns_info),
+            include_null_empty_profile=True,
+            include_blank_string_profile=True,
+        )
+        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
+        quality_profile = status_stats.get("quality_profile")
+        assert quality_profile is not None
+        assert quality_profile["null_ratio"] == 0.0
+        assert quality_profile["empty_string_ratio"] == 0.0
+        assert quality_profile.get("blank_string_ratio") == 0.0
+
+    def test_parse_without_quality_profile_for_backward_compatibility(self) -> None:
+        """Test no quality_profile field when include_null_empty_profile is disabled."""
+        columns_info = [
+            TableColumn(
+                name="price",
+                data_type="NUMBER(10,2)",
+                nullable=False,
+                ordinal_position=1,
+            ),
+            TableColumn(
+                name="status",
+                data_type="VARCHAR(10)",
+                nullable=True,
+                ordinal_position=2,
+            ),
+        ]
+
+        result_row = {
+            "TOTAL_ROWS": 100,
+            "NUMERIC_PRICE_COUNT": 100,
+            "NUMERIC_PRICE_NULL_COUNT": 0,
+            "NUMERIC_PRICE_MIN": 1.0,
+            "NUMERIC_PRICE_MAX": 100.0,
+            "NUMERIC_PRICE_AVG": 50.5,
+            "NUMERIC_PRICE_Q1": 25.0,
+            "NUMERIC_PRICE_MEDIAN": 50.0,
+            "NUMERIC_PRICE_Q3": 75.0,
+            "NUMERIC_PRICE_DISTINCT": 100,
+            "STRING_STATUS_COUNT": 90,
+            "STRING_STATUS_NULL_COUNT": 10,
+            "STRING_STATUS_MIN_LENGTH": 1,
+            "STRING_STATUS_MAX_LENGTH": 10,
+            "STRING_STATUS_DISTINCT": 3,
+            "STRING_STATUS_TOP_VALUES": '[["A", 40], ["B", 30], ["", 20]]',
+        }
+
+        parsed = parse_statistics_result(
+            result_row,
+            convert_to_statistics_support_columns(columns_info),
+            include_null_empty_profile=False,
+            include_blank_string_profile=True,
+        )
+        price_stats = cast("NumericStatsDict", parsed.column_statistics["price"])
+        status_stats = cast("StringStatsDict", parsed.column_statistics["status"])
+        assert "quality_profile" not in price_stats
+        assert "quality_profile" not in status_stats

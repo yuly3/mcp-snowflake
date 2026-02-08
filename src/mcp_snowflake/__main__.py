@@ -71,6 +71,7 @@ async def main() -> None:
             executor,
             settings.snowflake,
             settings.tools,
+            settings.analyze_table_statistics,
             settings.execute_query,
             settings.profile_semi_structured_columns,
         )

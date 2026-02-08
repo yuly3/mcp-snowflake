@@ -71,6 +71,12 @@ class ExecuteQuerySettings(BaseModel):
     timeout_seconds_max: int = Field(300, ge=1, le=3600, init=False)
 
 
+class AnalyzeTableStatisticsSettings(BaseModel):
+    """Settings for analyze_table_statistics tool behavior."""
+
+    query_timeout_seconds: int = Field(60, ge=1, le=3600, init=False)
+
+
 class ProfileSemiStructuredColumnsSettings(BaseModel):
     """Settings for profile_semi_structured_columns tool behavior."""
 
@@ -92,6 +98,7 @@ class ProfileSemiStructuredColumnsSettings(BaseModel):
 class Settings(BaseSettings):
     snowflake: SnowflakeSettings = Field(default_factory=SnowflakeSettings)
     tools: ToolsSettings = Field(default_factory=ToolsSettings)
+    analyze_table_statistics: AnalyzeTableStatisticsSettings = Field(default_factory=AnalyzeTableStatisticsSettings)
     execute_query: ExecuteQuerySettings = Field(default_factory=ExecuteQuerySettings)
     profile_semi_structured_columns: ProfileSemiStructuredColumnsSettings = Field(
         default_factory=ProfileSemiStructuredColumnsSettings

@@ -335,6 +335,9 @@ class TestAnalyzeTableStatisticsToolErrors:
                 table: Any,  # noqa: ARG002
                 columns_to_analyze: Any,
                 top_k_limit: Any,  # noqa: ARG002
+                *,
+                include_null_empty_profile: bool,
+                include_blank_string_profile: bool,
             ) -> TableStatisticsParseResult:
                 # Return result with invalid TOP_VALUES JSON
                 result_row = {
@@ -346,7 +349,12 @@ class TestAnalyzeTableStatisticsToolErrors:
                     "STRING_STATUS_DISTINCT": 3,
                     "STRING_STATUS_TOP_VALUES": "invalid_json",  # This will cause parse error
                 }
-                return parse_statistics_result(result_row, columns_to_analyze)
+                return parse_statistics_result(
+                    result_row,
+                    columns_to_analyze,
+                    include_null_empty_profile=include_null_empty_profile,
+                    include_blank_string_profile=include_blank_string_profile,
+                )
 
         tool = AnalyzeTableStatisticsTool(
             json_converter=json_converter,

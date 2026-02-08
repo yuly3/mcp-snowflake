@@ -69,6 +69,10 @@ sample_table_data = true  # Optional
 # Maximum value accepted by execute_query.timeout_seconds (default: 300, max: 3600)
 timeout_seconds_max = 300  # Optional
 
+[analyze_table_statistics]
+# Query timeout for analyze_table_statistics (default: 60)
+query_timeout_seconds = 60  # Optional (max: 3600)
+
 [profile_semi_structured_columns]
 # Query timeouts for semi-structured profiling (default base: 90, path: 180)
 base_query_timeout_seconds = 90  # Optional (max: 3600)
@@ -100,6 +104,7 @@ Set the following environment variables:
 - `TOOLS__PROFILE_SEMI_STRUCTURED_COLUMNS`: Enable/disable profile_semi_structured_columns tool ("true" or "false", default: "true")
 - `TOOLS__SAMPLE_TABLE_DATA`: Enable/disable sample_table_data tool ("true" or "false", default: "true")
 - `EXECUTE_QUERY__TIMEOUT_SECONDS_MAX`: Maximum allowed `timeout_seconds` for execute_query (default: 300, max: 3600). Values above 3600 fail server startup.
+- `ANALYZE_TABLE_STATISTICS__QUERY_TIMEOUT_SECONDS`: Query timeout for analyze_table_statistics (default: 60, max: 3600)
 - `PROFILE_SEMI_STRUCTURED_COLUMNS__BASE_QUERY_TIMEOUT_SECONDS`: Base query timeout for profile_semi_structured_columns (default: 90, max: 3600)
 - `PROFILE_SEMI_STRUCTURED_COLUMNS__PATH_QUERY_TIMEOUT_SECONDS`: Path query timeout for profile_semi_structured_columns (default: 180, max: 3600, must be >= base_query_timeout_seconds)
 
@@ -346,6 +351,8 @@ Analyze table statistics using Snowflake's high-performance approximation functi
 - `table` (string, required): Name of the table to analyze
 - `columns` (array of strings, optional): List of column names to analyze (if not specified, all columns will be analyzed)
 - `top_k_limit` (integer, optional): Number of top values to retrieve for string columns (default: 10, max: 100)
+- `include_null_empty_profile` (boolean, optional): Include per-column quality profile (default: true)
+- `include_blank_string_profile` (boolean, optional): Include TRIM-based blank string profile for STRING columns (default: false)
 
 **Example:**
 ```json
@@ -356,7 +363,9 @@ Analyze table statistics using Snowflake's high-performance approximation functi
     "schema": "PUBLIC",
     "table": "SALES_DATA",
     "columns": ["amount", "region", "order_date"],
-    "top_k_limit": 5
+    "top_k_limit": 5,
+    "include_null_empty_profile": true,
+    "include_blank_string_profile": false
   }
 }
 ```
@@ -367,6 +376,17 @@ Returns comprehensive statistics tailored to each column type:
 - **String columns**: count, min/max length, distinct count, top K most frequent values
 - **Date columns**: count, min/max dates, date range in days, distinct count
 - **Boolean columns**: count, true/false counts and percentages (both NULL-inclusive and NULL-exclusive)
+- **Quality profile (`quality_profile`)**: optional per-column quality metrics
+  - All types: `null_count`, `null_ratio` (`null_count / total_rows`)
+  - String only: `empty_string_count`, `empty_string_ratio` (`empty_string_count / non_null_rows`)
+  - String only (optional): `blank_string_count`, `blank_string_ratio` (`blank_string_count / non_null_rows`)
+  - All ratios return `0.0` when denominator is `0`
+- **Statistics metadata (`statistics_metadata`)**: optional execution semantics
+  - `quality_profile_counting_mode`: `exact`
+  - `distribution_metrics_mode`: `approximate`
+
+**Timeout Configuration:**
+- `analyze_table_statistics.query_timeout_seconds` (default: 60)
 
 #### profile_semi_structured_columns
 Profile semi-structured columns (`VARIANT`, `ARRAY`, `OBJECT`) using sampled recursive flatten analysis.
