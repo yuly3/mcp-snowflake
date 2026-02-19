@@ -80,6 +80,7 @@ class ServerContext:
             ExecuteQueryTool(
                 self._json_converter,
                 ExecuteQueryEffectHandler(self._snowflake_client),
+                timeout_seconds_default=execute_query_settings.timeout_seconds_default,
                 timeout_seconds_max=execute_query_settings.timeout_seconds_max,
             ),
             ListSchemasTool(ListSchemasEffectHandler(self._snowflake_client)),

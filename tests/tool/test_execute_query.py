@@ -1,6 +1,7 @@
 """Test for ExecuteQueryTool."""
 
 import json
+from datetime import timedelta
 
 import mcp.types as types
 import pytest
@@ -65,6 +66,19 @@ class TestExecuteQueryTool:
         timeout = definition.inputSchema["properties"]["timeout_seconds"]
         assert timeout["maximum"] == 1800
         assert timeout["description"] == "Query timeout in seconds (default: 30, max: 1800)"
+
+    def test_definition_property_with_custom_timeout_default(self) -> None:
+        """Test definition property with custom default timeout."""
+        converter = JsonImmutableConverter()
+        mock_effect = MockExecuteQuery()
+        tool = ExecuteQueryTool(converter, mock_effect, timeout_seconds_default=60, timeout_seconds_max=300)
+        definition = tool.definition
+
+        assert definition.inputSchema is not None
+        timeout = definition.inputSchema["properties"]["timeout_seconds"]
+        assert timeout["default"] == 60
+        assert timeout["maximum"] == 300
+        assert timeout["description"] == "Query timeout in seconds (default: 60, max: 300)"
 
     @pytest.mark.asyncio
     async def test_perform_success(self) -> None:
@@ -229,6 +243,24 @@ class TestExecuteQueryTool:
         assert isinstance(result[0], types.TextContent)
         assert "Error: Invalid arguments for execute_query:" in result[0].text
         assert "less than or equal to 45" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_perform_uses_custom_default_timeout(self) -> None:
+        """Test that custom default timeout is used when timeout_seconds is not provided."""
+        converter = JsonImmutableConverter()
+        mock_data = [{"result": "ok"}]
+        mock_effect = MockExecuteQuery(result_data=mock_data)
+        tool = ExecuteQueryTool(converter, mock_effect, timeout_seconds_default=60, timeout_seconds_max=300)
+
+        result = await tool.perform({"sql": "SELECT 1"})
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        response_data = json.loads(result[0].text)
+        assert response_data["query_result"]["row_count"] == 1
+        # The query should have been executed with 60s timeout
+        assert mock_effect.called_with_timeout is not None
+        assert mock_effect.called_with_timeout == timedelta(seconds=60)
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(

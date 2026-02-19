@@ -26,6 +26,7 @@ def test_settings(config_path: Path) -> None:
     assert settings.snowflake.client_store_temporary_credential is True
     assert settings.snowflake.secondary_roles is None
     assert settings.analyze_table_statistics.query_timeout_seconds == 60
+    assert settings.execute_query.timeout_seconds_default == 30
     assert settings.execute_query.timeout_seconds_max == 300
     assert settings.profile_semi_structured_columns.base_query_timeout_seconds == 90
     assert settings.profile_semi_structured_columns.path_query_timeout_seconds == 180
@@ -223,6 +224,85 @@ timeout_seconds_max = 1800
     try:
         settings = Settings.build(SettingsConfigDict(toml_file=temp_file))
         assert settings.execute_query.timeout_seconds_max == 1800
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_execute_query_timeout_default_toml_override() -> None:
+    """Test that TOML config can override execute_query timeout default."""
+    toml_content = """
+[snowflake]
+account = "test"
+role = "test"
+warehouse = "test"
+user = "test"
+password = "test"
+
+[execute_query]
+timeout_seconds_default = 60
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        settings = Settings.build(SettingsConfigDict(toml_file=temp_file))
+        assert settings.execute_query.timeout_seconds_default == 60
+        assert settings.execute_query.timeout_seconds_max == 300
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_execute_query_timeout_default_exceeds_max_fails() -> None:
+    """Test that timeout default exceeding max fails validation."""
+    toml_content = """
+[snowflake]
+account = "test"
+role = "test"
+warehouse = "test"
+user = "test"
+password = "test"
+
+[execute_query]
+timeout_seconds_default = 600
+timeout_seconds_max = 300
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        with pytest.raises(ValidationError, match="must be less than or equal to"):
+            _ = Settings.build(SettingsConfigDict(toml_file=temp_file))
+    finally:
+        Path(temp_file).unlink()
+
+
+def test_execute_query_timeout_default_equals_max_succeeds() -> None:
+    """Test that timeout default equal to max succeeds."""
+    toml_content = """
+[snowflake]
+account = "test"
+role = "test"
+warehouse = "test"
+user = "test"
+password = "test"
+
+[execute_query]
+timeout_seconds_default = 600
+timeout_seconds_max = 600
+"""
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+
+    try:
+        settings = Settings.build(SettingsConfigDict(toml_file=temp_file))
+        assert settings.execute_query.timeout_seconds_default == 600
+        assert settings.execute_query.timeout_seconds_max == 600
     finally:
         Path(temp_file).unlink()
 

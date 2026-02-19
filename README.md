@@ -68,6 +68,8 @@ profile_semi_structured_columns = true  # Optional
 sample_table_data = true  # Optional
 
 [execute_query]
+# Default timeout_seconds when not specified by the caller (default: 30, must be <= timeout_seconds_max)
+timeout_seconds_default = 30  # Optional
 # Maximum value accepted by execute_query.timeout_seconds (default: 300, max: 3600)
 timeout_seconds_max = 300  # Optional
 
@@ -111,6 +113,7 @@ Set the following environment variables:
 - `TOOLS__LIST_VIEWS`: Enable/disable list_views tool ("true" or "false", default: "true")
 - `TOOLS__PROFILE_SEMI_STRUCTURED_COLUMNS`: Enable/disable profile_semi_structured_columns tool ("true" or "false", default: "true")
 - `TOOLS__SAMPLE_TABLE_DATA`: Enable/disable sample_table_data tool ("true" or "false", default: "true")
+- `EXECUTE_QUERY__TIMEOUT_SECONDS_DEFAULT`: Default `timeout_seconds` for execute_query when not specified by the caller (default: 30, must be <= `timeout_seconds_max`)
 - `EXECUTE_QUERY__TIMEOUT_SECONDS_MAX`: Maximum allowed `timeout_seconds` for execute_query (default: 300, max: 3600). Values above 3600 fail server startup.
 - `ANALYZE_TABLE_STATISTICS__QUERY_TIMEOUT_SECONDS`: Query timeout for analyze_table_statistics (default: 60, max: 3600)
 - `PROFILE_SEMI_STRUCTURED_COLUMNS__BASE_QUERY_TIMEOUT_SECONDS`: Base query timeout for profile_semi_structured_columns (default: 90, max: 3600)

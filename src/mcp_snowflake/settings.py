@@ -86,7 +86,19 @@ class ToolsSettings(BaseModel):
 class ExecuteQuerySettings(BaseModel):
     """Settings for execute_query tool behavior."""
 
+    timeout_seconds_default: int = Field(30, ge=1, le=3600, init=False)
     timeout_seconds_max: int = Field(300, ge=1, le=3600, init=False)
+
+    @model_validator(mode="after")
+    def validate_timeout_relationship(self) -> "ExecuteQuerySettings":
+        """Validate default timeout does not exceed max timeout."""
+        if self.timeout_seconds_default > self.timeout_seconds_max:
+            raise ValueError(
+                "execute_query.timeout_seconds_default "
+                + "must be less than or equal to "
+                + "execute_query.timeout_seconds_max"
+            )
+        return self
 
 
 class AnalyzeTableStatisticsSettings(BaseModel):

@@ -16,7 +16,6 @@ from cattrs_converter import JsonImmutableConverter
 from expression.contract import ContractViolationError
 
 from ..handler import (
-    DEFAULT_TIMEOUT_SECONDS,
     EffectExecuteQuery,
     ExecuteQueryArgs,
     handle_execute_query,
@@ -29,10 +28,12 @@ class ExecuteQueryTool(Tool):
         self,
         json_converter: JsonImmutableConverter,
         effect_handler: EffectExecuteQuery,
+        timeout_seconds_default: int = 30,
         timeout_seconds_max: int = 300,
     ) -> None:
         self.json_converter = json_converter
         self.effect_handler = effect_handler
+        self.timeout_seconds_default = timeout_seconds_default
         self.timeout_seconds_max = timeout_seconds_max
 
     @property
@@ -45,7 +46,7 @@ class ExecuteQueryTool(Tool):
     ) -> Sequence[types.Content]:
         payload = dict(arguments or {})
         if "timeout_seconds" not in payload:
-            payload["timeout_seconds"] = min(DEFAULT_TIMEOUT_SECONDS, self.timeout_seconds_max)
+            payload["timeout_seconds"] = self.timeout_seconds_default
 
         try:
             args = ExecuteQueryArgs.model_validate(
@@ -89,7 +90,6 @@ class ExecuteQueryTool(Tool):
 
     @property
     def definition(self) -> types.Tool:
-        default_timeout = min(DEFAULT_TIMEOUT_SECONDS, self.timeout_seconds_max)
         return types.Tool(
             name=self.name,
             description="Execute a read-only SQL query and return the results. Only SELECT, SHOW, DESCRIBE, EXPLAIN and similar read operations are allowed.",
@@ -102,8 +102,8 @@ class ExecuteQueryTool(Tool):
                     },
                     "timeout_seconds": {
                         "type": "integer",
-                        "description": f"Query timeout in seconds (default: {default_timeout}, max: {self.timeout_seconds_max})",
-                        "default": default_timeout,
+                        "description": f"Query timeout in seconds (default: {self.timeout_seconds_default}, max: {self.timeout_seconds_max})",
+                        "default": self.timeout_seconds_default,
                         "minimum": 1,
                         "maximum": self.timeout_seconds_max,
                     },

@@ -24,6 +24,8 @@ client_store_temporary_credential = true  # ID token cache for externalbrowser
 # sample_table_data = true
 
 # [execute_query]
+# Default timeout_seconds when not specified by the caller
+# timeout_seconds_default = 30  # Optional (must be <= timeout_seconds_max)
 # Maximum value accepted by execute_query.timeout_seconds
 # timeout_seconds_max = 300  # Optional (max: 3600)
 
