@@ -72,6 +72,10 @@ sample_table_data = true  # Optional
 timeout_seconds_default = 30  # Optional
 # Maximum value accepted by execute_query.timeout_seconds (default: 300, max: 3600)
 timeout_seconds_max = 300  # Optional
+# Enable compact text format for small result sets to reduce LLM token usage (default: false)
+compact_format_enabled = false  # Optional
+# Row count threshold: results with this many rows or fewer use compact format (default: 5)
+compact_format_threshold = 5  # Optional
 
 [analyze_table_statistics]
 # Query timeout for analyze_table_statistics (default: 60)
@@ -115,6 +119,8 @@ Set the following environment variables:
 - `TOOLS__SAMPLE_TABLE_DATA`: Enable/disable sample_table_data tool ("true" or "false", default: "true")
 - `EXECUTE_QUERY__TIMEOUT_SECONDS_DEFAULT`: Default `timeout_seconds` for execute_query when not specified by the caller (default: 30, must be <= `timeout_seconds_max`)
 - `EXECUTE_QUERY__TIMEOUT_SECONDS_MAX`: Maximum allowed `timeout_seconds` for execute_query (default: 300, max: 3600). Values above 3600 fail server startup.
+- `EXECUTE_QUERY__COMPACT_FORMAT_ENABLED`: Enable compact text format for small result sets ("true" or "false", default: "false")
+- `EXECUTE_QUERY__COMPACT_FORMAT_THRESHOLD`: Row count threshold for compact format (integer, default: 5)
 - `ANALYZE_TABLE_STATISTICS__QUERY_TIMEOUT_SECONDS`: Query timeout for analyze_table_statistics (default: 60, max: 3600)
 - `PROFILE_SEMI_STRUCTURED_COLUMNS__BASE_QUERY_TIMEOUT_SECONDS`: Base query timeout for profile_semi_structured_columns (default: 90, max: 3600)
 - `PROFILE_SEMI_STRUCTURED_COLUMNS__PATH_QUERY_TIMEOUT_SECONDS`: Path query timeout for profile_semi_structured_columns (default: 180, max: 3600, must be >= base_query_timeout_seconds)
@@ -320,17 +326,44 @@ Execute read-only SQL queries and return structured results. Only SELECT, SHOW, 
 ```
 
 **Response Format:**
+
+The response format depends on the `compact_format_enabled` configuration.
+
+**JSON format** (default, or when row count exceeds `compact_format_threshold`):
 ```json
 {
-  "execution_time_ms": 150,
-  "row_count": 10,
-  "columns": ["id", "name", "email"],
-  "rows": [
-    {"id": 1, "name": "John", "email": "john@example.com"}
-  ],
-  "warnings": []
+  "query_result": {
+    "execution_time_ms": 150,
+    "row_count": 2,
+    "columns": ["id", "name", "email"],
+    "rows": [
+      {"id": 1, "name": "John", "email": "john@example.com"},
+      {"id": 2, "name": "Jane", "email": "jane@example.com"}
+    ],
+    "warnings": []
+  }
 }
 ```
+
+**Compact format** (when `compact_format_enabled = true` and row count <= `compact_format_threshold`):
+```
+execution_time_ms: 150
+row_count: 2
+
+row1:
+id: 1
+name: "John"
+email: "john@example.com"
+
+row2:
+id: 2
+name: "Jane"
+email: "jane@example.com"
+```
+
+The compact format reduces LLM token usage for small result sets (e.g., aggregations, statistics).
+Semi-structured values (objects/arrays) are rendered as inline JSON even in compact format.
+String values are always JSON-escaped (e.g., `"john@example.com"`, `"line1\\nline2"`) to keep the compact row structure parseable.
 
 #### sample_table_data
 Retrieve sample data from a specified table using Snowflake's SAMPLE ROW clause for efficient data sampling.

@@ -1,5 +1,4 @@
 from datetime import timedelta
-from typing import ClassVar
 
 import pytest
 from pydantic import ValidationError
@@ -8,10 +7,11 @@ from cattrs_converter import JsonImmutableConverter
 from kernel import DataProcessingResult
 from mcp_snowflake.handler.execute_query import (
     ExecuteQueryArgs,
+    QueryResult,
     handle_execute_query,
 )
 
-from ..mock_effect_handler import MockExecuteQuery
+from ...mock_effect_handler import MockExecuteQuery
 
 
 class TestExecuteQueryArgs:
@@ -59,15 +59,6 @@ class TestExecuteQueryArgs:
 class TestExecuteQueryHandler:
     """Test execute_query handler functionality."""
 
-    # Expected keys in execute_query response
-    EXPECTED_RESPONSE_KEYS: ClassVar[set[str]] = {
-        "execution_time_ms",
-        "row_count",
-        "columns",
-        "rows",
-        "warnings",
-    }
-
     @pytest.mark.asyncio
     async def test_handle_execute_query_success(
         self,
@@ -87,18 +78,15 @@ class TestExecuteQueryHandler:
         # Execute handler
         result = await handle_execute_query(json_converter, args, effect_handler)
 
-        # Verify result - should be ExecuteQueryJsonResponse directly
-        assert isinstance(result, dict)
-        assert "query_result" in result
-
-        query_result = result["query_result"]
-        assert query_result["row_count"] == 2
-        assert query_result["columns"] == ["id", "name", "age"]
-        assert len(query_result["rows"]) == 2
-        assert query_result["rows"][0] == {"id": 1, "name": "Alice", "age": 30}
-        assert query_result["rows"][1] == {"id": 2, "name": "Bob", "age": 25}
-        assert isinstance(query_result["execution_time_ms"], int)
-        assert query_result["execution_time_ms"] >= 0
+        # Verify result - should be QueryResult
+        assert isinstance(result, QueryResult)
+        assert result.row_count == 2
+        assert result.columns == ["id", "name", "age"]
+        assert len(result.rows) == 2
+        assert result.rows[0] == {"id": 1, "name": "Alice", "age": 30}
+        assert result.rows[1] == {"id": 2, "name": "Bob", "age": 25}
+        assert isinstance(result.execution_time_ms, int)
+        assert result.execution_time_ms >= 0
 
     @pytest.mark.asyncio
     async def test_handle_execute_query_write_sql_blocked(
@@ -135,13 +123,11 @@ class TestExecuteQueryHandler:
         # Execute handler
         result = await handle_execute_query(json_converter, args, effect_handler)
 
-        # Verify result - should be ExecuteQueryJsonResponse directly
-        assert isinstance(result, dict)
-        assert "query_result" in result
-        query_result = result["query_result"]
-        assert query_result["row_count"] == 0
-        assert query_result["columns"] == []
-        assert query_result["rows"] == []
+        # Verify result - should be QueryResult
+        assert isinstance(result, QueryResult)
+        assert result.row_count == 0
+        assert result.columns == []
+        assert result.rows == []
 
     @pytest.mark.asyncio
     async def test_handle_execute_query_with_timeout(
@@ -159,7 +145,8 @@ class TestExecuteQueryHandler:
         result = await handle_execute_query(json_converter, args, effect_handler)
 
         # Verify result
-        assert len(result) == 1
+        assert isinstance(result, QueryResult)
+        assert result.row_count == 1
 
         # Verify effect handler was called with correct timeout
         assert effect_handler.called_with_sql == "SELECT 1"

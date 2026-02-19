@@ -28,6 +28,10 @@ client_store_temporary_credential = true  # ID token cache for externalbrowser
 # timeout_seconds_default = 30  # Optional (must be <= timeout_seconds_max)
 # Maximum value accepted by execute_query.timeout_seconds
 # timeout_seconds_max = 300  # Optional (max: 3600)
+# Enable compact text format for small result sets to reduce LLM token usage
+# compact_format_enabled = false  # Optional (default: false)
+# Row count threshold: results with this many rows or fewer use compact format
+# compact_format_threshold = 5  # Optional (default: 5)
 
 # [analyze_table_statistics]
 # Timeout for analyze_table_statistics query

@@ -1,4 +1,3 @@
-import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -16,8 +15,10 @@ from cattrs_converter import JsonImmutableConverter
 from expression.contract import ContractViolationError
 
 from ..handler import (
+    CompactQueryResultSerializer,
     EffectExecuteQuery,
     ExecuteQueryArgs,
+    JsonQueryResultSerializer,
     handle_execute_query,
 )
 from .base import Tool
@@ -30,11 +31,16 @@ class ExecuteQueryTool(Tool):
         effect_handler: EffectExecuteQuery,
         timeout_seconds_default: int = 30,
         timeout_seconds_max: int = 300,
+        *,
+        compact_format_enabled: bool = False,
+        compact_format_threshold: int = 5,
     ) -> None:
         self.json_converter = json_converter
         self.effect_handler = effect_handler
         self.timeout_seconds_default = timeout_seconds_default
         self.timeout_seconds_max = timeout_seconds_max
+        self.compact_format_enabled = compact_format_enabled
+        self.compact_format_threshold = compact_format_threshold
 
     @property
     def name(self) -> str:
@@ -62,7 +68,7 @@ class ExecuteQueryTool(Tool):
             ]
 
         try:
-            result = await handle_execute_query(
+            query_result = await handle_execute_query(
                 self.json_converter,
                 args,
                 self.effect_handler,
@@ -85,7 +91,12 @@ class ExecuteQueryTool(Tool):
             # For SQL analyzer errors (write operations not allowed)
             text = f"Error: {e}"
         else:
-            text = json.dumps(result, indent=2)
+            use_compact = self.compact_format_enabled and query_result.row_count <= self.compact_format_threshold
+            if use_compact:
+                serializer = CompactQueryResultSerializer()
+            else:
+                serializer = JsonQueryResultSerializer(query_result.columns)
+            text = query_result.serialize_with(serializer)
         return [types.TextContent(type="text", text=text)]
 
     @property

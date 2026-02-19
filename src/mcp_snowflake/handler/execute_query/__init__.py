@@ -1,37 +1,40 @@
+"""Execute query handler module."""
+
 import logging
-from collections.abc import Awaitable, Mapping, Sequence
+from collections.abc import Awaitable
 from datetime import timedelta
-from typing import Any, Protocol, TypedDict
+from typing import Any, Protocol
 
 from more_itertools import first
 from pydantic import BaseModel, Field, ValidationInfo, model_validator
 
-from cattrs_converter import Jsonable, JsonImmutableConverter
+from cattrs_converter import JsonImmutableConverter
 from kernel import DataProcessingResult
 
-from ..sql_analyzer import SQLWriteDetector
-from ..stopwatch import StopWatch
+from ...sql_analyzer import SQLWriteDetector
+from ...stopwatch import StopWatch
+from ._serializer import (
+    CompactQueryResultSerializer,
+    JsonQueryResultSerializer,
+    QueryResult,
+    QueryResultSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT_SECONDS = 30
 DEFAULT_TIMEOUT_SECONDS_MAX = 300
 
-
-class QueryResultDict(TypedDict):
-    """TypedDict for query result in JSON response."""
-
-    execution_time_ms: int
-    row_count: int
-    columns: list[str]
-    rows: Sequence[Mapping[str, Jsonable]]
-    warnings: list[str]
-
-
-class ExecuteQueryJsonResponse(TypedDict):
-    """TypedDict for the complete execute query JSON response structure."""
-
-    query_result: QueryResultDict
+# Public API exports
+__all__ = [
+    "CompactQueryResultSerializer",
+    "EffectExecuteQuery",
+    "ExecuteQueryArgs",
+    "JsonQueryResultSerializer",
+    "QueryResult",
+    "QueryResultSerializer",
+    "handle_execute_query",
+]
 
 
 class ExecuteQueryArgs(BaseModel):
@@ -92,7 +95,7 @@ async def handle_execute_query(
     json_converter: JsonImmutableConverter,
     args: ExecuteQueryArgs,
     effect_handler: EffectExecuteQuery,
-) -> ExecuteQueryJsonResponse:
+) -> QueryResult:
     """Handle execute_query tool call.
 
     Parameters
@@ -106,8 +109,8 @@ async def handle_execute_query(
 
     Returns
     -------
-    ExecuteQueryJsonResponse
-        The structured response containing query results.
+    QueryResult
+        Format-agnostic query result, ready for serialization.
 
     Raises
     ------
@@ -142,12 +145,9 @@ async def handle_execute_query(
     result = DataProcessingResult.from_raw_rows(json_converter, raw_data)
 
     columns = list(first(result.processed_rows, {}).keys())
-    return ExecuteQueryJsonResponse(
-        query_result={
-            "execution_time_ms": execution_time_ms,
-            "row_count": len(result.processed_rows),
-            "columns": columns,
-            "rows": result.processed_rows,
-            "warnings": result.warnings,
-        }
+    return QueryResult(
+        execution_time_ms=execution_time_ms,
+        columns=columns,
+        rows=result.processed_rows,
+        warnings=result.warnings,
     )

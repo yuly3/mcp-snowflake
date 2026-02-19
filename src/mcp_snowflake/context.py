@@ -82,6 +82,8 @@ class ServerContext:
                 ExecuteQueryEffectHandler(self._snowflake_client),
                 timeout_seconds_default=execute_query_settings.timeout_seconds_default,
                 timeout_seconds_max=execute_query_settings.timeout_seconds_max,
+                compact_format_enabled=execute_query_settings.compact_format_enabled,
+                compact_format_threshold=execute_query_settings.compact_format_threshold,
             ),
             ListSchemasTool(ListSchemasEffectHandler(self._snowflake_client)),
             ListTablesTool(ListTablesEffectHandler(self._snowflake_client)),

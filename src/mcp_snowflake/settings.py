@@ -88,6 +88,8 @@ class ExecuteQuerySettings(BaseModel):
 
     timeout_seconds_default: int = Field(30, ge=1, le=3600, init=False)
     timeout_seconds_max: int = Field(300, ge=1, le=3600, init=False)
+    compact_format_enabled: bool = Field(False, init=False)
+    compact_format_threshold: int = Field(5, ge=1, init=False)
 
     @model_validator(mode="after")
     def validate_timeout_relationship(self) -> "ExecuteQuerySettings":

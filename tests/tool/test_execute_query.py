@@ -154,6 +154,73 @@ class TestExecuteQueryTool:
         assert "avg_salary" in query_result["columns"]
 
     @pytest.mark.asyncio
+    async def test_perform_uses_compact_format_at_threshold(self) -> None:
+        """Compact format should be used when row_count is equal to threshold."""
+        converter = JsonImmutableConverter()
+        mock_data = [
+            {"id": 1, "name": "Alice"},
+            {"id": 2, "name": "Bob"},
+        ]
+        mock_effect = MockExecuteQuery(result_data=mock_data)
+        tool = ExecuteQueryTool(
+            converter,
+            mock_effect,
+            compact_format_enabled=True,
+            compact_format_threshold=2,
+        )
+
+        result = await tool.perform({"sql": "SELECT id, name FROM users LIMIT 2"})
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert result[0].text.startswith("execution_time_ms:")
+        assert "\nrow1:\n" in result[0].text
+        assert 'name: "Alice"' in result[0].text
+        assert "query_result" not in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_perform_falls_back_to_json_above_threshold(self) -> None:
+        """JSON format should be used when row_count exceeds threshold."""
+        converter = JsonImmutableConverter()
+        mock_data = [
+            {"id": 1, "name": "Alice"},
+            {"id": 2, "name": "Bob"},
+        ]
+        mock_effect = MockExecuteQuery(result_data=mock_data)
+        tool = ExecuteQueryTool(
+            converter,
+            mock_effect,
+            compact_format_enabled=True,
+            compact_format_threshold=1,
+        )
+
+        result = await tool.perform({"sql": "SELECT id, name FROM users LIMIT 2"})
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        response_data = json.loads(result[0].text)
+        assert response_data["query_result"]["row_count"] == 2
+
+    @pytest.mark.asyncio
+    async def test_perform_compact_format_escapes_multiline_strings(self) -> None:
+        """Multiline string values should be escaped in compact format."""
+        converter = JsonImmutableConverter()
+        mock_data = [{"note": "line1\nline2"}]
+        mock_effect = MockExecuteQuery(result_data=mock_data)
+        tool = ExecuteQueryTool(
+            converter,
+            mock_effect,
+            compact_format_enabled=True,
+            compact_format_threshold=5,
+        )
+
+        result = await tool.perform({"sql": "SELECT note FROM notes LIMIT 1"})
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert 'note: "line1\\nline2"' in result[0].text
+
+    @pytest.mark.asyncio
     async def test_perform_empty_result(self) -> None:
         """Test with empty result set."""
         converter = JsonImmutableConverter()
