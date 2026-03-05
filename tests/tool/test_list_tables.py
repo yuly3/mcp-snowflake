@@ -1,7 +1,5 @@
 """Test for ListTablesTool."""
 
-import json
-
 import mcp.types as types
 import pytest
 from snowflake.connector import (
@@ -66,15 +64,12 @@ class TestListTablesTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
+        text = result[0].text
 
-        # Verify JSON structure
-        response_data = json.loads(result[0].text)
-        assert "tables_info" in response_data
-        tables_info = response_data["tables_info"]
-        assert tables_info["database"] == "TEST_DB"
-        assert tables_info["schema"] == "TEST_SCHEMA"
-        assert tables_info["tables"] == ["CUSTOMERS", "ORDERS"]
+        assert "database: TEST_DB" in text
+        assert "schema: TEST_SCHEMA" in text
+        assert "table_count: 2" in text
+        assert "tables: CUSTOMERS, ORDERS" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_custom_data(self) -> None:
@@ -88,12 +83,12 @@ class TestListTablesTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
+        text = result[0].text
 
-        response_data = json.loads(result[0].text)
-        tables_info = response_data["tables_info"]
-        assert tables_info["database"] == "CUSTOM_DB"
-        assert tables_info["schema"] == "CUSTOM_SCHEMA"
-        assert tables_info["tables"] == ["TABLE1", "TABLE2", "TABLE3"]
+        assert "database: CUSTOM_DB" in text
+        assert "schema: CUSTOM_SCHEMA" in text
+        assert "table_count: 3" in text
+        assert "tables: TABLE1, TABLE2, TABLE3" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_tables(self) -> None:
@@ -106,11 +101,12 @@ class TestListTablesTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        tables_info = response_data["tables_info"]
-        assert tables_info["database"] == "EMPTY_DB"
-        assert tables_info["schema"] == "EMPTY_SCHEMA"
-        assert tables_info["tables"] == []
+        text = result[0].text
+
+        assert "database: EMPTY_DB" in text
+        assert "schema: EMPTY_SCHEMA" in text
+        assert "table_count: 0" in text
+        assert "tables: (none)" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_filter(self) -> None:
@@ -128,9 +124,10 @@ class TestListTablesTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        tables_info = response_data["tables_info"]
-        assert tables_info["tables"] == ["ORDERS", "ORDER_ITEMS"]
+        text = result[0].text
+
+        assert "table_count: 2" in text
+        assert "tables: ORDERS, ORDER_ITEMS" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_arguments(self) -> None:

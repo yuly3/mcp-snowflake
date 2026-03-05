@@ -1,34 +1,37 @@
+"""List tables handler module."""
+
 import logging
 from collections.abc import Awaitable
-from typing import Protocol, TypedDict
+from typing import Protocol
 
 from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, Table
 
-from .name_filter import NameFilter, apply_name_filter
+from ..name_filter import NameFilter, apply_name_filter
+from ._serializer import (
+    CompactListTablesResultSerializer,
+    ListTablesResult,
+    ListTablesResultSerializer,
+)
 
 logger = logging.getLogger(__name__)
+
+# Public API exports
+__all__ = [
+    "CompactListTablesResultSerializer",
+    "EffectListTables",
+    "ListTablesArgs",
+    "ListTablesResult",
+    "ListTablesResultSerializer",
+    "handle_list_tables",
+]
 
 
 class ListTablesArgs(BaseModel):
     database: DataBase
     schema_: Schema = Field(alias="schema")
     filter_: NameFilter | None = Field(default=None, alias="filter")
-
-
-class TablesInfoDict(TypedDict):
-    """TypedDict for tables information in JSON response."""
-
-    database: str
-    schema: str
-    tables: list[str]
-
-
-class ListTablesJsonResponse(TypedDict):
-    """TypedDict for the complete list tables JSON response structure."""
-
-    tables_info: TablesInfoDict
 
 
 class EffectListTables(Protocol):
@@ -68,7 +71,7 @@ class EffectListTables(Protocol):
 async def handle_list_tables(
     args: ListTablesArgs,
     effect_handler: EffectListTables,
-) -> ListTablesJsonResponse:
+) -> ListTablesResult:
     """Handle list_tables tool call.
 
     Parameters
@@ -80,8 +83,8 @@ async def handle_list_tables(
 
     Returns
     -------
-    ListTablesJsonResponse
-        The structured response containing the tables information.
+    ListTablesResult
+        Format-agnostic list tables result, ready for serialization.
 
     Raises
     ------
@@ -101,10 +104,8 @@ async def handle_list_tables(
     tables = await effect_handler.list_tables(args.database, args.schema_)
     filtered_tables = apply_name_filter([str(table) for table in tables], args.filter_)
 
-    return ListTablesJsonResponse(
-        tables_info={
-            "database": str(args.database),
-            "schema": str(args.schema_),
-            "tables": filtered_tables,
-        }
+    return ListTablesResult(
+        database=args.database,
+        schema=args.schema_,
+        tables=filtered_tables,
     )

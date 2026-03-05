@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from kernel.table_metadata import DataBase, Schema, Table
 from mcp_snowflake.handler import ListTablesArgs, handle_list_tables
 
-from ..mock_effect_handler import MockListTables
+from ...mock_effect_handler import MockListTables
 
 
 class TestListTablesArgs:
@@ -78,101 +78,78 @@ class TestHandleListTables:
 
     @pytest.mark.asyncio
     async def test_successful_list_tables(self) -> None:
-        """Test successful table listing."""
-        # Arrange
+        """Test successful table listing returns ListTablesResult."""
         args = ListTablesArgs.model_validate({"database": "test_db", "schema": "test_schema"})
         mock_tables = [Table("table1"), Table("table2"), Table("table3")]
         effect_handler = MockListTables(result_data=mock_tables)
 
-        # Act
         result = await handle_list_tables(args, effect_handler)
 
-        # Assert
-        tables_info = result["tables_info"]
-        assert tables_info["database"] == "test_db"
-        assert tables_info["schema"] == "test_schema"
-        assert tables_info["tables"] == ["table1", "table2", "table3"]
+        assert result.database == "test_db"
+        assert result.schema == "test_schema"
+        assert result.tables == ["table1", "table2", "table3"]
 
     @pytest.mark.asyncio
     async def test_empty_tables_list(self) -> None:
         """Test when no tables are returned."""
-        # Arrange
         args = ListTablesArgs.model_validate({"database": "empty_db", "schema": "empty_schema"})
         effect_handler = MockListTables(result_data=[])
 
-        # Act
         result = await handle_list_tables(args, effect_handler)
 
-        # Assert
-        tables_info = result["tables_info"]
-        assert tables_info["database"] == "empty_db"
-        assert tables_info["schema"] == "empty_schema"
-        assert tables_info["tables"] == []
+        assert result.database == "empty_db"
+        assert result.schema == "empty_schema"
+        assert result.tables == []
 
     @pytest.mark.asyncio
     async def test_effect_handler_exception(self) -> None:
         """Test exception handling from effect handler."""
-        # Arrange
         args = ListTablesArgs.model_validate({"database": "error_db", "schema": "error_schema"})
         error_message = "Connection failed"
         effect_handler = MockListTables(should_raise=Exception(error_message))
 
-        # Act
         with pytest.raises(Exception, match=error_message):
             _ = await handle_list_tables(args, effect_handler)
 
     @pytest.mark.asyncio
     async def test_with_standard_table_names(self) -> None:
         """Test with typical table names."""
-        # Arrange
         args = ListTablesArgs.model_validate({"database": "production_db", "schema": "public"})
         effect_handler = MockListTables(result_data=[Table("users"), Table("orders"), Table("products")])
 
-        # Act
         result = await handle_list_tables(args, effect_handler)
 
-        # Assert
-        tables_info = result["tables_info"]
-        assert tables_info["database"] == "production_db"
-        assert tables_info["schema"] == "public"
-        assert tables_info["tables"] == ["users", "orders", "products"]
+        assert result.database == "production_db"
+        assert result.schema == "public"
+        assert result.tables == ["users", "orders", "products"]
 
     @pytest.mark.asyncio
     async def test_single_table(self) -> None:
         """Test with single table result."""
-        # Arrange
         args = ListTablesArgs.model_validate({"database": "single_db", "schema": "single_schema"})
         effect_handler = MockListTables(result_data=[Table("ONLY_TABLE")])
 
-        # Act
         result = await handle_list_tables(args, effect_handler)
 
-        # Assert
-        tables_info = result["tables_info"]
-        assert tables_info["database"] == "single_db"
-        assert tables_info["schema"] == "single_schema"
-        assert tables_info["tables"] == ["ONLY_TABLE"]
+        assert result.database == "single_db"
+        assert result.schema == "single_schema"
+        assert result.tables == ["ONLY_TABLE"]
 
     @pytest.mark.asyncio
     async def test_case_sensitive_table_names(self) -> None:
         """Test with case-sensitive table names."""
-        # Arrange
         args = ListTablesArgs.model_validate({"database": "case_db", "schema": "case_schema"})
         effect_handler = MockListTables(result_data=[Table("MyTable"), Table("my_table"), Table("MY_TABLE")])
 
-        # Act
         result = await handle_list_tables(args, effect_handler)
 
-        # Assert
-        tables_info = result["tables_info"]
-        assert tables_info["database"] == "case_db"
-        assert tables_info["schema"] == "case_schema"
-        assert tables_info["tables"] == ["MyTable", "my_table", "MY_TABLE"]
+        assert result.database == "case_db"
+        assert result.schema == "case_schema"
+        assert result.tables == ["MyTable", "my_table", "MY_TABLE"]
 
     @pytest.mark.asyncio
     async def test_filter_contains_applies_case_insensitive_match(self) -> None:
         """Test that contains filter is applied case-insensitively."""
-        # Arrange
         args = ListTablesArgs.model_validate({
             "database": "case_db",
             "schema": "case_schema",
@@ -180,17 +157,13 @@ class TestHandleListTables:
         })
         effect_handler = MockListTables(result_data=[Table("Orders"), Table("order_items"), Table("CUSTOMERS")])
 
-        # Act
         result = await handle_list_tables(args, effect_handler)
 
-        # Assert
-        tables_info = result["tables_info"]
-        assert tables_info["tables"] == ["Orders", "order_items"]
+        assert result.tables == ["Orders", "order_items"]
 
     @pytest.mark.asyncio
     async def test_filter_contains_with_no_match(self) -> None:
         """Test contains filter when no names match."""
-        # Arrange
         args = ListTablesArgs.model_validate({
             "database": "case_db",
             "schema": "case_schema",
@@ -198,9 +171,6 @@ class TestHandleListTables:
         })
         effect_handler = MockListTables(result_data=[Table("Orders"), Table("CUSTOMERS")])
 
-        # Act
         result = await handle_list_tables(args, effect_handler)
 
-        # Assert
-        tables_info = result["tables_info"]
-        assert tables_info["tables"] == []
+        assert result.tables == []

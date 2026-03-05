@@ -22,7 +22,14 @@ from .execute_query import (
     handle_execute_query,
 )
 from .list_schemas import EffectListSchemas, ListSchemasArgs, handle_list_schemas
-from .list_tables import EffectListTables, ListTablesArgs, handle_list_tables
+from .list_tables import (
+    CompactListTablesResultSerializer,
+    EffectListTables,
+    ListTablesArgs,
+    ListTablesResult,
+    ListTablesResultSerializer,
+    handle_list_tables,
+)
 from .list_views import EffectListViews, ListViewsArgs, handle_list_views
 from .profile_semi_structured_columns import (
     EffectProfileSemiStructuredColumns,
@@ -46,6 +53,7 @@ __all__ = [
     "EffectDescribeTable",
     "EffectExecuteQuery",
     "EffectListSchemas",
+    "CompactListTablesResultSerializer",
     "EffectListTables",
     "EffectListViews",
     "EffectProfileSemiStructuredColumns",
@@ -55,6 +63,8 @@ __all__ = [
     "JsonQueryResultSerializer",
     "ListSchemasArgs",
     "ListTablesArgs",
+    "ListTablesResult",
+    "ListTablesResultSerializer",
     "ListViewsArgs",
     "ProfileSemiStructuredColumnsArgs",
     "QueryResult",

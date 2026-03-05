@@ -238,6 +238,25 @@ Retrieve a list of tables from a specified database and schema.
 }
 ```
 
+**Response Format:**
+The list_tables tool returns a compact, token-efficient text format:
+
+```
+database: MY_DATABASE
+schema: PUBLIC
+table_count: 3
+tables: CUSTOMERS, ORDERS, PRODUCTS
+```
+
+When no tables match, the output is:
+
+```
+database: MY_DATABASE
+schema: PUBLIC
+table_count: 0
+tables: (none)
+```
+
 #### list_views
 Retrieve a list of views from a specified database and schema.
 
