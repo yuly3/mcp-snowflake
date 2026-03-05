@@ -13,6 +13,7 @@ from mcp_snowflake.adapter.analyze_table_statistics_handler.sql_generator import
 )
 from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
+    AnalyzeTableStatisticsResult,
     TableStatisticsParseResult,
     handle_analyze_table_statistics,
 )
@@ -62,20 +63,14 @@ class TestColumnSelection:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return structured data
-        assert isinstance(result, dict)
-        assert "table_statistics" in result
-
-        table_stats = result["table_statistics"]
-
-        # Should only have 1 analyzed column
-        assert table_stats["table_info"]["analyzed_columns"] == 1
-        assert "id" in table_stats["column_statistics"]
-        assert "name" not in table_stats["column_statistics"]
-        assert "date" not in table_stats["column_statistics"]
+        assert isinstance(result, AnalyzeTableStatisticsResult)
+        assert result.analyzed_columns == 1
+        assert "id" in result.column_statistics
+        assert "name" not in result.column_statistics
+        assert "date" not in result.column_statistics
 
         # Verify the selected column has complete stats
-        id_stats = table_stats["column_statistics"]["id"]
+        id_stats = result.column_statistics["id"]
         assert id_stats["column_type"] == "numeric"
         assert id_stats["min"] == 1.0
         assert id_stats["max"] == 100.0
@@ -163,8 +158,7 @@ class TestColumnSelection:
         assert 'APPROX_TOP_K("status", 25)' in query
 
         # Verify result is successful
-        assert isinstance(result, dict)
-        assert "table_statistics" in result
+        assert isinstance(result, AnalyzeTableStatisticsResult)
 
     @pytest.mark.asyncio
     async def test_multiple_columns_selection(self) -> None:
@@ -215,23 +209,19 @@ class TestColumnSelection:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return structured data
-        assert isinstance(result, dict)
-        table_stats = result["table_statistics"]
-
-        # Should only have 2 analyzed columns
-        assert table_stats["table_info"]["analyzed_columns"] == 2
-        assert "id" in table_stats["column_statistics"]
-        assert "price" in table_stats["column_statistics"]
+        assert isinstance(result, AnalyzeTableStatisticsResult)
+        assert result.analyzed_columns == 2
+        assert "id" in result.column_statistics
+        assert "price" in result.column_statistics
 
         # Should not have unselected columns
-        assert "name" not in table_stats["column_statistics"]
-        assert "date" not in table_stats["column_statistics"]
-        assert "status" not in table_stats["column_statistics"]
+        assert "name" not in result.column_statistics
+        assert "date" not in result.column_statistics
+        assert "status" not in result.column_statistics
 
         # Verify both selected columns have complete stats
-        id_stats = table_stats["column_statistics"]["id"]
-        price_stats = table_stats["column_statistics"]["price"]
+        id_stats = result.column_statistics["id"]
+        price_stats = result.column_statistics["price"]
 
         assert id_stats["column_type"] == "numeric"
         assert price_stats["column_type"] == "numeric"
@@ -269,14 +259,11 @@ class TestColumnSelection:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return structured data
-        assert isinstance(result, dict)
-        table_stats = result["table_statistics"]
+        assert isinstance(result, AnalyzeTableStatisticsResult)
+        assert result.analyzed_columns == 1
+        assert "single_col" in result.column_statistics
 
-        assert table_stats["table_info"]["analyzed_columns"] == 1
-        assert "single_col" in table_stats["column_statistics"]
-
-        col_stats = table_stats["column_statistics"]["single_col"]
+        col_stats = result.column_statistics["single_col"]
         assert col_stats["column_type"] == "string"
         assert col_stats["count"] == 45
         assert col_stats["null_count"] == 5

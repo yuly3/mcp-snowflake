@@ -67,41 +67,6 @@ class PathProfileDict(TypedDict):
     top_values: NotRequired[list[TopValue[str]]]
 
 
-class UnsupportedColumnDict(TypedDict):
-    """Column that cannot be profiled by this tool."""
-
-    name: str
-    data_type: str
-
-
-class ProfileInfoDict(TypedDict):
-    """Summary metadata for profile execution."""
-
-    database: str
-    schema: str
-    table: str
-    total_rows: int
-    sampled_rows: int
-    analyzed_columns: int
-    analyzed_column_names: list[str]
-    unsupported_columns: NotRequired[list[UnsupportedColumnDict]]
-
-
-class SemiStructuredProfileDict(TypedDict):
-    """Main payload for semi-structured profiling results."""
-
-    profile_info: ProfileInfoDict
-    column_profiles: dict[str, ColumnProfileDict]
-    path_profiles: list[PathProfileDict]
-    warnings: list[str]
-
-
-class ProfileSemiStructuredColumnsJsonResponse(TypedDict):
-    """Typed JSON response payload for profile_semi_structured_columns tool."""
-
-    semi_structured_profile: SemiStructuredProfileDict
-
-
 class ProfileSemiStructuredColumnsArgs(BaseModel):
     """Arguments for profiling semi-structured columns."""
 

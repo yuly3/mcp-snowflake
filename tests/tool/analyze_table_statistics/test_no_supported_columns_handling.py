@@ -2,7 +2,6 @@
 
 import pytest
 
-from cattrs_converter import JsonImmutableConverter
 from kernel.table_metadata import DataBase, Schema, TableColumn, TableInfo
 from mcp_snowflake.tool.analyze_table_statistics import AnalyzeTableStatisticsTool
 
@@ -15,7 +14,6 @@ class TestAnalyzeTableStatisticsToolNoSupportedColumns:
     @pytest.mark.asyncio
     async def test_perform_with_no_supported_columns_message(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test that tool correctly formats NoSupportedColumns as error message."""
         # Create table info with only unsupported columns
@@ -46,7 +44,7 @@ class TestAnalyzeTableStatisticsToolNoSupportedColumns:
 
         # Create tool instance with mock effect
         mock_effect = MockAnalyzeTableStatistics(table_info=table_info)
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         # Perform analysis
         arguments = {

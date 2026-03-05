@@ -1,11 +1,8 @@
 """Success and validation tests for ProfileSemiStructuredColumnsTool."""
 
-import json
-
 import mcp.types as types
 import pytest
 
-from cattrs_converter import JsonImmutableConverter
 from kernel.table_metadata import DataBase, Schema, TableColumn, TableInfo
 from mcp_snowflake.handler.profile_semi_structured_columns.models import (
     SemiStructuredProfileParseResult,
@@ -17,10 +14,9 @@ from mcp_snowflake.tool.profile_semi_structured_columns import (
 from ...mock_effect_handler import MockProfileSemiStructuredColumns
 
 
-def test_name_and_definition(json_converter: JsonImmutableConverter) -> None:
+def test_name_and_definition() -> None:
     """Tool name and definition should match expected contract."""
     tool = ProfileSemiStructuredColumnsTool(
-        json_converter,
         MockProfileSemiStructuredColumns(),
     )
     assert tool.name == "profile_semi_structured_columns"
@@ -35,8 +31,8 @@ def test_name_and_definition(json_converter: JsonImmutableConverter) -> None:
 
 
 @pytest.mark.asyncio
-async def test_perform_success(json_converter: JsonImmutableConverter) -> None:
-    """Should return summary and JSON body on successful profiling."""
+async def test_perform_success() -> None:
+    """Should return compact format on successful profiling."""
     table_info = TableInfo(
         database=DataBase("db"),
         schema=Schema("public"),
@@ -67,7 +63,6 @@ async def test_perform_success(json_converter: JsonImmutableConverter) -> None:
         warnings=["Path profiling is limited to max_depth=4"],
     )
     tool = ProfileSemiStructuredColumnsTool(
-        json_converter,
         MockProfileSemiStructuredColumns(
             table_info=table_info,
             profile_result=profile_result,
@@ -80,21 +75,27 @@ async def test_perform_success(json_converter: JsonImmutableConverter) -> None:
         "table": "events",
     })
 
-    assert len(result) == 2
+    assert len(result) == 1
     assert isinstance(result[0], types.TextContent)
-    assert "Semi-Structured Profile: db.public.events" in result[0].text
-    assert isinstance(result[1], types.TextContent)
 
-    body = json.loads(result[1].text)
-    assert body["semi_structured_profile"]["profile_info"]["analyzed_columns"] == 1
-    assert "payload" in body["semi_structured_profile"]["column_profiles"]
+    text = result[0].text
+    assert text.startswith("database: db")
+    assert "schema: public" in text
+    assert "table: events" in text
+    assert "total_rows: 2000" in text
+    assert "sampled_rows: 1000" in text
+    assert "analyzed_columns: 1" in text
+    assert "column_profile: payload" in text
+    assert "column_type: VARIANT" in text
+    assert "OBJECT: 800" in text
+    assert "warnings:" in text
+    assert "- Path profiling is limited to max_depth=4" in text
 
 
 @pytest.mark.asyncio
-async def test_perform_invalid_args(json_converter: JsonImmutableConverter) -> None:
+async def test_perform_invalid_args() -> None:
     """Should return a validation error string for invalid arguments."""
     tool = ProfileSemiStructuredColumnsTool(
-        json_converter,
         MockProfileSemiStructuredColumns(),
     )
     result = await tool.perform({

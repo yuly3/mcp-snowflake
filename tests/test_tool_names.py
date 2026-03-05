@@ -20,10 +20,10 @@ def test_tool_name_unique() -> None:
     mock_effect_handler = Mock()
     mock_json_converter = Mock()
 
-    analyze_tool = AnalyzeTableStatisticsTool(mock_json_converter, mock_effect_handler)
+    analyze_tool = AnalyzeTableStatisticsTool(mock_effect_handler)
     execute_tool = ExecuteQueryTool(mock_json_converter, mock_effect_handler)
     sample_tool = SampleTableDataTool(mock_json_converter, mock_effect_handler)
-    profile_tool = ProfileSemiStructuredColumnsTool(mock_json_converter, mock_effect_handler)
+    profile_tool = ProfileSemiStructuredColumnsTool(mock_effect_handler)
 
     describe_tool = DescribeTableTool(mock_effect_handler)
     list_schemas_tool = ListSchemasTool(mock_effect_handler)
@@ -52,10 +52,10 @@ def test_settings_keys_match_tool_names() -> None:
     mock_effect_handler = Mock()
     mock_json_converter = Mock()
 
-    analyze_tool = AnalyzeTableStatisticsTool(mock_json_converter, mock_effect_handler)
+    analyze_tool = AnalyzeTableStatisticsTool(mock_effect_handler)
     execute_tool = ExecuteQueryTool(mock_json_converter, mock_effect_handler)
     sample_tool = SampleTableDataTool(mock_json_converter, mock_effect_handler)
-    profile_tool = ProfileSemiStructuredColumnsTool(mock_json_converter, mock_effect_handler)
+    profile_tool = ProfileSemiStructuredColumnsTool(mock_effect_handler)
 
     describe_tool = DescribeTableTool(mock_effect_handler)
     list_schemas_tool = ListSchemasTool(mock_effect_handler)

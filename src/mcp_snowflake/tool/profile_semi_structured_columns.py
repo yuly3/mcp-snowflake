@@ -1,4 +1,3 @@
-import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -12,7 +11,6 @@ from snowflake.connector import (
     ProgrammingError,
 )
 
-from cattrs_converter import JsonImmutableConverter
 from expression.contract import ContractViolationError
 
 from ..handler import (
@@ -21,8 +19,8 @@ from ..handler import (
     handle_profile_semi_structured_columns,
 )
 from ..handler.profile_semi_structured_columns import (
+    CompactProfileSemiStructuredColumnsResultSerializer,
     NoSemiStructuredColumns,
-    ProfileSemiStructuredColumnsJsonResponse,
     SemiStructuredColumnDoesNotExist,
     SemiStructuredProfileResultParseError,
 )
@@ -32,10 +30,8 @@ from .base import Tool
 class ProfileSemiStructuredColumnsTool(Tool):
     def __init__(
         self,
-        json_converter: JsonImmutableConverter,
         effect_handler: EffectProfileSemiStructuredColumns,
     ) -> None:
-        self.json_converter = json_converter
         self.effect_handler = effect_handler
 
     @property
@@ -84,18 +80,7 @@ class ProfileSemiStructuredColumnsTool(Tool):
                         f"Unsupported columns: {', '.join(unsupported_list)}"
                     )
                 case response:
-                    summary_text = _build_summary_text(response)
-                    return [
-                        types.TextContent(type="text", text=summary_text),
-                        types.TextContent(
-                            type="text",
-                            text=json.dumps(
-                                self.json_converter.unstructure(response),
-                                indent=2,
-                                ensure_ascii=False,
-                            ),
-                        ),
-                    ]
+                    text = response.serialize_with(CompactProfileSemiStructuredColumnsResultSerializer())
 
         return [types.TextContent(type="text", text=text)]
 
@@ -161,29 +146,3 @@ class ProfileSemiStructuredColumnsTool(Tool):
                 "required": ["database", "schema", "table"],
             },
         )
-
-
-def _build_summary_text(
-    response: ProfileSemiStructuredColumnsJsonResponse,
-) -> str:
-    """Build summary text for profile_semi_structured_columns response."""
-    profile = response["semi_structured_profile"]
-    info = profile["profile_info"]
-    column_count = len(profile["column_profiles"])
-    path_count = len(profile["path_profiles"])
-    warning_count = len(profile["warnings"])
-
-    summary_lines = [
-        f"Semi-Structured Profile: {info['database']}.{info['schema']}.{info['table']}",
-        "",
-        f"Analyzed {column_count} columns with sampled_rows={info['sampled_rows']:,} / total_rows={info['total_rows']:,}.",
-        f"Path profiles: {path_count}",
-        f"Warnings: {warning_count}",
-    ]
-
-    if warning_count:
-        summary_lines.extend(["", "**Warnings:**"])
-        summary_lines.extend(f"- {warning}" for warning in profile["warnings"])
-
-    summary_lines.extend(["", "Full profiling details are provided in the JSON response below."])
-    return "\n".join(summary_lines)

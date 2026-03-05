@@ -5,6 +5,7 @@ import pytest
 from kernel.table_metadata import DataBase, Schema, Table
 from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
+    AnalyzeTableStatisticsResult,
     NoSupportedColumns,
     handle_analyze_table_statistics,
 )
@@ -50,40 +51,25 @@ class TestPartialResults:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return structured data
-        assert isinstance(result, dict)
-        assert "table_statistics" in result
-
-        table_stats = result["table_statistics"]
+        assert isinstance(result, AnalyzeTableStatisticsResult)
 
         # Check that only supported columns are in column_statistics
-        column_stats = table_stats["column_statistics"]
-        assert len(column_stats) == 2
-        assert "id" in column_stats
-        assert "name" in column_stats
-        assert "metadata" not in column_stats
-        assert "config" not in column_stats
+        assert len(result.column_statistics) == 2
+        assert "id" in result.column_statistics
+        assert "name" in result.column_statistics
+        assert "metadata" not in result.column_statistics
+        assert "config" not in result.column_statistics
 
-        # Check unsupported_columns field
-        assert "unsupported_columns" in table_stats
-        unsupported = table_stats["unsupported_columns"]
-        assert len(unsupported) == 2
-
-        # Check unsupported column details
-        unsupported_names = {col["name"] for col in unsupported}
+        # Check unsupported_columns
+        assert len(result.unsupported_columns) == 2
+        unsupported_names = {col.name for col in result.unsupported_columns}
         assert unsupported_names == {"metadata", "config"}
 
-        for col in unsupported:
-            assert "name" in col
-            assert "data_type" in col
-            assert "reason" not in col  # Should not include reason
-            assert len(col) == 2  # Only name and data_type
-
         # Verify data types
-        metadata_col = next(col for col in unsupported if col["name"] == "metadata")
-        config_col = next(col for col in unsupported if col["name"] == "config")
-        assert metadata_col["data_type"] == "VARIANT"
-        assert config_col["data_type"] == "OBJECT"
+        metadata_col = next(col for col in result.unsupported_columns if col.name == "metadata")
+        config_col = next(col for col in result.unsupported_columns if col.name == "config")
+        assert metadata_col.data_type == "VARIANT"
+        assert config_col.data_type == "OBJECT"
 
     @pytest.mark.asyncio
     async def test_all_unsupported_columns_error(self) -> None:
@@ -151,26 +137,20 @@ class TestPartialResults:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return structured data
-        assert isinstance(result, dict)
-        assert "table_statistics" in result
-
-        table_stats = result["table_statistics"]
+        assert isinstance(result, AnalyzeTableStatisticsResult)
 
         # Only id should be analyzed
-        column_stats = table_stats["column_statistics"]
-        assert len(column_stats) == 1
-        assert "id" in column_stats
+        assert len(result.column_statistics) == 1
+        assert "id" in result.column_statistics
 
         # metadata should be in unsupported_columns
-        unsupported = table_stats.get("unsupported_columns", [])
-        assert len(unsupported) == 1
-        assert unsupported[0]["name"] == "metadata"
-        assert unsupported[0]["data_type"] == "VARIANT"
+        assert len(result.unsupported_columns) == 1
+        assert result.unsupported_columns[0].name == "metadata"
+        assert result.unsupported_columns[0].data_type == "VARIANT"
 
     @pytest.mark.asyncio
     async def test_all_supported_columns_no_unsupported_field(self) -> None:
-        """Test that unsupported_columns field is omitted when all columns are supported."""
+        """Test that unsupported_columns is empty when all columns are supported."""
         # Create table with only supported columns
         table_data = create_test_table_info(
             [
@@ -200,16 +180,11 @@ class TestPartialResults:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return structured data (no unsupported columns)
-        assert isinstance(result, dict)
-        assert "table_statistics" in result
-
-        table_stats = result["table_statistics"]
-        assert "unsupported_columns" not in table_stats
+        assert isinstance(result, AnalyzeTableStatisticsResult)
+        assert len(result.unsupported_columns) == 0
 
         # All columns should be analyzed
-        column_stats = table_stats["column_statistics"]
-        assert len(column_stats) == 3
-        assert "id" in column_stats
-        assert "name" in column_stats
-        assert "active" in column_stats
+        assert len(result.column_statistics) == 3
+        assert "id" in result.column_statistics
+        assert "name" in result.column_statistics
+        assert "active" in result.column_statistics

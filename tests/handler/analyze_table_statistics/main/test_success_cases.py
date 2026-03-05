@@ -7,6 +7,7 @@ import pytest
 from kernel.table_metadata import DataBase, Schema, Table
 from mcp_snowflake.handler.analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
+    AnalyzeTableStatisticsResult,
     handle_analyze_table_statistics,
 )
 
@@ -58,25 +59,16 @@ class TestSuccessCases:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return structured data, not content list
-        assert isinstance(result, dict)
-        assert "table_statistics" in result
-
-        # Check table_info
-        table_stats = result["table_statistics"]
-        table_info = table_stats["table_info"]
-        assert table_info["database"] == "test_db"
-        assert table_info["schema"] == "test_schema"
-        assert table_info["table"] == "test_table"
-        assert table_info["total_rows"] == 1000
-        assert table_info["analyzed_columns"] == 5
-        statistics_metadata = table_stats.get("statistics_metadata")
-        assert statistics_metadata is not None
-        assert statistics_metadata["quality_profile_counting_mode"] == "exact"
-        assert statistics_metadata["distribution_metrics_mode"] == "approximate"
+        assert isinstance(result, AnalyzeTableStatisticsResult)
+        assert result.database == "test_db"
+        assert result.schema == "test_schema"
+        assert result.table == "test_table"
+        assert result.total_rows == 1000
+        assert result.analyzed_columns == 5
+        assert result.include_statistics_metadata is True
 
         # Check column statistics
-        column_stats = table_stats["column_statistics"]
+        column_stats = result.column_statistics
         assert len(column_stats) == 5
 
         # Verify numeric columns
@@ -92,23 +84,6 @@ class TestSuccessCases:
         assert column_stats["is_active"]["column_type"] == "boolean"
 
         # Verify detailed column statistics structure
-        numeric_stats = column_stats["id"]
-        column_stats = table_stats["column_statistics"]
-        assert len(column_stats) == 5
-        assert "id" in column_stats
-        assert "name" in column_stats
-        assert "price" in column_stats
-        assert "status" in column_stats
-        assert "is_active" in column_stats
-
-        # Verify column types
-        assert column_stats["id"]["column_type"] == "numeric"
-        assert column_stats["name"]["column_type"] == "string"
-        assert column_stats["price"]["column_type"] == "numeric"
-        assert column_stats["status"]["column_type"] == "string"
-        assert column_stats["is_active"]["column_type"] == "boolean"
-
-        # Verify numeric statistics structure
         numeric_stats = column_stats["id"]
         assert "min" in numeric_stats
         assert "max" in numeric_stats
@@ -160,19 +135,12 @@ class TestSuccessCases:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return structured data, not content list
-        assert isinstance(result, dict)
-        assert "table_statistics" in result
-
-        # Check table_info
-        table_stats = result["table_statistics"]
-        table_info = table_stats["table_info"]
-        assert table_info["total_rows"] == 1000
-        assert table_info["analyzed_columns"] == 1
+        assert isinstance(result, AnalyzeTableStatisticsResult)
+        assert result.total_rows == 1000
+        assert result.analyzed_columns == 1
 
         # Check boolean column statistics
-        column_stats = table_stats["column_statistics"]
-        boolean_stats = column_stats["is_active"]
+        boolean_stats = result.column_statistics["is_active"]
         assert boolean_stats["column_type"] == "boolean"
         assert boolean_stats["data_type"] == "BOOLEAN"
         assert boolean_stats["count"] == 950
@@ -226,29 +194,20 @@ class TestSuccessCases:
 
         result = await handle_analyze_table_statistics(args, mock_effect)
 
-        # Should return structured data, not content list
-        assert isinstance(result, dict)
-        assert "table_statistics" in result
-
-        # Check table_info
-        table_stats = result["table_statistics"]
-        table_info = table_stats["table_info"]
-        assert table_info["total_rows"] == 100
-        assert table_info["analyzed_columns"] == 2
-
-        # Check column statistics
-        column_stats = table_stats["column_statistics"]
-        assert "id" in column_stats
-        assert "name" in column_stats
+        assert isinstance(result, AnalyzeTableStatisticsResult)
+        assert result.total_rows == 100
+        assert result.analyzed_columns == 2
+        assert "id" in result.column_statistics
+        assert "name" in result.column_statistics
 
         # Verify specific statistics values
-        id_stats = column_stats["id"]
+        id_stats = result.column_statistics["id"]
         assert id_stats["column_type"] == "numeric"
         assert id_stats["min"] == 1.0
         assert id_stats["max"] == 100.0
         assert id_stats["avg"] == 50.5
 
-        name_stats = column_stats["name"]
+        name_stats = result.column_statistics["name"]
         assert name_stats["column_type"] == "string"
         assert name_stats["min_length"] == 3
         assert name_stats["max_length"] == 20
@@ -282,10 +241,10 @@ class TestSuccessCases:
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
-        assert isinstance(result, dict)
+        assert isinstance(result, AnalyzeTableStatisticsResult)
         name_stats = cast(
             "StringStatsDict",
-            result["table_statistics"]["column_statistics"]["name"],
+            result.column_statistics["name"],
         )
         quality_profile = name_stats.get("quality_profile")
         assert quality_profile is not None
@@ -294,9 +253,7 @@ class TestSuccessCases:
         assert quality_profile["empty_string_count"] == 2
         assert quality_profile["empty_string_ratio"] == 0.25
 
-        statistics_metadata = result["table_statistics"].get("statistics_metadata")
-        assert statistics_metadata is not None
-        assert statistics_metadata["quality_profile_counting_mode"] == "exact"
+        assert result.include_statistics_metadata is True
 
     @pytest.mark.asyncio
     async def test_quality_profile_disabled_keeps_backward_compatible_shape(self) -> None:
@@ -327,7 +284,7 @@ class TestSuccessCases:
         )
 
         result = await handle_analyze_table_statistics(args, mock_effect)
-        assert isinstance(result, dict)
-        name_stats = result["table_statistics"]["column_statistics"]["name"]
+        assert isinstance(result, AnalyzeTableStatisticsResult)
+        name_stats = result.column_statistics["name"]
         assert "quality_profile" not in name_stats
-        assert "statistics_metadata" not in result["table_statistics"]
+        assert result.include_statistics_metadata is False

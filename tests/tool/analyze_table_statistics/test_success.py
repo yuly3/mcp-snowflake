@@ -1,11 +1,8 @@
 """Test for AnalyzeTableStatisticsTool - Success Cases."""
 
-import json
-
 import mcp.types as types
 import pytest
 
-from cattrs_converter import JsonImmutableConverter
 from kernel.table_metadata import DataBase, Schema, TableColumn, TableInfo
 from mcp_snowflake.tool.analyze_table_statistics import AnalyzeTableStatisticsTool
 
@@ -15,16 +12,16 @@ from ...mock_effect_handler import MockAnalyzeTableStatistics
 class TestAnalyzeTableStatisticsToolSuccess:
     """Test AnalyzeTableStatisticsTool success cases."""
 
-    def test_name_property(self, json_converter: JsonImmutableConverter) -> None:
+    def test_name_property(self) -> None:
         """Test name property."""
         mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
         assert tool.name == "analyze_table_statistics"
 
-    def test_definition_property(self, json_converter: JsonImmutableConverter) -> None:
+    def test_definition_property(self) -> None:
         """Test definition property."""
         mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
         definition = tool.definition
 
         assert definition.name == "analyze_table_statistics"
@@ -58,12 +55,8 @@ class TestAnalyzeTableStatisticsToolSuccess:
         assert properties["include_blank_string_profile"]["default"] is False
 
     @pytest.mark.asyncio
-    async def test_perform_success_basic(
-        self,
-        json_converter: JsonImmutableConverter,
-    ) -> None:
-        """Test basic successful statistics analysis."""
-        # Set up mock table info with various column types
+    async def test_perform_success_basic(self) -> None:
+        """Test basic successful statistics analysis returns compact format."""
         table_info = TableInfo(
             database=DataBase("test_db"),
             schema=Schema("test_schema"),
@@ -105,10 +98,8 @@ class TestAnalyzeTableStatisticsToolSuccess:
             ],
         )
 
-        # Mock statistics result with sample data
         statistics_result = {
             "TOTAL_ROWS": 5000,
-            # Numeric column (ID)
             "NUMERIC_ID_COUNT": 5000,
             "NUMERIC_ID_NULL_COUNT": 0,
             "NUMERIC_ID_MIN": 1,
@@ -118,21 +109,18 @@ class TestAnalyzeTableStatisticsToolSuccess:
             "NUMERIC_ID_MEDIAN": 2500.5,
             "NUMERIC_ID_Q3": 3750.75,
             "NUMERIC_ID_DISTINCT": 5000,
-            # String column (NAME)
             "STRING_NAME_COUNT": 4900,
             "STRING_NAME_NULL_COUNT": 100,
             "STRING_NAME_MIN_LENGTH": 3,
             "STRING_NAME_MAX_LENGTH": 20,
             "STRING_NAME_DISTINCT": 4500,
             "STRING_NAME_TOP_VALUES": '[["John", 50], ["Jane", 45]]',
-            # Date column (CREATED_DATE)
             "DATE_CREATED_DATE_COUNT": 4950,
             "DATE_CREATED_DATE_NULL_COUNT": 50,
             "DATE_CREATED_DATE_MIN": "2023-01-01",
             "DATE_CREATED_DATE_MAX": "2024-12-31",
             "DATE_CREATED_DATE_DISTINCT": 365,
             "DATE_CREATED_DATE_RANGE_DAYS": 730,
-            # Boolean column (IS_ACTIVE)
             "BOOLEAN_IS_ACTIVE_COUNT": 4950,
             "BOOLEAN_IS_ACTIVE_NULL_COUNT": 50,
             "BOOLEAN_IS_ACTIVE_TRUE_COUNT": 3000,
@@ -148,7 +136,7 @@ class TestAnalyzeTableStatisticsToolSuccess:
             table_info=table_info,
             statistics_result=statistics_result,
         )
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -157,193 +145,23 @@ class TestAnalyzeTableStatisticsToolSuccess:
         }
         result = await tool.perform(arguments)
 
-        assert len(result) == 2
-        assert all(isinstance(content, types.TextContent) for content in result)
-
-        # First content should be summary
-        assert isinstance(result[0], types.TextContent)
-        summary_text = result[0].text
-        assert "Table Statistics Analysis: test_db.test_schema.test_table" in summary_text
-        assert "5,000 total rows" in summary_text
-        assert "Successfully analyzed" in summary_text
-
-        # Second content should be JSON
-        assert isinstance(result[1], types.TextContent)
-        json_text = result[1].text
-        response_data = json.loads(json_text)
-
-        assert "table_statistics" in response_data
-        table_stats = response_data["table_statistics"]
-
-        # Verify table info
-        assert table_stats["table_info"]["database"] == "test_db"
-        assert table_stats["table_info"]["schema"] == "test_schema"
-        assert table_stats["table_info"]["table"] == "test_table"
-        assert table_stats["table_info"]["total_rows"] == 5000
-
-        # Verify column statistics exist
-        assert "column_statistics" in table_stats
-        column_stats = table_stats["column_statistics"]
-
-        # Should have statistics for supported column types
-        expected_columns = {"ID", "NAME", "CREATED_DATE", "IS_ACTIVE"}
-        actual_columns = set(column_stats.keys())
-        assert actual_columns.issubset(expected_columns)
-
-    @pytest.mark.asyncio
-    async def test_perform_with_specific_columns(
-        self,
-        json_converter: JsonImmutableConverter,
-    ) -> None:
-        """Test statistics analysis with specific columns specified."""
-        table_info = TableInfo(
-            database=DataBase("test_db"),
-            schema=Schema("test_schema"),
-            name="test_table",
-            column_count=2,
-            columns=[
-                TableColumn(
-                    name="ID",
-                    data_type="NUMBER(10,0)",
-                    nullable=False,
-                    default_value=None,
-                    comment="Primary key",
-                    ordinal_position=1,
-                ),
-                TableColumn(
-                    name="NAME",
-                    data_type="VARCHAR(100)",
-                    nullable=True,
-                    default_value=None,
-                    comment="User name",
-                    ordinal_position=2,
-                ),
-            ],
-        )
-
-        statistics_result = {
-            "TOTAL_ROWS": 1000,
-            "NUMERIC_ID_COUNT": 1000,
-            "NUMERIC_ID_NULL_COUNT": 0,
-            "NUMERIC_ID_MIN": 1,
-            "NUMERIC_ID_MAX": 1000,
-            "NUMERIC_ID_AVG": 500.5,
-            "NUMERIC_ID_Q1": 250.0,
-            "NUMERIC_ID_MEDIAN": 500.0,
-            "NUMERIC_ID_Q3": 750.0,
-            "NUMERIC_ID_DISTINCT": 1000,
-        }
-
-        mock_effect = MockAnalyzeTableStatistics(
-            table_info=table_info,
-            statistics_result=statistics_result,
-        )
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
-
-        arguments = {
-            "database": "test_db",
-            "schema": "test_schema",
-            "table": "test_table",
-            "columns": ["ID"],  # Only analyze ID column
-        }
-        result = await tool.perform(arguments)
-
-        assert len(result) == 2
-        assert isinstance(result[0], types.TextContent)
-        summary_text = result[0].text
-        assert "test_db.test_schema.test_table" in summary_text
-
-        # Verify JSON response
-        assert isinstance(result[1], types.TextContent)
-        json_text = result[1].text
-        response_data = json.loads(json_text)
-        assert "table_statistics" in response_data
-
-    @pytest.mark.asyncio
-    async def test_perform_with_custom_top_k_limit(
-        self,
-        json_converter: JsonImmutableConverter,
-    ) -> None:
-        """Test statistics analysis with custom top_k_limit."""
-        table_info = TableInfo(
-            database=DataBase("test_db"),
-            schema=Schema("test_schema"),
-            name="test_table",
-            column_count=1,
-            columns=[
-                TableColumn(
-                    name="CATEGORY",
-                    data_type="VARCHAR(50)",
-                    nullable=True,
-                    default_value=None,
-                    comment="Category name",
-                    ordinal_position=1,
-                ),
-            ],
-        )
-
-        statistics_result = {
-            "TOTAL_ROWS": 2000,
-            "STRING_CATEGORY_COUNT": 1990,
-            "STRING_CATEGORY_NULL_COUNT": 10,
-            "STRING_CATEGORY_MIN_LENGTH": 1,
-            "STRING_CATEGORY_MAX_LENGTH": 10,
-            "STRING_CATEGORY_DISTINCT": 25,
-            "STRING_CATEGORY_TOP_VALUES": '[["A", 200], ["B", 150]]',
-        }
-
-        mock_effect = MockAnalyzeTableStatistics(
-            table_info=table_info,
-            statistics_result=statistics_result,
-        )
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
-
-        arguments = {
-            "database": "test_db",
-            "schema": "test_schema",
-            "table": "test_table",
-            "top_k_limit": 5,  # Custom limit
-        }
-        result = await tool.perform(arguments)
-
-        assert len(result) == 2
-        assert isinstance(result[0], types.TextContent)
-        summary_text = result[0].text
-        assert "test_db.test_schema.test_table" in summary_text
-
-        assert isinstance(result[1], types.TextContent)
-        json_text = result[1].text
-        response_data = json.loads(json_text)
-        assert "table_statistics" in response_data
-
-    @pytest.mark.asyncio
-    async def test_perform_with_minimal_table(
-        self,
-        json_converter: JsonImmutableConverter,
-    ) -> None:
-        """Test with minimal table (no columns)."""
-        # Use default table info from MockAnalyzeTableStatistics (no columns)
-        mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
-
-        arguments = {
-            "database": "test_db",
-            "schema": "test_schema",
-            "table": "test_table",
-        }
-        result = await tool.perform(arguments)
-
-        # With no columns, should return error message
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        error_text = result[0].text
-        assert "Error: No supported columns for statistics" in error_text
+
+        text = result[0].text
+        assert text.startswith("database: test_db")
+        assert "schema: test_schema" in text
+        assert "table: test_table" in text
+        assert "total_rows: 5000" in text
+        assert "analyzed_columns: 4" in text
+        assert "\ncolumn: ID\n" in text
+        assert "column_type: numeric" in text
+        assert "\ncolumn: NAME\n" in text
+        assert "column_type: string" in text
+        assert '"John": 50' in text
 
     @pytest.mark.asyncio
-    async def test_perform_with_unsupported_columns(
-        self,
-        json_converter: JsonImmutableConverter,
-    ) -> None:
+    async def test_perform_with_unsupported_columns(self) -> None:
         """Test statistics analysis with unsupported column types."""
         table_info = TableInfo(
             database=DataBase("test_db"),
@@ -395,7 +213,7 @@ class TestAnalyzeTableStatisticsToolSuccess:
             table_info=table_info,
             statistics_result=statistics_result,
         )
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -404,27 +222,15 @@ class TestAnalyzeTableStatisticsToolSuccess:
         }
         result = await tool.perform(arguments)
 
-        assert len(result) == 2
+        assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        summary_text = result[0].text
-        assert "test_db.test_schema.test_table" in summary_text
 
-        # Should mention unsupported columns if any
-        assert isinstance(result[1], types.TextContent)
-        json_text = result[1].text
-        response_data = json.loads(json_text)
-        table_stats = response_data["table_statistics"]
-
-        # May have unsupported_columns field if binary/object columns are not supported
-        if "unsupported_columns" in table_stats:
-            unsupported = table_stats["unsupported_columns"]
-            assert isinstance(unsupported, list)
+        text = result[0].text
+        assert "unsupported_columns:" in text
+        assert "DATA_BLOB (BINARY)" in text or "METADATA (OBJECT)" in text
 
     @pytest.mark.asyncio
-    async def test_perform_with_blank_string_profile_enabled(
-        self,
-        json_converter: JsonImmutableConverter,
-    ) -> None:
+    async def test_perform_with_blank_string_profile_enabled(self) -> None:
         """Test quality profile fields when blank string profile is enabled."""
         table_info = TableInfo(
             database=DataBase("test_db"),
@@ -459,7 +265,7 @@ class TestAnalyzeTableStatisticsToolSuccess:
             table_info=table_info,
             statistics_result=statistics_result,
         )
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -470,11 +276,31 @@ class TestAnalyzeTableStatisticsToolSuccess:
         }
         result = await tool.perform(arguments)
 
-        assert len(result) == 2
-        assert isinstance(result[1], types.TextContent)
-        response_data = json.loads(result[1].text)
-        name_stats = response_data["table_statistics"]["column_statistics"]["NAME"]
-        assert "quality_profile" in name_stats
-        assert name_stats["quality_profile"]["null_ratio"] == 0.2
-        assert name_stats["quality_profile"]["empty_string_ratio"] == 0.25
-        assert name_stats["quality_profile"]["blank_string_ratio"] == 0.375
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+
+        text = result[0].text
+        assert "quality_profile:" in text
+        assert "null_ratio: 0.2" in text
+        assert "empty_string_ratio: 0.25" in text
+        assert "blank_string_ratio: 0.375" in text
+        assert "statistics_metadata:" in text
+        assert "quality_profile_counting_mode: exact" in text
+
+    @pytest.mark.asyncio
+    async def test_perform_with_minimal_table(self) -> None:
+        """Test with minimal table (no columns)."""
+        mock_effect = MockAnalyzeTableStatistics()
+        tool = AnalyzeTableStatisticsTool(mock_effect)
+
+        arguments = {
+            "database": "test_db",
+            "schema": "test_schema",
+            "table": "test_table",
+        }
+        result = await tool.perform(arguments)
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        error_text = result[0].text
+        assert "Error: No supported columns for statistics" in error_text

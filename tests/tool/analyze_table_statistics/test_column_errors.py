@@ -3,7 +3,6 @@
 import mcp.types as types
 import pytest
 
-from cattrs_converter import JsonImmutableConverter
 from kernel.table_metadata import DataBase, Schema, TableColumn, TableInfo
 from mcp_snowflake.tool.analyze_table_statistics import AnalyzeTableStatisticsTool
 
@@ -16,7 +15,6 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
     @pytest.mark.asyncio
     async def test_perform_with_nonexistent_columns(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test with columns that don't exist in the table."""
         # Set up mock table info with limited columns
@@ -46,7 +44,7 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
         )
 
         mock_effect = MockAnalyzeTableStatistics(table_info=table_info)
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         # Request analysis for columns that don't exist
         arguments = {
@@ -71,7 +69,6 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
     @pytest.mark.asyncio
     async def test_perform_with_no_supported_columns(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test with table that has no supported columns for statistics."""
         # Set up mock table info with only unsupported column types
@@ -101,7 +98,7 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
         )
 
         mock_effect = MockAnalyzeTableStatistics(table_info=table_info)
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -121,7 +118,6 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
     @pytest.mark.asyncio
     async def test_perform_with_mixed_existing_nonexisting_columns(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test with a mix of existing and non-existing columns."""
         # Set up mock table info
@@ -151,7 +147,7 @@ class TestAnalyzeTableStatisticsToolColumnErrors:
         )
 
         mock_effect = MockAnalyzeTableStatistics(table_info=table_info)
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         # Request analysis with mix of existing and non-existing columns
         arguments = {

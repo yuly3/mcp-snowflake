@@ -70,7 +70,6 @@ class ServerContext:
 
         all_tools: list[Tool] = [
             AnalyzeTableStatisticsTool(
-                self._json_converter,
                 AnalyzeTableStatisticsEffectHandler(
                     self._snowflake_client,
                     query_timeout_seconds=analyze_table_statistics_settings.query_timeout_seconds,
@@ -87,7 +86,6 @@ class ServerContext:
             ListTablesTool(ListTablesEffectHandler(self._snowflake_client)),
             ListViewsTool(ListViewsEffectHandler(self._snowflake_client)),
             ProfileSemiStructuredColumnsTool(
-                self._json_converter,
                 ProfileSemiStructuredColumnsEffectHandler(
                     self._snowflake_client,
                     base_query_timeout_seconds=profile_semi_structured_columns_settings.base_query_timeout_seconds,

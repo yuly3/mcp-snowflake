@@ -3,10 +3,15 @@
 import logging
 
 from ._column_analysis import select_and_classify_columns
+from ._serializer import (
+    AnalyzeTableStatisticsResult,
+    AnalyzeTableStatisticsResultSerializer,
+    CompactAnalyzeTableStatisticsResultSerializer,
+    UnsupportedColumnInfo,
+)
 from ._types import ClassifiedColumns
 from .models import (
     AnalyzeTableStatisticsArgs,
-    AnalyzeTableStatisticsJsonResponse,
     ColumnDoesNotExist,
     EffectAnalyzeTableStatistics,
     NoSupportedColumns,
@@ -19,8 +24,10 @@ logger = logging.getLogger(__name__)
 # Public API exports
 __all__ = [
     "AnalyzeTableStatisticsArgs",
-    "AnalyzeTableStatisticsJsonResponse",
+    "AnalyzeTableStatisticsResult",
+    "AnalyzeTableStatisticsResultSerializer",
     "ColumnDoesNotExist",
+    "CompactAnalyzeTableStatisticsResultSerializer",
     "EffectAnalyzeTableStatistics",
     "NoSupportedColumns",
     "StatisticsResultParseError",
@@ -32,7 +39,7 @@ __all__ = [
 async def handle_analyze_table_statistics(
     args: AnalyzeTableStatisticsArgs,
     effect: EffectAnalyzeTableStatistics,
-) -> AnalyzeTableStatisticsJsonResponse | ColumnDoesNotExist | NoSupportedColumns:
+) -> AnalyzeTableStatisticsResult | ColumnDoesNotExist | NoSupportedColumns:
     """Handle table statistics analysis request.
 
     Parameters
@@ -44,8 +51,8 @@ async def handle_analyze_table_statistics(
 
     Returns
     -------
-    AnalyzeTableStatisticsJsonResponse | ColumnDoesNotExist | NoSupportedColumns
-        The structured response containing table statistics, error information
+    AnalyzeTableStatisticsResult | ColumnDoesNotExist | NoSupportedColumns
+        The structured result containing table statistics, error information
         if requested columns don't exist, or NoSupportedColumns if no columns
         support statistics analysis.
 
@@ -97,30 +104,16 @@ async def handle_analyze_table_statistics(
         include_blank_string_profile=args.include_blank_string_profile,
     )
 
-    # Build structured response using parsed result
-    response: AnalyzeTableStatisticsJsonResponse = {
-        "table_statistics": {
-            "table_info": {
-                "database": args.database,
-                "schema": args.schema_,
-                "table": args.table_,
-                "total_rows": parsed.total_rows,
-                "analyzed_columns": len(supported_columns),
-            },
-            "column_statistics": parsed.column_statistics,
-        }
-    }
+    unsupported_info = [
+        UnsupportedColumnInfo(name=col.name, data_type=col.data_type.raw_type) for col in unsupported_columns
+    ]
 
-    if args.include_null_empty_profile:
-        response["table_statistics"]["statistics_metadata"] = {
-            "quality_profile_counting_mode": "exact",
-            "distribution_metrics_mode": "approximate",
-        }
-
-    # Add unsupported_columns if any exist
-    if unsupported_columns:
-        response["table_statistics"]["unsupported_columns"] = [
-            {"name": col.name, "data_type": col.data_type.raw_type} for col in unsupported_columns
-        ]
-
-    return response
+    return AnalyzeTableStatisticsResult(
+        database=args.database,
+        schema=args.schema_,
+        table=args.table_,
+        total_rows=parsed.total_rows,
+        column_statistics=parsed.column_statistics,
+        unsupported_columns=unsupported_info,
+        include_statistics_metadata=args.include_null_empty_profile,
+    )

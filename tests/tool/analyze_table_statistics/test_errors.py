@@ -13,7 +13,6 @@ from snowflake.connector import (
     ProgrammingError,
 )
 
-from cattrs_converter import JsonImmutableConverter
 from expression.contract import ContractViolationError
 from kernel.table_metadata import TableColumn
 from mcp_snowflake.adapter.analyze_table_statistics_handler.result_parser import (
@@ -31,11 +30,10 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_empty_arguments(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test with empty arguments."""
         mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         result = await tool.perform(None)
 
@@ -47,11 +45,10 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_invalid_arguments(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test with invalid arguments."""
         mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         # Missing required fields
         arguments = {"database": "test_db"}  # Missing schema and table
@@ -65,11 +62,10 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_empty_dict_arguments(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test with empty dictionary arguments."""
         mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {}  # Empty dict, missing required fields
         result = await tool.perform(arguments)
@@ -82,11 +78,10 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_invalid_top_k_limit(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test with invalid top_k_limit values."""
         mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         # Test with top_k_limit exceeding maximum
         arguments = {
@@ -119,11 +114,10 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_invalid_columns_type(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test with invalid columns argument type."""
         mock_effect = MockAnalyzeTableStatistics()
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         # Test with columns as string instead of list
         arguments = {
@@ -169,13 +163,12 @@ class TestAnalyzeTableStatisticsToolErrors:
     )
     async def test_perform_with_exceptions(
         self,
-        json_converter: JsonImmutableConverter,
         exception: Exception,
         expected_message_prefix: str,
     ) -> None:
         """Test exception handling in perform method."""
         mock_effect = MockAnalyzeTableStatistics(should_raise=exception)
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -193,12 +186,11 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_describe_table_exception(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test exception during describe_table operation."""
         # Test that exceptions from describe_table are also handled properly
         mock_effect = MockAnalyzeTableStatistics(should_raise=ProgrammingError("Table does not exist"))
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -216,12 +208,11 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_analyze_statistics_exception(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test exception during analyze_table_statistics operation."""
         # Test that exceptions from analyze_table_statistics are handled properly
         mock_effect = MockAnalyzeTableStatistics(should_raise=OperationalError("Statistics analysis failed"))
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -239,11 +230,10 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_timeout_error(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test timeout error handling."""
         mock_effect = MockAnalyzeTableStatistics(should_raise=TimeoutError("Query execution timeout after 30 seconds"))
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -261,11 +251,10 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_data_error(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test data error handling."""
         mock_effect = MockAnalyzeTableStatistics(should_raise=DataError("Invalid data format in column"))
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -283,11 +272,10 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_contract_violation_error(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test contract violation error handling."""
         mock_effect = MockAnalyzeTableStatistics(should_raise=ContractViolationError("Unexpected contract violation"))
-        tool = AnalyzeTableStatisticsTool(json_converter, mock_effect)
+        tool = AnalyzeTableStatisticsTool(mock_effect)
 
         arguments = {
             "database": "test_db",
@@ -305,7 +293,6 @@ class TestAnalyzeTableStatisticsToolErrors:
     @pytest.mark.asyncio
     async def test_perform_with_statistics_result_parse_error(
         self,
-        json_converter: JsonImmutableConverter,
     ) -> None:
         """Test that StatisticsResultParseError is properly mapped to user-friendly message."""
 
@@ -357,7 +344,6 @@ class TestAnalyzeTableStatisticsToolErrors:
                 )
 
         tool = AnalyzeTableStatisticsTool(
-            json_converter=json_converter,
             effect_handler=MockEffectWithBadResult(),
         )
 

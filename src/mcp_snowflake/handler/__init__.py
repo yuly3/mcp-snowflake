@@ -1,5 +1,8 @@
 from .analyze_table_statistics import (
     AnalyzeTableStatisticsArgs,
+    AnalyzeTableStatisticsResult,
+    AnalyzeTableStatisticsResultSerializer,
+    CompactAnalyzeTableStatisticsResultSerializer,
     EffectAnalyzeTableStatistics,
     handle_analyze_table_statistics,
 )
@@ -44,8 +47,11 @@ from .list_views import (
     handle_list_views,
 )
 from .profile_semi_structured_columns import (
+    CompactProfileSemiStructuredColumnsResultSerializer,
     EffectProfileSemiStructuredColumns,
     ProfileSemiStructuredColumnsArgs,
+    ProfileSemiStructuredColumnsResult,
+    ProfileSemiStructuredColumnsResultSerializer,
     handle_profile_semi_structured_columns,
 )
 from .sample_table_data import (
@@ -59,10 +65,14 @@ from .sample_table_data import (
 
 __all__ = [
     "AnalyzeTableStatisticsArgs",
+    "AnalyzeTableStatisticsResult",
+    "AnalyzeTableStatisticsResultSerializer",
+    "CompactAnalyzeTableStatisticsResultSerializer",
     "CompactDescribeTableResultSerializer",
     "CompactListSchemasResultSerializer",
     "CompactListTablesResultSerializer",
     "CompactListViewsResultSerializer",
+    "CompactProfileSemiStructuredColumnsResultSerializer",
     "CompactQueryResultSerializer",
     "CompactSampleTableDataResultSerializer",
     "DescribeTableArgs",
@@ -87,6 +97,8 @@ __all__ = [
     "ListViewsResult",
     "ListViewsResultSerializer",
     "ProfileSemiStructuredColumnsArgs",
+    "ProfileSemiStructuredColumnsResult",
+    "ProfileSemiStructuredColumnsResultSerializer",
     "QueryResult",
     "QueryResultSerializer",
     "SampleTableDataArgs",

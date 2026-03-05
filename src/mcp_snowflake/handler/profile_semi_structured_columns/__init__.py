@@ -3,12 +3,17 @@
 import logging
 
 from ._column_analysis import select_and_classify_columns
+from ._serializer import (
+    CompactProfileSemiStructuredColumnsResultSerializer,
+    ProfileSemiStructuredColumnsResult,
+    ProfileSemiStructuredColumnsResultSerializer,
+    UnsupportedColumnInfo,
+)
 from ._types import ClassifiedSemiStructuredColumns
 from .models import (
     EffectProfileSemiStructuredColumns,
     NoSemiStructuredColumns,
     ProfileSemiStructuredColumnsArgs,
-    ProfileSemiStructuredColumnsJsonResponse,
     SemiStructuredColumnDoesNotExist,
     SemiStructuredProfileParseResult,
     SemiStructuredProfileResultParseError,
@@ -17,10 +22,12 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    "CompactProfileSemiStructuredColumnsResultSerializer",
     "EffectProfileSemiStructuredColumns",
     "NoSemiStructuredColumns",
     "ProfileSemiStructuredColumnsArgs",
-    "ProfileSemiStructuredColumnsJsonResponse",
+    "ProfileSemiStructuredColumnsResult",
+    "ProfileSemiStructuredColumnsResultSerializer",
     "SemiStructuredColumnDoesNotExist",
     "SemiStructuredProfileParseResult",
     "SemiStructuredProfileResultParseError",
@@ -31,7 +38,7 @@ __all__ = [
 async def handle_profile_semi_structured_columns(
     args: ProfileSemiStructuredColumnsArgs,
     effect: EffectProfileSemiStructuredColumns,
-) -> ProfileSemiStructuredColumnsJsonResponse | SemiStructuredColumnDoesNotExist | NoSemiStructuredColumns:
+) -> ProfileSemiStructuredColumnsResult | SemiStructuredColumnDoesNotExist | NoSemiStructuredColumns:
     """Handle profile_semi_structured_columns request."""
     table_info = await effect.describe_table(
         args.database,
@@ -63,26 +70,19 @@ async def handle_profile_semi_structured_columns(
         args.include_value_samples,
     )
 
-    response: ProfileSemiStructuredColumnsJsonResponse = {
-        "semi_structured_profile": {
-            "profile_info": {
-                "database": args.database,
-                "schema": args.schema_,
-                "table": args.table_,
-                "total_rows": parsed.total_rows,
-                "sampled_rows": parsed.sampled_rows,
-                "analyzed_columns": len(supported_columns),
-                "analyzed_column_names": [col.name for col in supported_columns],
-            },
-            "column_profiles": parsed.column_profiles,
-            "path_profiles": parsed.path_profiles,
-            "warnings": parsed.warnings,
-        }
-    }
+    unsupported_info = [
+        UnsupportedColumnInfo(name=col.name, data_type=col.data_type.raw_type) for col in unsupported_columns
+    ]
 
-    if unsupported_columns:
-        response["semi_structured_profile"]["profile_info"]["unsupported_columns"] = [
-            {"name": col.name, "data_type": col.data_type.raw_type} for col in unsupported_columns
-        ]
-
-    return response
+    return ProfileSemiStructuredColumnsResult(
+        database=args.database,
+        schema=args.schema_,
+        table=args.table_,
+        total_rows=parsed.total_rows,
+        sampled_rows=parsed.sampled_rows,
+        analyzed_column_names=[col.name for col in supported_columns],
+        column_profiles=parsed.column_profiles,
+        path_profiles=parsed.path_profiles,
+        warnings=parsed.warnings,
+        unsupported_columns=unsupported_info,
+    )

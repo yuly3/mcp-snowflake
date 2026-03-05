@@ -479,19 +479,67 @@ Analyze table statistics using Snowflake's high-performance approximation functi
 ```
 
 **Response Format:**
-Returns comprehensive statistics tailored to each column type:
-- **Numeric columns**: count, min, max, avg, percentiles (25th, 50th, 75th), distinct count
-- **String columns**: count, min/max length, distinct count, top K most frequent values
-- **Date columns**: count, min/max dates, date range in days, distinct count
-- **Boolean columns**: count, true/false counts and percentages (both NULL-inclusive and NULL-exclusive)
-- **Quality profile (`quality_profile`)**: optional per-column quality metrics
-  - All types: `null_count`, `null_ratio` (`null_count / total_rows`)
-  - String only: `empty_string_count`, `empty_string_ratio` (`empty_string_count / non_null_rows`)
-  - String only (optional): `blank_string_count`, `blank_string_ratio` (`blank_string_count / non_null_rows`)
-  - All ratios return `0.0` when denominator is `0`
-- **Statistics metadata (`statistics_metadata`)**: optional execution semantics
-  - `quality_profile_counting_mode`: `exact`
-  - `distribution_metrics_mode`: `approximate`
+```
+database: MY_DATABASE
+schema: PUBLIC
+table: SALES_DATA
+total_rows: 10000
+analyzed_columns: 3
+
+column: amount
+column_type: numeric
+data_type: NUMBER(10,2)
+count: 10000
+null_count: 50
+distinct_count_approx: 8500
+min: 0.01
+max: 99999.99
+avg: 4532.17
+percentile_25: 1200.0
+percentile_50: 3500.0
+percentile_75: 7800.0
+quality_profile:
+  null_count: 50
+  null_ratio: 0.005
+
+column: region
+column_type: string
+data_type: VARCHAR(50)
+count: 10000
+null_count: 0
+distinct_count_approx: 5
+min_length: 2
+max_length: 20
+top_values:
+- "EAST": 3200
+- "WEST": 2800
+- "NORTH": 2100
+
+column: order_date
+column_type: date
+data_type: DATE
+count: 10000
+null_count: 0
+distinct_count_approx: 365
+min_date: 2024-01-01
+max_date: 2024-12-31
+date_range_days: 365
+
+unsupported_columns:
+- metadata (VARIANT)
+
+statistics_metadata:
+quality_profile_counting_mode: exact
+distribution_metrics_mode: approximate
+```
+
+Column types and their fields:
+- **Numeric**: count, min, max, avg, percentiles (25th, 50th, 75th), distinct_count_approx
+- **String**: count, min_length, max_length, distinct_count_approx, top_values
+- **Date**: count, min_date, max_date, date_range_days, distinct_count_approx
+- **Boolean**: count, true_count, false_count, true/false percentages (NULL-inclusive and exclusive)
+- **quality_profile** (optional): null_count, null_ratio; string adds empty_string_count/ratio and optional blank_string_count/ratio
+- **statistics_metadata** (when `include_null_empty_profile` is true): counting mode and approximation notes
 
 **Timeout Configuration:**
 - `analyze_table_statistics.query_timeout_seconds` (default: 60)
@@ -527,10 +575,49 @@ Profile semi-structured columns (`VARIANT`, `ARRAY`, `OBJECT`) using sampled rec
 ```
 
 **Response Format:**
-- `profile_info`: table metadata, row counts, analyzed columns
-- `column_profiles`: null ratio, top-level type distribution, array length stats, top-level keys top-k
-- `path_profiles`: path-wise type distribution, approx distinct count, null ratio, optional top values
-- `warnings`: sampling/depth-limit and approximation notes
+```
+database: MY_DATABASE
+schema: PUBLIC
+table: EVENT_LOGS
+total_rows: 100000
+sampled_rows: 10000
+analyzed_columns: 1
+
+column_profile: payload
+column_type: VARIANT
+null_count: 100
+non_null_count: 9900
+null_ratio: 0.01
+top_level_type_distribution:
+  OBJECT: 8000
+  ARRAY: 1000
+  STRING: 500
+  NUMBER: 300
+  BOOLEAN: 100
+  NULL: 100
+
+path_profile: payload.user_id
+column: payload
+path_depth: 1
+value_type_distribution:
+  STRING: 9500
+  NULL: 500
+distinct_count_approx: 4200
+null_ratio: 0.05
+
+unsupported_columns:
+- id (NUMBER)
+
+warnings:
+- Path profiling is limited to max_depth=4
+```
+
+Sections:
+- **Header**: database, schema, table, row counts, analyzed column count
+- **column_profile**: null ratio, top-level type distribution, optional array_length_stats, optional top_level_keys_top_k
+- **path_profile** (when `include_path_stats` is true): path-wise type distribution, distinct count, null ratio, optional top_values
+- **unsupported_columns**: columns skipped due to non-semi-structured types
+- **warnings**: sampling/depth-limit and approximation notes
 
 **Timeout Configuration:**
 - `profile_semi_structured_columns.base_query_timeout_seconds` (default: 90)

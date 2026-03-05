@@ -201,45 +201,6 @@ class EffectAnalyzeTableStatistics(EffectDescribeTable, Protocol):
         ...
 
 
-class UnsupportedColumnDict(TypedDict):
-    """TypedDict for unsupported column information."""
-
-    name: str
-    data_type: str
-
-
-class TableInfoDict(TypedDict):
-    """TypedDict for table information."""
-
-    database: str
-    schema: str
-    table: str
-    total_rows: int
-    analyzed_columns: int
-
-
-class StatisticsMetadataDict(TypedDict):
-    """TypedDict for statistics calculation metadata."""
-
-    quality_profile_counting_mode: Literal["exact"]
-    distribution_metrics_mode: Literal["approximate"]
-
-
-class TableStatisticsDict(TypedDict):
-    """TypedDict for the complete table statistics response."""
-
-    table_info: TableInfoDict
-    column_statistics: dict[str, StatsDict]
-    unsupported_columns: NotRequired[list[UnsupportedColumnDict]]
-    statistics_metadata: NotRequired[StatisticsMetadataDict]
-
-
-class AnalyzeTableStatisticsJsonResponse(TypedDict):
-    """TypedDict for the complete JSON response structure."""
-
-    table_statistics: TableStatisticsDict
-
-
 @attrs.define(frozen=True, slots=True)
 class ColumnDoesNotExist:
     """Error result when some requested columns don't exist in the table.

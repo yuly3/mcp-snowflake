@@ -6,11 +6,10 @@ from pydantic import ValidationError
 from kernel.table_metadata import DataBase, Schema, TableColumn, TableInfo
 from mcp_snowflake.handler.profile_semi_structured_columns import (
     ProfileSemiStructuredColumnsArgs,
+    ProfileSemiStructuredColumnsResult,
     handle_profile_semi_structured_columns,
 )
 from mcp_snowflake.handler.profile_semi_structured_columns.models import (
-    NoSemiStructuredColumns,
-    SemiStructuredColumnDoesNotExist,
     SemiStructuredProfileParseResult,
 )
 
@@ -19,7 +18,7 @@ from ...mock_effect_handler import MockProfileSemiStructuredColumns
 
 @pytest.mark.asyncio
 async def test_handle_profile_semi_structured_columns_success() -> None:
-    """Should return structured profile response on success."""
+    """Should return structured profile result on success."""
     table_info = TableInfo(
         database=DataBase("test_db"),
         schema=Schema("test_schema"),
@@ -63,17 +62,16 @@ async def test_handle_profile_semi_structured_columns_success() -> None:
         "schema": "test_schema",
         "table": "events",
     })
-    response = await handle_profile_semi_structured_columns(args, effect)
+    result = await handle_profile_semi_structured_columns(args, effect)
 
-    assert not isinstance(response, (SemiStructuredColumnDoesNotExist, NoSemiStructuredColumns))
-    profile = response["semi_structured_profile"]
-    assert profile["profile_info"]["database"] == "test_db"
-    assert profile["profile_info"]["sampled_rows"] == 500
-    assert profile["profile_info"]["analyzed_columns"] == 1
-    assert profile["profile_info"]["analyzed_column_names"] == ["payload"]
-    assert "unsupported_columns" in profile["profile_info"]
-    assert profile["column_profiles"]["payload"]["column_type"] == "VARIANT"
-    assert profile["warnings"] == ["Approximate profile based on sampling"]
+    assert isinstance(result, ProfileSemiStructuredColumnsResult)
+    assert result.database == "test_db"
+    assert result.sampled_rows == 500
+    assert result.analyzed_columns == 1
+    assert result.analyzed_column_names == ["payload"]
+    assert len(result.unsupported_columns) == 1  # "id" is NUMBER, unsupported for this tool
+    assert result.column_profiles["payload"]["column_type"] == "VARIANT"
+    assert result.warnings == ["Approximate profile based on sampling"]
 
 
 def test_profile_args_validation_bounds() -> None:
