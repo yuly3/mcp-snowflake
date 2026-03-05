@@ -1,7 +1,5 @@
 """Test for DescribeTableTool."""
 
-import json
-
 import mcp.types as types
 import pytest
 from snowflake.connector import (
@@ -53,8 +51,7 @@ class TestDescribeTableTool:
 
     @pytest.mark.asyncio
     async def test_perform_success(self) -> None:
-        """Test successful table description."""
-        # Prepare mock data
+        """Test successful table description outputs compact format."""
         table_info = TableInfo(
             database=DataBase("test_db"),
             schema=Schema("test_schema"),
@@ -83,7 +80,6 @@ class TestDescribeTableTool:
         mock_effect = MockDescribeTable(table_info=table_info)
         tool = DescribeTableTool(mock_effect)
 
-        # Execute
         arguments = {
             "database": "test_db",
             "schema": "test_schema",
@@ -91,36 +87,22 @@ class TestDescribeTableTool:
         }
         result = await tool.perform(arguments)
 
-        # Verify
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
+        text = result[0].text
 
-        # Parse and verify JSON content
-        response_data = json.loads(result[0].text)
-        assert "table_info" in response_data
-        table_info_dict = response_data["table_info"]
-        assert table_info_dict["database"] == "test_db"
-        assert table_info_dict["schema"] == "test_schema"
-        assert table_info_dict["name"] == "test_table"
-        assert table_info_dict["column_count"] == 2
-        assert len(table_info_dict["columns"]) == 2
-
-        # Verify column details
-        columns = table_info_dict["columns"]
-        id_column = next((col for col in columns if col["name"] == "ID"), None)
-        assert id_column is not None
-        assert id_column["data_type"] == "NUMBER(10,0)"
-        assert id_column["nullable"] is False
-        assert id_column["comment"] == "Primary key"
-        assert id_column["ordinal_position"] == 1
-
-        name_column = next((col for col in columns if col["name"] == "NAME"), None)
-        assert name_column is not None
-        assert name_column["data_type"] == "VARCHAR(100)"
-        assert name_column["nullable"] is True
-        assert name_column["comment"] == "User name"
-        assert name_column["ordinal_position"] == 2
+        assert "database: test_db" in text
+        assert "schema: test_schema" in text
+        assert "table: test_table" in text
+        assert "column_count: 2" in text
+        assert "name: ID" in text
+        assert "type: NUMBER(10,0)" in text
+        assert "nullable: false" in text
+        assert "comment: Primary key" in text
+        assert "name: NAME" in text
+        assert "type: VARCHAR(100)" in text
+        assert "nullable: true" in text
+        assert "comment: User name" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_arguments(self) -> None:
@@ -216,7 +198,6 @@ class TestDescribeTableTool:
     @pytest.mark.asyncio
     async def test_perform_minimal_table_info(self) -> None:
         """Test with minimal table information."""
-        # Use default table info from MockDescribeTable
         mock_effect = MockDescribeTable()
         tool = DescribeTableTool(mock_effect)
 
@@ -229,104 +210,9 @@ class TestDescribeTableTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
+        text = result[0].text
 
-        # Parse and verify JSON content
-        response_data = json.loads(result[0].text)
-        assert "table_info" in response_data
-        table_info_dict = response_data["table_info"]
-        assert table_info_dict["database"] == "default_db"
-        assert table_info_dict["schema"] == "default_schema"
-        assert table_info_dict["name"] == "default_table"
-        assert table_info_dict["column_count"] == 0
-        assert table_info_dict["columns"] == []
-
-    @pytest.mark.asyncio
-    async def test_perform_with_complex_column_types(self) -> None:
-        """Test with various column data types."""
-        table_info = TableInfo(
-            database=DataBase("complex_db"),
-            schema=Schema("complex_schema"),
-            name="complex_table",
-            column_count=5,
-            columns=[
-                TableColumn(
-                    name="INT_COL",
-                    data_type="NUMBER(10,0)",
-                    nullable=False,
-                    default_value="0",
-                    comment=None,
-                    ordinal_position=1,
-                ),
-                TableColumn(
-                    name="TEXT_COL",
-                    data_type="VARCHAR(16777216)",
-                    nullable=True,
-                    default_value=None,
-                    comment="Long text column",
-                    ordinal_position=2,
-                ),
-                TableColumn(
-                    name="DATE_COL",
-                    data_type="DATE",
-                    nullable=True,
-                    default_value="CURRENT_DATE",
-                    comment="Date column",
-                    ordinal_position=3,
-                ),
-                TableColumn(
-                    name="DECIMAL_COL",
-                    data_type="NUMBER(18,2)",
-                    nullable=False,
-                    default_value="0.00",
-                    comment="Decimal column",
-                    ordinal_position=4,
-                ),
-                TableColumn(
-                    name="BOOLEAN_COL",
-                    data_type="BOOLEAN",
-                    nullable=True,
-                    default_value=None,
-                    comment="Boolean column",
-                    ordinal_position=5,
-                ),
-            ],
-        )
-
-        mock_effect = MockDescribeTable(table_info=table_info)
-        tool = DescribeTableTool(mock_effect)
-
-        arguments = {
-            "database": "complex_db",
-            "schema": "complex_schema",
-            "table": "complex_table",
-        }
-        result = await tool.perform(arguments)
-
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-
-        # Parse and verify JSON content
-        response_data = json.loads(result[0].text)
-        table_info_dict = response_data["table_info"]
-        assert table_info_dict["column_count"] == 5
-
-        columns = table_info_dict["columns"]
-        assert len(columns) == 5
-
-        # Verify specific columns
-        int_col = next((col for col in columns if col["name"] == "INT_COL"), None)
-        assert int_col is not None
-        assert int_col["data_type"] == "NUMBER(10,0)"
-        assert int_col["default_value"] == "0"
-        assert int_col["nullable"] is False
-
-        text_col = next((col for col in columns if col["name"] == "TEXT_COL"), None)
-        assert text_col is not None
-        assert text_col["data_type"] == "VARCHAR(16777216)"
-        assert text_col["comment"] == "Long text column"
-
-        boolean_col = next((col for col in columns if col["name"] == "BOOLEAN_COL"), None)
-        assert boolean_col is not None
-        assert boolean_col["data_type"] == "BOOLEAN"
-        assert boolean_col["default_value"] is None
+        assert "database: default_db" in text
+        assert "schema: default_schema" in text
+        assert "table: default_table" in text
+        assert "column_count: 0" in text

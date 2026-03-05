@@ -1,39 +1,32 @@
+"""Describe table handler module."""
+
 import logging
 from collections.abc import Awaitable
-from typing import Protocol, TypedDict
+from typing import Protocol
 
 from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, Table, TableInfo
 
+from ._serializer import (
+    CompactDescribeTableResultSerializer,
+    DescribeTableResult,
+    DescribeTableResultSerializer,
+    JsonDescribeTableResultSerializer,
+)
+
 logger = logging.getLogger(__name__)
 
-
-class ColumnDict(TypedDict):
-    """TypedDict for column information in JSON response."""
-
-    name: str
-    data_type: str
-    nullable: bool
-    default_value: str | None
-    comment: str | None
-    ordinal_position: int
-
-
-class TableInfoDict(TypedDict):
-    """TypedDict for table information in JSON response."""
-
-    database: DataBase
-    schema: Schema
-    name: str
-    column_count: int
-    columns: list[ColumnDict]
-
-
-class TableJsonResponse(TypedDict):
-    """TypedDict for the complete table JSON response structure."""
-
-    table_info: TableInfoDict
+# Public API exports
+__all__ = [
+    "CompactDescribeTableResultSerializer",
+    "DescribeTableArgs",
+    "DescribeTableResult",
+    "DescribeTableResultSerializer",
+    "EffectDescribeTable",
+    "JsonDescribeTableResultSerializer",
+    "handle_describe_table",
+]
 
 
 class DescribeTableArgs(BaseModel):
@@ -86,7 +79,7 @@ class EffectDescribeTable(Protocol):
 async def handle_describe_table(
     args: DescribeTableArgs,
     effect_handler: EffectDescribeTable,
-) -> TableJsonResponse:
+) -> DescribeTableResult:
     """Handle describe_table tool call.
 
     Parameters
@@ -98,8 +91,8 @@ async def handle_describe_table(
 
     Returns
     -------
-    TableJsonResponse
-        The JSON response containing the table information.
+    DescribeTableResult
+        Format-agnostic describe table result, ready for serialization.
 
     Raises
     ------
@@ -122,24 +115,10 @@ async def handle_describe_table(
         args.table_,
     )
 
-    columns_dict: list[ColumnDict] = [
-        {
-            "name": col.name,
-            "data_type": col.data_type.raw_type,
-            "nullable": col.nullable,
-            "default_value": col.default_value,
-            "comment": col.comment,
-            "ordinal_position": col.ordinal_position,
-        }
-        for col in table_data.columns
-    ]
-
-    return TableJsonResponse(
-        table_info={
-            "database": table_data.database,
-            "schema": table_data.schema,
-            "name": table_data.name,
-            "column_count": table_data.column_count,
-            "columns": columns_dict,
-        }
+    return DescribeTableResult(
+        database=table_data.database,
+        schema=table_data.schema,
+        name=table_data.name,
+        column_count=table_data.column_count,
+        columns=table_data.columns,
     )

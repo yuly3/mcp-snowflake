@@ -72,6 +72,7 @@ def test_build_tools_respects_settings(
         mock_snowflake_settings,
         base_settings.tools,
         base_settings.analyze_table_statistics,
+
         base_settings.execute_query,
         base_settings.profile_semi_structured_columns,
     )
@@ -106,6 +107,7 @@ def test_analyze_table_statistics_timeout_setting_is_applied(
         mock_snowflake_settings,
         base_settings.tools,
         base_settings.analyze_table_statistics,
+
         base_settings.execute_query,
         base_settings.profile_semi_structured_columns,
     )
