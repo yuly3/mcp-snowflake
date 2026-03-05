@@ -9,7 +9,6 @@ from .describe_table import (
     DescribeTableResult,
     DescribeTableResultSerializer,
     EffectDescribeTable,
-    JsonDescribeTableResultSerializer,
     handle_describe_table,
 )
 from .execute_query import (
@@ -45,6 +44,7 @@ from .sample_table_data import (
 __all__ = [
     "AnalyzeTableStatisticsArgs",
     "CompactDescribeTableResultSerializer",
+    "CompactListTablesResultSerializer",
     "CompactQueryResultSerializer",
     "DescribeTableArgs",
     "DescribeTableResult",
@@ -53,13 +53,11 @@ __all__ = [
     "EffectDescribeTable",
     "EffectExecuteQuery",
     "EffectListSchemas",
-    "CompactListTablesResultSerializer",
     "EffectListTables",
     "EffectListViews",
     "EffectProfileSemiStructuredColumns",
     "EffectSampleTableData",
     "ExecuteQueryArgs",
-    "JsonDescribeTableResultSerializer",
     "JsonQueryResultSerializer",
     "ListSchemasArgs",
     "ListTablesArgs",

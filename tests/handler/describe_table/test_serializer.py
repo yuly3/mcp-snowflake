@@ -1,15 +1,11 @@
-"""Tests for describe_table serializers (JSON and compact format)."""
-
-import json
+"""Tests for describe_table serializers."""
 
 from kernel.table_metadata import DataBase, Schema, TableColumn
 from mcp_snowflake.handler.describe_table import (
     CompactDescribeTableResultSerializer,
     DescribeTableResult,
     DescribeTableResultSerializer,
-    JsonDescribeTableResultSerializer,
 )
-
 
 # ---------------------------------------------------------------------------
 # DescribeTableResult
@@ -84,109 +80,6 @@ class TestDescribeTableResult:
         output = result.serialize_with(SpySerializer())
         assert output == "empty"
         assert calls == ["metadata", "finish"]
-
-
-# ---------------------------------------------------------------------------
-# JsonDescribeTableResultSerializer
-# ---------------------------------------------------------------------------
-
-
-class TestJsonDescribeTableResultSerializer:
-    """Test JSON serializer."""
-
-    def test_basic_serialization(self) -> None:
-        """Test basic JSON output structure."""
-        result = DescribeTableResult(
-            database=DataBase("test_db"),
-            schema=Schema("test_schema"),
-            name="test_table",
-            column_count=2,
-            columns=[
-                TableColumn(
-                    name="ID",
-                    data_type="NUMBER(10,0)",
-                    nullable=False,
-                    default_value=None,
-                    comment="Primary key",
-                    ordinal_position=1,
-                ),
-                TableColumn(
-                    name="NAME",
-                    data_type="VARCHAR(100)",
-                    nullable=True,
-                    default_value=None,
-                    comment="User name",
-                    ordinal_position=2,
-                ),
-            ],
-        )
-        serializer = JsonDescribeTableResultSerializer()
-        text = result.serialize_with(serializer)
-        parsed = json.loads(text)
-
-        assert "table_info" in parsed
-        ti = parsed["table_info"]
-        assert ti["database"] == "test_db"
-        assert ti["schema"] == "test_schema"
-        assert ti["name"] == "test_table"
-        assert ti["column_count"] == 2
-        assert len(ti["columns"]) == 2
-
-        id_col = ti["columns"][0]
-        assert id_col["name"] == "ID"
-        assert id_col["data_type"] == "NUMBER(10,0)"
-        assert id_col["nullable"] is False
-        assert id_col["comment"] == "Primary key"
-        assert id_col["ordinal_position"] == 1
-
-        name_col = ti["columns"][1]
-        assert name_col["name"] == "NAME"
-        assert name_col["data_type"] == "VARCHAR(100)"
-        assert name_col["nullable"] is True
-        assert name_col["comment"] == "User name"
-
-    def test_empty_result(self) -> None:
-        """Test JSON output for empty columns."""
-        result = DescribeTableResult(
-            database=DataBase("db"),
-            schema=Schema("sch"),
-            name="tbl",
-            column_count=0,
-            columns=[],
-        )
-        serializer = JsonDescribeTableResultSerializer()
-        text = result.serialize_with(serializer)
-        parsed = json.loads(text)
-
-        ti = parsed["table_info"]
-        assert ti["column_count"] == 0
-        assert ti["columns"] == []
-
-    def test_with_default_value(self) -> None:
-        """Test JSON output includes default_value."""
-        result = DescribeTableResult(
-            database=DataBase("db"),
-            schema=Schema("sch"),
-            name="tbl",
-            column_count=1,
-            columns=[
-                TableColumn(
-                    name="STATUS",
-                    data_type="VARCHAR(20)",
-                    nullable=False,
-                    default_value="'active'",
-                    comment=None,
-                    ordinal_position=1,
-                ),
-            ],
-        )
-        serializer = JsonDescribeTableResultSerializer()
-        text = result.serialize_with(serializer)
-        parsed = json.loads(text)
-
-        col = parsed["table_info"]["columns"][0]
-        assert col["default_value"] == "'active'"
-        assert col["comment"] is None
 
 
 # ---------------------------------------------------------------------------

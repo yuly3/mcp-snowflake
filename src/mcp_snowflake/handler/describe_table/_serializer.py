@@ -6,7 +6,6 @@ Rust's serde.  The data structure drives the serialization by calling
 back into the serializer, while each serializer controls the output format.
 """
 
-import json
 from abc import ABC, abstractmethod
 
 import attrs
@@ -106,66 +105,6 @@ class DescribeTableResultSerializer(ABC):
 # ---------------------------------------------------------------------------
 # Concrete serializers
 # ---------------------------------------------------------------------------
-
-
-class JsonDescribeTableResultSerializer(DescribeTableResultSerializer):
-    """Serialize a :class:`DescribeTableResult` as a JSON document.
-
-    Output structure::
-
-        {
-          "table_info": {
-            "database": ...,
-            "schema": ...,
-            "name": ...,
-            "column_count": ...,
-            "columns": [...]
-          }
-        }
-    """
-
-    def __init__(self) -> None:
-        self._database: str = ""
-        self._schema: str = ""
-        self._name: str = ""
-        self._column_count: int = 0
-        self._columns: list[dict[str, str | bool | int | None]] = []
-
-    def visit_metadata(
-        self,
-        database: DataBase,
-        schema: Schema,
-        name: str,
-        column_count: int,
-    ) -> None:
-        self._database = database
-        self._schema = schema
-        self._name = name
-        self._column_count = column_count
-
-    def visit_column(self, index: int, column: TableColumn) -> None:  # noqa: ARG002
-        self._columns.append({
-            "name": column.name,
-            "data_type": column.data_type.raw_type,
-            "nullable": column.nullable,
-            "default_value": column.default_value,
-            "comment": column.comment,
-            "ordinal_position": column.ordinal_position,
-        })
-
-    def finish(self) -> str:
-        return json.dumps(
-            {
-                "table_info": {
-                    "database": self._database,
-                    "schema": self._schema,
-                    "name": self._name,
-                    "column_count": self._column_count,
-                    "columns": self._columns,
-                }
-            },
-            indent=2,
-        )
 
 
 class CompactDescribeTableResultSerializer(DescribeTableResultSerializer):

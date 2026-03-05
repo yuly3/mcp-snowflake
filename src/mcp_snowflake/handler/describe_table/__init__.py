@@ -12,7 +12,6 @@ from ._serializer import (
     CompactDescribeTableResultSerializer,
     DescribeTableResult,
     DescribeTableResultSerializer,
-    JsonDescribeTableResultSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,6 @@ __all__ = [
     "DescribeTableResult",
     "DescribeTableResultSerializer",
     "EffectDescribeTable",
-    "JsonDescribeTableResultSerializer",
     "handle_describe_table",
 ]
 
