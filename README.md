@@ -213,6 +213,20 @@ Retrieve a list of schemas from a specified database.
 }
 ```
 
+**Response Format:**
+```
+database: MY_DATABASE
+schema_count: 3
+schemas: PUBLIC, INFORMATION_SCHEMA, RAW
+```
+
+When no schemas exist:
+```
+database: MY_DATABASE
+schema_count: 0
+schemas: (none)
+```
+
 #### list_tables
 Retrieve a list of tables from a specified database and schema.
 
@@ -280,6 +294,22 @@ Retrieve a list of views from a specified database and schema.
     }
   }
 }
+```
+
+**Response Format:**
+```
+database: MY_DATABASE
+schema: PUBLIC
+view_count: 3
+views: CUSTOMER_VIEW, ORDER_SUMMARY, PRODUCT_CATALOG
+```
+
+When no views match:
+```
+database: MY_DATABASE
+schema: PUBLIC
+view_count: 0
+views: (none)
 ```
 
 #### describe_table
@@ -419,6 +449,33 @@ Retrieve sample data from a specified table using Snowflake's SAMPLE ROW clause 
   }
 }
 ```
+
+**Response Format:**
+```
+database: MY_DATABASE
+schema: PUBLIC
+table: ORDERS
+sample_size: 5
+actual_rows: 3
+
+row1:
+order_id: 1001
+customer_id: 42
+total: 299.99
+
+row2:
+order_id: 1002
+customer_id: 17
+total: 149.50
+
+row3:
+order_id: 1003
+customer_id: 42
+total: 75.00
+```
+
+Semi-structured values (objects/arrays) are rendered as inline JSON.
+String values are JSON-escaped to keep the compact row structure parseable.
 
 #### analyze_table_statistics
 Analyze table statistics using Snowflake's high-performance approximation functions (APPROX_PERCENTILE, APPROX_TOP_K, APPROX_COUNT_DISTINCT) to efficiently retrieve statistical information for numeric, string, date, and boolean columns.

@@ -1,29 +1,34 @@
+"""List schemas handler module."""
+
 import logging
 from collections.abc import Awaitable
-from typing import Protocol, TypedDict
+from typing import Protocol
 
 from pydantic import BaseModel
 
 from kernel.table_metadata import DataBase, Schema
 
+from ._serializer import (
+    CompactListSchemasResultSerializer,
+    ListSchemasResult,
+    ListSchemasResultSerializer,
+)
+
 logger = logging.getLogger(__name__)
+
+# Public API exports
+__all__ = [
+    "CompactListSchemasResultSerializer",
+    "EffectListSchemas",
+    "ListSchemasArgs",
+    "ListSchemasResult",
+    "ListSchemasResultSerializer",
+    "handle_list_schemas",
+]
 
 
 class ListSchemasArgs(BaseModel):
     database: DataBase
-
-
-class SchemasInfoDict(TypedDict):
-    """TypedDict for schemas information in JSON response."""
-
-    database: str
-    schemas: list[str]
-
-
-class ListSchemasJsonResponse(TypedDict):
-    """TypedDict for the complete list schemas JSON response structure."""
-
-    schemas_info: SchemasInfoDict
 
 
 class EffectListSchemas(Protocol):
@@ -61,7 +66,7 @@ class EffectListSchemas(Protocol):
 async def handle_list_schemas(
     args: ListSchemasArgs,
     effect_handler: EffectListSchemas,
-) -> ListSchemasJsonResponse:
+) -> ListSchemasResult:
     """Handle list_schemas tool call.
 
     Parameters
@@ -73,8 +78,8 @@ async def handle_list_schemas(
 
     Returns
     -------
-    ListSchemasJsonResponse
-        The structured response containing the schemas information.
+    ListSchemasResult
+        Format-agnostic list schemas result, ready for serialization.
 
     Raises
     ------
@@ -93,9 +98,7 @@ async def handle_list_schemas(
     """
     schemas = await effect_handler.list_schemas(args.database)
 
-    return ListSchemasJsonResponse(
-        schemas_info={
-            "database": str(args.database),
-            "schemas": [str(schema) for schema in schemas],
-        }
+    return ListSchemasResult(
+        database=args.database,
+        schemas=[str(schema) for schema in schemas],
     )

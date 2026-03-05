@@ -1,4 +1,3 @@
-import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -16,6 +15,7 @@ from cattrs_converter import JsonImmutableConverter
 from expression.contract import ContractViolationError
 
 from ..handler import (
+    CompactSampleTableDataResultSerializer,
     EffectSampleTableData,
     SampleTableDataArgs,
     handle_sample_table_data,
@@ -71,7 +71,7 @@ class SampleTableDataTool(Tool):
         except ContractViolationError as e:
             text = f"Error: Unexpected error: {e}"
         else:
-            text = json.dumps(result, indent=2)
+            text = result.serialize_with(CompactSampleTableDataResultSerializer())
         return [types.TextContent(type="text", text=text)]
 
     @property

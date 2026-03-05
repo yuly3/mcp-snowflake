@@ -1,7 +1,5 @@
 """Test for ListViewsTool."""
 
-import json
-
 import mcp.types as types
 import pytest
 from snowflake.connector import (
@@ -66,15 +64,12 @@ class TestListViewsTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
+        text = result[0].text
 
-        # Verify JSON structure
-        response_data = json.loads(result[0].text)
-        assert "views_info" in response_data
-        views_info = response_data["views_info"]
-        assert views_info["database"] == "TEST_DB"
-        assert views_info["schema"] == "TEST_SCHEMA"
-        assert views_info["views"] == ["CUSTOMER_VIEW", "ORDER_SUMMARY_VIEW"]
+        assert "database: TEST_DB" in text
+        assert "schema: TEST_SCHEMA" in text
+        assert "view_count: 2" in text
+        assert "views: CUSTOMER_VIEW, ORDER_SUMMARY_VIEW" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_custom_data(self) -> None:
@@ -88,12 +83,12 @@ class TestListViewsTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
+        text = result[0].text
 
-        response_data = json.loads(result[0].text)
-        views_info = response_data["views_info"]
-        assert views_info["database"] == "CUSTOM_DB"
-        assert views_info["schema"] == "CUSTOM_SCHEMA"
-        assert views_info["views"] == ["VIEW1", "VIEW2", "VIEW3"]
+        assert "database: CUSTOM_DB" in text
+        assert "schema: CUSTOM_SCHEMA" in text
+        assert "view_count: 3" in text
+        assert "views: VIEW1, VIEW2, VIEW3" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_views(self) -> None:
@@ -106,11 +101,12 @@ class TestListViewsTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        views_info = response_data["views_info"]
-        assert views_info["database"] == "EMPTY_DB"
-        assert views_info["schema"] == "EMPTY_SCHEMA"
-        assert views_info["views"] == []
+        text = result[0].text
+
+        assert "database: EMPTY_DB" in text
+        assert "schema: EMPTY_SCHEMA" in text
+        assert "view_count: 0" in text
+        assert "views: (none)" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_filter(self) -> None:
@@ -128,9 +124,10 @@ class TestListViewsTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        views_info = response_data["views_info"]
-        assert views_info["views"] == ["ORDERS", "ORDER_ITEMS"]
+        text = result[0].text
+
+        assert "view_count: 2" in text
+        assert "views: ORDERS, ORDER_ITEMS" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_arguments(self) -> None:

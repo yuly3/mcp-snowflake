@@ -1,4 +1,3 @@
-import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -14,7 +13,12 @@ from snowflake.connector import (
 
 from expression.contract import ContractViolationError
 
-from ..handler import EffectListViews, ListViewsArgs, handle_list_views
+from ..handler import (
+    CompactListViewsResultSerializer,
+    EffectListViews,
+    ListViewsArgs,
+    handle_list_views,
+)
 from .base import Tool
 
 
@@ -57,7 +61,7 @@ class ListViewsTool(Tool):
         except ContractViolationError as e:
             text = f"Error: Unexpected error: {e}"
         else:
-            text = json.dumps(result, indent=2)
+            text = result.serialize_with(CompactListViewsResultSerializer())
         return [types.TextContent(type="text", text=text)]
 
     @property

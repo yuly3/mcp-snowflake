@@ -1,7 +1,5 @@
 """Test for SampleTableDataTool."""
 
-import json
-
 import mcp.types as types
 import pytest
 from snowflake.connector import (
@@ -75,19 +73,15 @@ class TestSampleTableDataTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
+        text = result[0].text
 
-        # Parse JSON response
-        response_data = json.loads(result[0].text)
-        assert "sample_data" in response_data
-
-        sample_data = response_data["sample_data"]
-        assert sample_data["database"] == "test_db"
-        assert sample_data["schema"] == "test_schema"
-        assert sample_data["table"] == "users"
-        assert sample_data["sample_size"] == 2
-        assert sample_data["actual_rows"] == 2
-        assert len(sample_data["rows"]) == 2
+        assert "database: test_db" in text
+        assert "schema: test_schema" in text
+        assert "table: users" in text
+        assert "sample_size: 2" in text
+        assert "actual_rows: 2" in text
+        assert "row1:" in text
+        assert "row2:" in text
 
     @pytest.mark.asyncio
     async def test_perform_minimal_data(self) -> None:
@@ -106,8 +100,7 @@ class TestSampleTableDataTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        assert response_data["sample_data"]["actual_rows"] == 1
+        assert "actual_rows: 1" in result[0].text
 
     @pytest.mark.asyncio
     async def test_perform_with_columns(self) -> None:
@@ -127,10 +120,10 @@ class TestSampleTableDataTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        sample_data = response_data["sample_data"]
-        assert "name" in sample_data["columns"]
-        assert len(sample_data["rows"]) == 2
+        text = result[0].text
+        assert "actual_rows: 2" in text
+        assert "row1:" in text
+        assert "row2:" in text
 
     @pytest.mark.asyncio
     async def test_perform_empty_result(self) -> None:
@@ -148,11 +141,9 @@ class TestSampleTableDataTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        sample_data = response_data["sample_data"]
-        assert sample_data["actual_rows"] == 0
-        assert len(sample_data["rows"]) == 0
-        assert len(sample_data["columns"]) == 0
+        text = result[0].text
+        assert "actual_rows: 0" in text
+        assert "row1:" not in text
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_arguments(self) -> None:

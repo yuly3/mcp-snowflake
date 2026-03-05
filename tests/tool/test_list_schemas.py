@@ -1,7 +1,5 @@
 """Test for ListSchemasTool."""
 
-import json
-
 import mcp.types as types
 import pytest
 from snowflake.connector import (
@@ -60,14 +58,11 @@ class TestListSchemasTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        assert result[0].type == "text"
+        text = result[0].text
 
-        # Verify JSON structure
-        response_data = json.loads(result[0].text)
-        assert "schemas_info" in response_data
-        schemas_info = response_data["schemas_info"]
-        assert schemas_info["database"] == "TEST_DB"
-        assert schemas_info["schemas"] == ["INFORMATION_SCHEMA", "PUBLIC"]
+        assert "database: TEST_DB" in text
+        assert "schema_count: 2" in text
+        assert "schemas: INFORMATION_SCHEMA, PUBLIC" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_custom_data(self) -> None:
@@ -81,11 +76,11 @@ class TestListSchemasTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
+        text = result[0].text
 
-        response_data = json.loads(result[0].text)
-        schemas_info = response_data["schemas_info"]
-        assert schemas_info["database"] == "CUSTOM_DB"
-        assert schemas_info["schemas"] == ["SCHEMA1", "SCHEMA2", "SCHEMA3"]
+        assert "database: CUSTOM_DB" in text
+        assert "schema_count: 3" in text
+        assert "schemas: SCHEMA1, SCHEMA2, SCHEMA3" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_schemas(self) -> None:
@@ -98,10 +93,11 @@ class TestListSchemasTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        schemas_info = response_data["schemas_info"]
-        assert schemas_info["database"] == "EMPTY_DB"
-        assert schemas_info["schemas"] == []
+        text = result[0].text
+
+        assert "database: EMPTY_DB" in text
+        assert "schema_count: 0" in text
+        assert "schemas: (none)" in text
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_arguments(self) -> None:

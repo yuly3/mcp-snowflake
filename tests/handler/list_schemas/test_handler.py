@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from kernel.table_metadata import DataBase, Schema
 from mcp_snowflake.handler import ListSchemasArgs, handle_list_schemas
 
-from ..mock_effect_handler import MockListSchemas
+from ...mock_effect_handler import MockListSchemas
 
 
 class TestListSchemasArgs:
@@ -31,75 +31,57 @@ class TestHandleListSchemas:
 
     @pytest.mark.asyncio
     async def test_successful_list_schemas(self) -> None:
-        """Test successful schema listing."""
-        # Arrange
+        """Test successful schema listing returns ListSchemasResult."""
         args = ListSchemasArgs(database=DataBase("test_db"))
         mock_schemas = [Schema("schema1"), Schema("schema2"), Schema("schema3")]
         effect_handler = MockListSchemas(result_data=mock_schemas)
 
-        # Act
         result = await handle_list_schemas(args, effect_handler)
 
-        # Assert
-        schemas_info = result["schemas_info"]
-        assert schemas_info["database"] == "test_db"
-        assert schemas_info["schemas"] == ["schema1", "schema2", "schema3"]
+        assert result.database == "test_db"
+        assert result.schemas == ["schema1", "schema2", "schema3"]
 
     @pytest.mark.asyncio
     async def test_empty_schemas_list(self) -> None:
         """Test when no schemas are returned."""
-        # Arrange
         args = ListSchemasArgs(database=DataBase("empty_db"))
         effect_handler = MockListSchemas(result_data=[])
 
-        # Act
         result = await handle_list_schemas(args, effect_handler)
 
-        # Assert
-        schemas_info = result["schemas_info"]
-        assert schemas_info["database"] == "empty_db"
-        assert schemas_info["schemas"] == []
+        assert result.database == "empty_db"
+        assert result.schemas == []
 
     @pytest.mark.asyncio
     async def test_effect_handler_exception(self) -> None:
         """Test exception handling from effect handler."""
-        # Arrange
         args = ListSchemasArgs(database=DataBase("error_db"))
         error_message = "Connection failed"
         effect_handler = MockListSchemas(should_raise=Exception(error_message))
 
-        # Act
         with pytest.raises(Exception, match=error_message):
             _ = await handle_list_schemas(args, effect_handler)
 
     @pytest.mark.asyncio
     async def test_with_standard_snowflake_schemas(self) -> None:
         """Test with typical Snowflake schema names."""
-        # Arrange
         args = ListSchemasArgs(database=DataBase("snowflake_db"))
         effect_handler = MockListSchemas(
             result_data=[Schema("PUBLIC"), Schema("INFORMATION_SCHEMA")],
         )
 
-        # Act
         result = await handle_list_schemas(args, effect_handler)
 
-        # Assert
-        schemas_info = result["schemas_info"]
-        assert schemas_info["database"] == "snowflake_db"
-        assert schemas_info["schemas"] == ["PUBLIC", "INFORMATION_SCHEMA"]
+        assert result.database == "snowflake_db"
+        assert result.schemas == ["PUBLIC", "INFORMATION_SCHEMA"]
 
     @pytest.mark.asyncio
     async def test_single_schema(self) -> None:
         """Test with single schema result."""
-        # Arrange
         args = ListSchemasArgs(database=DataBase("single_db"))
         effect_handler = MockListSchemas(result_data=[Schema("ONLY_SCHEMA")])
 
-        # Act
         result = await handle_list_schemas(args, effect_handler)
 
-        # Assert
-        schemas_info = result["schemas_info"]
-        assert schemas_info["database"] == "single_db"
-        assert schemas_info["schemas"] == ["ONLY_SCHEMA"]
+        assert result.database == "single_db"
+        assert result.schemas == ["ONLY_SCHEMA"]

@@ -1,34 +1,37 @@
+"""List views handler module."""
+
 import logging
 from collections.abc import Awaitable
-from typing import Protocol, TypedDict
+from typing import Protocol
 
 from pydantic import BaseModel, Field
 
 from kernel.table_metadata import DataBase, Schema, View
 
-from .name_filter import NameFilter, apply_name_filter
+from ..name_filter import NameFilter, apply_name_filter
+from ._serializer import (
+    CompactListViewsResultSerializer,
+    ListViewsResult,
+    ListViewsResultSerializer,
+)
 
 logger = logging.getLogger(__name__)
+
+# Public API exports
+__all__ = [
+    "CompactListViewsResultSerializer",
+    "EffectListViews",
+    "ListViewsArgs",
+    "ListViewsResult",
+    "ListViewsResultSerializer",
+    "handle_list_views",
+]
 
 
 class ListViewsArgs(BaseModel):
     database: DataBase
     schema_: Schema = Field(alias="schema")
     filter_: NameFilter | None = Field(default=None, alias="filter")
-
-
-class ViewsInfoDict(TypedDict):
-    """TypedDict for views information in JSON response."""
-
-    database: str
-    schema: str
-    views: list[str]
-
-
-class ListViewsJsonResponse(TypedDict):
-    """TypedDict for the complete list views JSON response structure."""
-
-    views_info: ViewsInfoDict
 
 
 class EffectListViews(Protocol):
@@ -68,7 +71,7 @@ class EffectListViews(Protocol):
 async def handle_list_views(
     args: ListViewsArgs,
     effect_handler: EffectListViews,
-) -> ListViewsJsonResponse:
+) -> ListViewsResult:
     """Handle list_views tool call.
 
     Parameters
@@ -80,8 +83,8 @@ async def handle_list_views(
 
     Returns
     -------
-    ListViewsJsonResponse
-        The structured response containing the views information.
+    ListViewsResult
+        Format-agnostic list views result, ready for serialization.
 
     Raises
     ------
@@ -101,10 +104,8 @@ async def handle_list_views(
     views = await effect_handler.list_views(args.database, args.schema_)
     filtered_views = apply_name_filter([str(view) for view in views], args.filter_)
 
-    return ListViewsJsonResponse(
-        views_info={
-            "database": str(args.database),
-            "schema": str(args.schema_),
-            "views": filtered_views,
-        }
+    return ListViewsResult(
+        database=args.database,
+        schema=args.schema_,
+        views=filtered_views,
     )

@@ -102,7 +102,6 @@ class TestHandleSampleTableData:
         expected: dict[str, Any],
     ) -> None:
         """Test successful sample data retrieval scenarios with parametrized variants."""
-        # Arrange
         mock_effect = MockEffectSampleTableData(sample_data=sample_data)
         args = SampleTableDataArgs(
             database=DataBase("test_db"),
@@ -112,43 +111,33 @@ class TestHandleSampleTableData:
             columns=columns_arg or [],
         )
 
-        # Act
         result = await handle_sample_table_data(json_converter, args, mock_effect)
 
-        # Assert - result should be SampleTableDataJsonResponse directly
-        assert isinstance(result, dict)
-        assert "sample_data" in result
-        sample_data_obj = result["sample_data"]
+        # Common assertions on result model
+        assert result.database == "test_db", f"[{case_id}] Database mismatch"
+        assert result.schema == "test_schema", f"[{case_id}] Schema mismatch"
+        assert result.table == "test_table", f"[{case_id}] Table mismatch"
+        assert result.sample_size == sample_size, f"[{case_id}] Sample size mismatch"
 
-        # Common assertions
-        assert sample_data_obj["database"] == "test_db", f"[{case_id}] Database mismatch"
-        assert sample_data_obj["schema"] == "test_schema", f"[{case_id}] Schema mismatch"
-        assert sample_data_obj["table"] == "test_table", f"[{case_id}] Table mismatch"
-        assert sample_data_obj["sample_size"] == sample_size, f"[{case_id}] Sample size mismatch"
+        assert result.actual_rows == expected["actual_rows"], f"[{case_id}] Actual rows mismatch"
+        assert result.columns == expected["columns"], f"[{case_id}] Columns mismatch"
 
-        # Expected value assertions
-        assert sample_data_obj["actual_rows"] == expected["actual_rows"], f"[{case_id}] Actual rows mismatch"
-        assert sample_data_obj["columns"] == expected["columns"], f"[{case_id}] Columns mismatch"
-
-        # Conditional assertions based on expected keys
         if "warnings_len" in expected:
-            assert len(sample_data_obj["warnings"]) == expected["warnings_len"], (
-                f"[{case_id}] Warnings length mismatch"
-            )
+            assert len(result.warnings) == expected["warnings_len"], f"[{case_id}] Warnings length mismatch"
 
         if "warnings_contains" in expected:
-            assert any(expected["warnings_contains"] in warning for warning in sample_data_obj["warnings"]), (
+            assert any(expected["warnings_contains"] in warning for warning in result.warnings), (
                 f"[{case_id}] Warning content not found"
             )
 
         if "mutated_field" in expected:
             column_name, expected_value = expected["mutated_field"]
-            actual_value = sample_data_obj["rows"][0][column_name]
+            actual_value = result.rows[0][column_name]
             assert actual_value == expected_value, f"[{case_id}] Mutated field {column_name} mismatch"
 
         # For non-empty cases, verify rows structure
         if expected["actual_rows"] > 0 and "mutated_field" not in expected:
-            assert sample_data_obj["rows"] == sample_data, f"[{case_id}] Rows content mismatch"
+            assert list(result.rows) == sample_data, f"[{case_id}] Rows content mismatch"
 
     @pytest.mark.asyncio
     async def test_error_handling(self, json_converter: JsonImmutableConverter) -> None:
@@ -163,7 +152,5 @@ class TestHandleSampleTableData:
             table=Table("test_table"),
         )
 
-        # Since we refactored the handler to not handle exceptions,
-        # the exception should be raised directly
         with pytest.raises(Exception, match="Database error"):
             _ = await handle_sample_table_data(json_converter, args, mock_effect)

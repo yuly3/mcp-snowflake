@@ -1,34 +1,33 @@
+"""Sample table data handler module."""
+
 import logging
-from collections.abc import Awaitable, Mapping, Sequence
-from typing import Any, Protocol, TypedDict
+from collections.abc import Awaitable
+from typing import Any, Protocol
 
 from more_itertools import first
 from pydantic import BaseModel, Field
 
-from cattrs_converter import Jsonable, JsonImmutableConverter
+from cattrs_converter import JsonImmutableConverter
 from kernel import DataProcessingResult
 from kernel.table_metadata import DataBase, Schema, Table
 
+from ._serializer import (
+    CompactSampleTableDataResultSerializer,
+    SampleTableDataResult,
+    SampleTableDataResultSerializer,
+)
+
 logger = logging.getLogger(__name__)
 
-
-class SampleDataDict(TypedDict):
-    """TypedDict for sample data in JSON response."""
-
-    database: DataBase
-    schema: Schema
-    table: Table
-    sample_size: int
-    actual_rows: int
-    columns: list[str]
-    rows: Sequence[Mapping[str, Jsonable]]
-    warnings: list[str]
-
-
-class SampleTableDataJsonResponse(TypedDict):
-    """TypedDict for the complete sample table data JSON response structure."""
-
-    sample_data: SampleDataDict
+# Public API exports
+__all__ = [
+    "CompactSampleTableDataResultSerializer",
+    "EffectSampleTableData",
+    "SampleTableDataArgs",
+    "SampleTableDataResult",
+    "SampleTableDataResultSerializer",
+    "handle_sample_table_data",
+]
 
 
 class SampleTableDataArgs(BaseModel):
@@ -90,7 +89,7 @@ async def handle_sample_table_data(
     json_converter: JsonImmutableConverter,
     args: SampleTableDataArgs,
     effect_handler: EffectSampleTableData,
-) -> SampleTableDataJsonResponse:
+) -> SampleTableDataResult:
     """Handle sample_table_data tool call.
 
     Parameters
@@ -104,8 +103,8 @@ async def handle_sample_table_data(
 
     Returns
     -------
-    SampleTableDataJsonResponse
-        The structured response containing sample data information.
+    SampleTableDataResult
+        Format-agnostic sample table data result, ready for serialization.
 
     Raises
     ------
@@ -133,15 +132,12 @@ async def handle_sample_table_data(
     result = DataProcessingResult.from_raw_rows(json_converter, raw_data)
 
     columns = list(first(result.processed_rows, {}).keys())
-    return SampleTableDataJsonResponse(
-        sample_data={
-            "database": args.database,
-            "schema": args.schema_,
-            "table": args.table_,
-            "sample_size": args.sample_size,
-            "actual_rows": len(result.processed_rows),
-            "columns": columns,
-            "rows": result.processed_rows,
-            "warnings": result.warnings,
-        }
+    return SampleTableDataResult(
+        database=args.database,
+        schema=args.schema_,
+        table=args.table_,
+        sample_size=args.sample_size,
+        columns=columns,
+        rows=result.processed_rows,
+        warnings=result.warnings,
     )

@@ -20,7 +20,14 @@ from .execute_query import (
     QueryResultSerializer,
     handle_execute_query,
 )
-from .list_schemas import EffectListSchemas, ListSchemasArgs, handle_list_schemas
+from .list_schemas import (
+    CompactListSchemasResultSerializer,
+    EffectListSchemas,
+    ListSchemasArgs,
+    ListSchemasResult,
+    ListSchemasResultSerializer,
+    handle_list_schemas,
+)
 from .list_tables import (
     CompactListTablesResultSerializer,
     EffectListTables,
@@ -29,23 +36,36 @@ from .list_tables import (
     ListTablesResultSerializer,
     handle_list_tables,
 )
-from .list_views import EffectListViews, ListViewsArgs, handle_list_views
+from .list_views import (
+    CompactListViewsResultSerializer,
+    EffectListViews,
+    ListViewsArgs,
+    ListViewsResult,
+    ListViewsResultSerializer,
+    handle_list_views,
+)
 from .profile_semi_structured_columns import (
     EffectProfileSemiStructuredColumns,
     ProfileSemiStructuredColumnsArgs,
     handle_profile_semi_structured_columns,
 )
 from .sample_table_data import (
+    CompactSampleTableDataResultSerializer,
     EffectSampleTableData,
     SampleTableDataArgs,
+    SampleTableDataResult,
+    SampleTableDataResultSerializer,
     handle_sample_table_data,
 )
 
 __all__ = [
     "AnalyzeTableStatisticsArgs",
     "CompactDescribeTableResultSerializer",
+    "CompactListSchemasResultSerializer",
     "CompactListTablesResultSerializer",
+    "CompactListViewsResultSerializer",
     "CompactQueryResultSerializer",
+    "CompactSampleTableDataResultSerializer",
     "DescribeTableArgs",
     "DescribeTableResult",
     "DescribeTableResultSerializer",
@@ -60,14 +80,20 @@ __all__ = [
     "ExecuteQueryArgs",
     "JsonQueryResultSerializer",
     "ListSchemasArgs",
+    "ListSchemasResult",
+    "ListSchemasResultSerializer",
     "ListTablesArgs",
     "ListTablesResult",
     "ListTablesResultSerializer",
     "ListViewsArgs",
+    "ListViewsResult",
+    "ListViewsResultSerializer",
     "ProfileSemiStructuredColumnsArgs",
     "QueryResult",
     "QueryResultSerializer",
     "SampleTableDataArgs",
+    "SampleTableDataResult",
+    "SampleTableDataResultSerializer",
     "handle_analyze_table_statistics",
     "handle_describe_table",
     "handle_execute_query",
