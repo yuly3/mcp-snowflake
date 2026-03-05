@@ -60,10 +60,16 @@ class TestDescribeTableResult:
         calls: list[str] = []
 
         class SpySerializer(DescribeTableResultSerializer):
-            def visit_metadata(self, database: DataBase, schema: Schema, name: str, column_count: int) -> None:
+            def visit_metadata(
+                self,
+                database: DataBase,  # noqa: ARG002
+                schema: Schema,  # noqa: ARG002
+                name: str,  # noqa: ARG002
+                column_count: int,  # noqa: ARG002
+            ) -> None:
                 calls.append("metadata")
 
-            def visit_column(self, index: int, column: TableColumn) -> None:
+            def visit_column(self, index: int, column: TableColumn) -> None:  # noqa: ARG002
                 calls.append("column")
 
             def finish(self) -> str:
@@ -119,23 +125,22 @@ class TestCompactDescribeTableResultSerializer:
         serializer = CompactDescribeTableResultSerializer()
         text = result.serialize_with(serializer)
 
-        expected = (
-            "database: test_db\n"
-            "schema: test_schema\n"
-            "table: test_table\n"
-            "column_count: 2\n"
-            "\n"
-            "col1:\n"
-            "name: ID\n"
-            "type: NUMBER(38,0)\n"
-            "nullable: false\n"
-            "comment: Primary key\n"
-            "\n"
-            "col2:\n"
-            "name: NAME\n"
-            "type: VARCHAR(100)\n"
-            "nullable: true"
-        )
+        expected = """\
+database: test_db
+schema: test_schema
+table: test_table
+column_count: 2
+
+col1:
+name: ID
+type: NUMBER(38,0)
+nullable: false
+comment: Primary key
+
+col2:
+name: NAME
+type: VARCHAR(100)
+nullable: true"""
         assert text == expected
 
     def test_empty_columns(self) -> None:
