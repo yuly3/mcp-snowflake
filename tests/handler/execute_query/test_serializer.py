@@ -1,4 +1,4 @@
-"""Tests for execute_query serializers (JSON and compact format)."""
+"""Tests for execute_query serializers."""
 
 import json
 
@@ -6,7 +6,6 @@ import pytest
 
 from mcp_snowflake.handler.execute_query import (
     CompactQueryResultSerializer,
-    JsonQueryResultSerializer,
     QueryResult,
     QueryResultSerializer,
 )
@@ -73,86 +72,6 @@ class TestQueryResult:
             "warnings(1)",
             "finish",
         ]
-
-
-# ---------------------------------------------------------------------------
-# JsonQueryResultSerializer
-# ---------------------------------------------------------------------------
-
-
-class TestJsonQueryResultSerializer:
-    """Test JSON serializer."""
-
-    def test_basic_serialization(self) -> None:
-        """Test basic JSON output structure."""
-        result = QueryResult(
-            execution_time_ms=123,
-            columns=["id", "name"],
-            rows=[
-                {"id": 1, "name": "Alice"},
-                {"id": 2, "name": "Bob"},
-            ],
-            warnings=[],
-        )
-        serializer = JsonQueryResultSerializer(result.columns)
-        text = result.serialize_with(serializer)
-        parsed = json.loads(text)
-
-        assert "query_result" in parsed
-        qr = parsed["query_result"]
-        assert qr["execution_time_ms"] == 123
-        assert qr["row_count"] == 2
-        assert qr["columns"] == ["id", "name"]
-        assert len(qr["rows"]) == 2
-        assert qr["rows"][0] == {"id": 1, "name": "Alice"}
-        assert qr["warnings"] == []
-
-    def test_empty_result(self) -> None:
-        """Test JSON output for empty result."""
-        result = QueryResult(
-            execution_time_ms=0,
-            columns=[],
-            rows=[],
-            warnings=[],
-        )
-        serializer = JsonQueryResultSerializer(result.columns)
-        text = result.serialize_with(serializer)
-        parsed = json.loads(text)
-
-        qr = parsed["query_result"]
-        assert qr["row_count"] == 0
-        assert qr["rows"] == []
-
-    def test_with_warnings(self) -> None:
-        """Test JSON output includes warnings."""
-        result = QueryResult(
-            execution_time_ms=10,
-            columns=["a"],
-            rows=[{"a": "<unsupported_type: complex>"}],
-            warnings=["Column 'a' contains unsupported data type"],
-        )
-        serializer = JsonQueryResultSerializer(result.columns)
-        text = result.serialize_with(serializer)
-        parsed = json.loads(text)
-
-        assert parsed["query_result"]["warnings"] == ["Column 'a' contains unsupported data type"]
-
-    def test_with_semi_structured_data(self) -> None:
-        """Test JSON output handles dicts/lists in values."""
-        result = QueryResult(
-            execution_time_ms=5,
-            columns=["data"],
-            rows=[{"data": {"key": "value", "nested": [1, 2]}}],
-            warnings=[],
-        )
-        serializer = JsonQueryResultSerializer(result.columns)
-        text = result.serialize_with(serializer)
-        parsed = json.loads(text)
-
-        assert parsed["query_result"]["rows"][0]["data"] == {
-            "key": "value",
-            "nested": [1, 2],
-        }
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,5 @@
 """Test for ExecuteQueryTool."""
 
-import json
 from datetime import timedelta
 
 import mcp.types as types
@@ -82,7 +81,7 @@ class TestExecuteQueryTool:
 
     @pytest.mark.asyncio
     async def test_perform_success(self) -> None:
-        """Test successful query execution."""
+        """Test successful query execution returns compact format."""
         converter = JsonImmutableConverter()
         mock_data = [
             {"id": 1, "name": "Alice", "count": 10},
@@ -101,15 +100,12 @@ class TestExecuteQueryTool:
         assert isinstance(result[0], types.TextContent)
         assert result[0].type == "text"
 
-        # Parse JSON response
-        response_data = json.loads(result[0].text)
-        assert "query_result" in response_data
-
-        query_result = response_data["query_result"]
-        assert query_result["row_count"] == 2
-        assert "execution_time_ms" in query_result
-        assert len(query_result["rows"]) == 2
-        assert query_result["columns"] == ["id", "name", "count"]
+        text = result[0].text
+        assert text.startswith("execution_time_ms:")
+        assert "row_count: 2" in text
+        assert "\nrow1:\n" in text
+        assert 'name: "Alice"' in text
+        assert 'name: "Bob"' in text
 
     @pytest.mark.asyncio
     async def test_perform_minimal_query(self) -> None:
@@ -124,8 +120,9 @@ class TestExecuteQueryTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        assert response_data["query_result"]["row_count"] == 1
+        text = result[0].text
+        assert "row_count: 1" in text
+        assert 'result: "ok"' in text
 
     @pytest.mark.asyncio
     async def test_perform_complex_query(self) -> None:
@@ -147,72 +144,18 @@ class TestExecuteQueryTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        query_result = response_data["query_result"]
-        assert query_result["row_count"] == 3
-        assert "department" in query_result["columns"]
-        assert "avg_salary" in query_result["columns"]
+        text = result[0].text
+        assert "row_count: 3" in text
+        assert 'department: "Engineering"' in text
+        assert "avg_salary: 95000.0" in text
 
     @pytest.mark.asyncio
-    async def test_perform_uses_compact_format_at_threshold(self) -> None:
-        """Compact format should be used when row_count is equal to threshold."""
-        converter = JsonImmutableConverter()
-        mock_data = [
-            {"id": 1, "name": "Alice"},
-            {"id": 2, "name": "Bob"},
-        ]
-        mock_effect = MockExecuteQuery(result_data=mock_data)
-        tool = ExecuteQueryTool(
-            converter,
-            mock_effect,
-            compact_format_enabled=True,
-            compact_format_threshold=2,
-        )
-
-        result = await tool.perform({"sql": "SELECT id, name FROM users LIMIT 2"})
-
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        assert result[0].text.startswith("execution_time_ms:")
-        assert "\nrow1:\n" in result[0].text
-        assert 'name: "Alice"' in result[0].text
-        assert "query_result" not in result[0].text
-
-    @pytest.mark.asyncio
-    async def test_perform_falls_back_to_json_above_threshold(self) -> None:
-        """JSON format should be used when row_count exceeds threshold."""
-        converter = JsonImmutableConverter()
-        mock_data = [
-            {"id": 1, "name": "Alice"},
-            {"id": 2, "name": "Bob"},
-        ]
-        mock_effect = MockExecuteQuery(result_data=mock_data)
-        tool = ExecuteQueryTool(
-            converter,
-            mock_effect,
-            compact_format_enabled=True,
-            compact_format_threshold=1,
-        )
-
-        result = await tool.perform({"sql": "SELECT id, name FROM users LIMIT 2"})
-
-        assert len(result) == 1
-        assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        assert response_data["query_result"]["row_count"] == 2
-
-    @pytest.mark.asyncio
-    async def test_perform_compact_format_escapes_multiline_strings(self) -> None:
+    async def test_perform_multiline_string_values(self) -> None:
         """Multiline string values should be escaped in compact format."""
         converter = JsonImmutableConverter()
         mock_data = [{"note": "line1\nline2"}]
         mock_effect = MockExecuteQuery(result_data=mock_data)
-        tool = ExecuteQueryTool(
-            converter,
-            mock_effect,
-            compact_format_enabled=True,
-            compact_format_threshold=5,
-        )
+        tool = ExecuteQueryTool(converter, mock_effect)
 
         result = await tool.perform({"sql": "SELECT note FROM notes LIMIT 1"})
 
@@ -232,11 +175,9 @@ class TestExecuteQueryTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        query_result = response_data["query_result"]
-        assert query_result["row_count"] == 0
-        assert len(query_result["rows"]) == 0
-        assert len(query_result["columns"]) == 0
+        text = result[0].text
+        assert "row_count: 0" in text
+        assert "row1:" not in text
 
     @pytest.mark.asyncio
     async def test_perform_write_operation_blocked(self) -> None:
@@ -323,8 +264,8 @@ class TestExecuteQueryTool:
 
         assert len(result) == 1
         assert isinstance(result[0], types.TextContent)
-        response_data = json.loads(result[0].text)
-        assert response_data["query_result"]["row_count"] == 1
+        text = result[0].text
+        assert "row_count: 1" in text
         # The query should have been executed with 60s timeout
         assert mock_effect.called_with_timeout is not None
         assert mock_effect.called_with_timeout == timedelta(seconds=60)

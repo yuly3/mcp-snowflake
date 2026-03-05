@@ -18,7 +18,6 @@ from ..handler import (
     CompactQueryResultSerializer,
     EffectExecuteQuery,
     ExecuteQueryArgs,
-    JsonQueryResultSerializer,
     handle_execute_query,
 )
 from .base import Tool
@@ -31,16 +30,11 @@ class ExecuteQueryTool(Tool):
         effect_handler: EffectExecuteQuery,
         timeout_seconds_default: int = 30,
         timeout_seconds_max: int = 300,
-        *,
-        compact_format_enabled: bool = False,
-        compact_format_threshold: int = 5,
     ) -> None:
         self.json_converter = json_converter
         self.effect_handler = effect_handler
         self.timeout_seconds_default = timeout_seconds_default
         self.timeout_seconds_max = timeout_seconds_max
-        self.compact_format_enabled = compact_format_enabled
-        self.compact_format_threshold = compact_format_threshold
 
     @property
     def name(self) -> str:
@@ -91,12 +85,7 @@ class ExecuteQueryTool(Tool):
             # For SQL analyzer errors (write operations not allowed)
             text = f"Error: {e}"
         else:
-            use_compact = self.compact_format_enabled and query_result.row_count <= self.compact_format_threshold
-            if use_compact:
-                serializer = CompactQueryResultSerializer()
-            else:
-                serializer = JsonQueryResultSerializer(query_result.columns)
-            text = query_result.serialize_with(serializer)
+            text = query_result.serialize_with(CompactQueryResultSerializer())
         return [types.TextContent(type="text", text=text)]
 
     @property

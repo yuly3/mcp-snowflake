@@ -15,7 +15,6 @@ from ...sql_analyzer import SQLWriteDetector
 from ...stopwatch import StopWatch
 from ._serializer import (
     CompactQueryResultSerializer,
-    JsonQueryResultSerializer,
     QueryResult,
     QueryResultSerializer,
 )
@@ -30,7 +29,6 @@ __all__ = [
     "CompactQueryResultSerializer",
     "EffectExecuteQuery",
     "ExecuteQueryArgs",
-    "JsonQueryResultSerializer",
     "QueryResult",
     "QueryResultSerializer",
     "handle_execute_query",

@@ -111,54 +111,6 @@ class QueryResultSerializer(ABC):
 # ---------------------------------------------------------------------------
 
 
-class JsonQueryResultSerializer(QueryResultSerializer):
-    """Serialize a :class:`QueryResult` as a JSON document.
-
-    Output structure::
-
-        {
-          "query_result": {
-            "execution_time_ms": ...,
-            "row_count": ...,
-            "columns": [...],
-            "rows": [...],
-            "warnings": [...]
-          }
-        }
-    """
-
-    def __init__(self, columns: list[str]) -> None:
-        self._columns = columns
-        self._execution_time_ms: int = 0
-        self._row_count: int = 0
-        self._rows: list[Mapping[str, Jsonable]] = []
-        self._warnings: list[str] = []
-
-    def visit_metadata(self, execution_time_ms: int, row_count: int) -> None:
-        self._execution_time_ms = execution_time_ms
-        self._row_count = row_count
-
-    def visit_row(self, index: int, row: Mapping[str, Jsonable]) -> None:  # noqa: ARG002
-        self._rows.append(row)
-
-    def visit_warnings(self, warnings: list[str]) -> None:
-        self._warnings = warnings
-
-    def finish(self) -> str:
-        return json.dumps(
-            {
-                "query_result": {
-                    "execution_time_ms": self._execution_time_ms,
-                    "row_count": self._row_count,
-                    "columns": self._columns,
-                    "rows": [dict(r) for r in self._rows],
-                    "warnings": self._warnings,
-                }
-            },
-            indent=2,
-        )
-
-
 class CompactQueryResultSerializer(QueryResultSerializer):
     """Serialize a :class:`QueryResult` in a compact, token-efficient format.
 
