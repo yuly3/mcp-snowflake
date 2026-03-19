@@ -80,6 +80,7 @@ def test_build_tools_respects_settings(
     expected_enabled = {
         "analyze_table_statistics",
         "execute_query",
+        "list_databases",
         "list_tables",
         "profile_semi_structured_columns",
     }

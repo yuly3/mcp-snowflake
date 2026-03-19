@@ -9,6 +9,7 @@ from .adapter import (
     AnalyzeTableStatisticsEffectHandler,
     DescribeTableEffectHandler,
     ExecuteQueryEffectHandler,
+    ListDatabasesEffectHandler,
     ListSchemasEffectHandler,
     ListTablesEffectHandler,
     ProfileSemiStructuredColumnsEffectHandler,
@@ -26,6 +27,7 @@ from .tool import (
     AnalyzeTableStatisticsTool,
     DescribeTableTool,
     ExecuteQueryTool,
+    ListDatabasesTool,
     ListSchemasTool,
     ListTablesTool,
     ProfileSemiStructuredColumnsTool,
@@ -80,6 +82,7 @@ class ServerContext:
                 timeout_seconds_default=execute_query_settings.timeout_seconds_default,
                 timeout_seconds_max=execute_query_settings.timeout_seconds_max,
             ),
+            ListDatabasesTool(ListDatabasesEffectHandler(self._snowflake_client)),
             ListSchemasTool(ListSchemasEffectHandler(self._snowflake_client)),
             ListTablesTool(ListTablesEffectHandler(self._snowflake_client)),
             ProfileSemiStructuredColumnsTool(

@@ -7,6 +7,7 @@ from mcp_snowflake.tool import (
     AnalyzeTableStatisticsTool,
     DescribeTableTool,
     ExecuteQueryTool,
+    ListDatabasesTool,
     ListSchemasTool,
     ListTablesTool,
     ProfileSemiStructuredColumnsTool,
@@ -25,6 +26,7 @@ def test_tool_name_unique() -> None:
     profile_tool = ProfileSemiStructuredColumnsTool(mock_effect_handler)
 
     describe_tool = DescribeTableTool(mock_effect_handler)
+    list_databases_tool = ListDatabasesTool(mock_effect_handler)
     list_schemas_tool = ListSchemasTool(mock_effect_handler)
     list_tables_tool = ListTablesTool(mock_effect_handler)
 
@@ -32,6 +34,7 @@ def test_tool_name_unique() -> None:
         analyze_tool,
         describe_tool,
         execute_tool,
+        list_databases_tool,
         list_schemas_tool,
         list_tables_tool,
         profile_tool,
@@ -55,6 +58,7 @@ def test_settings_keys_match_tool_names() -> None:
     profile_tool = ProfileSemiStructuredColumnsTool(mock_effect_handler)
 
     describe_tool = DescribeTableTool(mock_effect_handler)
+    list_databases_tool = ListDatabasesTool(mock_effect_handler)
     list_schemas_tool = ListSchemasTool(mock_effect_handler)
     list_tables_tool = ListTablesTool(mock_effect_handler)
 
@@ -62,6 +66,7 @@ def test_settings_keys_match_tool_names() -> None:
         analyze_tool,
         describe_tool,
         execute_tool,
+        list_databases_tool,
         list_schemas_tool,
         list_tables_tool,
         profile_tool,

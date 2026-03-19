@@ -490,6 +490,7 @@ def test_enabled_tool_names_default() -> None:
         "analyze_table_statistics",
         "describe_table",
         "execute_query",
+        "list_databases",
         "list_schemas",
         "list_tables",
         "profile_semi_structured_columns",
@@ -511,6 +512,7 @@ def test_enabled_tool_names_partial() -> None:
 
     expected_enabled = {
         "analyze_table_statistics",
+        "list_databases",
         "list_schemas",
         "list_tables",
     }
@@ -526,6 +528,7 @@ def test_enabled_tool_names_all_disabled() -> None:
     tools_settings.analyze_table_statistics = False
     tools_settings.describe_table = False
     tools_settings.execute_query = False
+    tools_settings.list_databases = False
     tools_settings.list_schemas = False
     tools_settings.list_tables = False
     tools_settings.profile_semi_structured_columns = False

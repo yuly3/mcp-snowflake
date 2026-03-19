@@ -55,6 +55,7 @@ class ToolsSettings(BaseModel):
     analyze_table_statistics: bool = Field(True, init=False)
     describe_table: bool = Field(True, init=False)
     execute_query: bool = Field(True, init=False)
+    list_databases: bool = Field(True, init=False)
     list_schemas: bool = Field(True, init=False)
     list_tables: bool = Field(True, init=False)
     profile_semi_structured_columns: bool = Field(True, init=False)
@@ -69,6 +70,8 @@ class ToolsSettings(BaseModel):
             enabled_tools.add("describe_table")
         if self.execute_query:
             enabled_tools.add("execute_query")
+        if self.list_databases:
+            enabled_tools.add("list_databases")
         if self.list_schemas:
             enabled_tools.add("list_schemas")
         if self.list_tables:

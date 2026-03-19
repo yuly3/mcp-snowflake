@@ -2,6 +2,7 @@ from .analyze_table_statistics import AnalyzeTableStatisticsTool
 from .base import Tool
 from .describe_table import DescribeTableTool
 from .execute_query import ExecuteQueryTool
+from .list_databases import ListDatabasesTool
 from .list_schemas import ListSchemasTool
 from .list_tables import ListTablesTool
 from .profile_semi_structured_columns import ProfileSemiStructuredColumnsTool
@@ -11,6 +12,7 @@ __all__ = [
     "AnalyzeTableStatisticsTool",
     "DescribeTableTool",
     "ExecuteQueryTool",
+    "ListDatabasesTool",
     "ListSchemasTool",
     "ListTablesTool",
     "ProfileSemiStructuredColumnsTool",
