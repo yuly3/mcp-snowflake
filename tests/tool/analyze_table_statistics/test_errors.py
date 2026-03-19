@@ -228,10 +228,10 @@ class TestAnalyzeTableStatisticsToolErrors:
         assert "Statistics analysis failed" in result[0].text
 
     @pytest.mark.asyncio
-    async def test_perform_with_timeout_error(
+    async def test_perform_with_timeout_error_without_columns(
         self,
     ) -> None:
-        """Test timeout error handling."""
+        """Test timeout error handling without columns specified includes hint to specify columns."""
         mock_effect = MockAnalyzeTableStatistics(should_raise=TimeoutError("Query execution timeout after 30 seconds"))
         tool = AnalyzeTableStatisticsTool(mock_effect)
 
@@ -247,6 +247,29 @@ class TestAnalyzeTableStatisticsToolErrors:
         assert result[0].type == "text"
         assert "Error: Query timed out:" in result[0].text
         assert "Query execution timeout after 30 seconds" in result[0].text
+        assert "Specify a subset of columns via the 'columns' parameter" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_perform_with_timeout_error_with_columns(
+        self,
+    ) -> None:
+        """Test timeout error handling with columns specified includes hint to reduce columns."""
+        mock_effect = MockAnalyzeTableStatistics(should_raise=TimeoutError("Query execution timeout after 30 seconds"))
+        tool = AnalyzeTableStatisticsTool(mock_effect)
+
+        arguments = {
+            "database": "test_db",
+            "schema": "test_schema",
+            "table": "large_table",
+            "columns": ["col_a", "col_b", "col_c"],
+        }
+        result = await tool.perform(arguments)
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert result[0].type == "text"
+        assert "Error: Query timed out:" in result[0].text
+        assert "Try reducing the number of columns" in result[0].text
 
     @pytest.mark.asyncio
     async def test_perform_with_data_error(

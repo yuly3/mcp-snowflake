@@ -55,7 +55,12 @@ class AnalyzeTableStatisticsTool(Tool):
         try:
             result = await handle_analyze_table_statistics(args, self.effect_handler)
         except TimeoutError as e:
-            text = f"Error: Query timed out: {e}"
+            hint = (
+                " Hint: Specify a subset of columns via the 'columns' parameter to reduce scan volume and avoid timeouts."
+                if not args.columns
+                else " Hint: Try reducing the number of columns specified in the 'columns' parameter."
+            )
+            text = f"Error: Query timed out: {e}:{hint}"
         except ProgrammingError as e:
             text = f"Error: SQL syntax error or other programming error: {e}"
         except OperationalError as e:
