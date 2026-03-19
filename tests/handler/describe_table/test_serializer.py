@@ -205,6 +205,29 @@ nullable: true"""
         assert "default: CURRENT_DATE" in text
         assert "comment: Date column" in text
 
+    def test_omits_empty_string_comment(self) -> None:
+        """Test compact format omits comment when empty string."""
+        result = DescribeTableResult(
+            database=DataBase("db"),
+            schema=Schema("sch"),
+            name="tbl",
+            column_count=1,
+            columns=[
+                TableColumn(
+                    name="COL",
+                    data_type="INTEGER",
+                    nullable=True,
+                    default_value=None,
+                    comment="",
+                    ordinal_position=1,
+                ),
+            ],
+        )
+        serializer = CompactDescribeTableResultSerializer()
+        text = result.serialize_with(serializer)
+
+        assert "comment:" not in text
+
     def test_includes_comment_when_present(self) -> None:
         """Test compact format includes comment when set."""
         result = DescribeTableResult(

@@ -155,7 +155,7 @@ class CompactDescribeTableResultSerializer(DescribeTableResultSerializer):
         self._lines.append(f"nullable: {str(column.nullable).lower()}")
         if column.default_value is not None:
             self._lines.append(f"default: {column.default_value}")
-        if column.comment is not None:
+        if column.comment:
             self._lines.append(f"comment: {column.comment}")
 
     def finish(self) -> str:
