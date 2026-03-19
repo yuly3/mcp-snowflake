@@ -17,6 +17,7 @@ from ..handler import (
     CompactListTablesResultSerializer,
     EffectListTables,
     ListTablesArgs,
+    MissingResponseColumnError,
     handle_list_tables,
 )
 from .base import Tool
@@ -58,6 +59,8 @@ class ListTablesTool(Tool):
             text = f"Error: Referential integrity constraint violation: {e}"
         except NotSupportedError as e:
             text = f"Error: Unsupported database feature used: {e}"
+        except MissingResponseColumnError as e:
+            text = f"Error: Missing required columns in Snowflake response: {e}"
         except ContractViolationError as e:
             text = f"Error: Unexpected error: {e}"
         else:
@@ -68,34 +71,53 @@ class ListTablesTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            description="Retrieve a list of tables from a specified database and schema",
+            description="Retrieve a list of tables and views from a specified database and schema",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "database": {
                         "type": "string",
-                        "description": "Database name to retrieve tables from",
+                        "description": "Database name to retrieve objects from",
                     },
                     "schema": {
                         "type": "string",
-                        "description": "Schema name to retrieve tables from",
+                        "description": "Schema name to retrieve objects from",
                     },
                     "filter": {
                         "type": "object",
-                        "description": "Optional filter for table names",
-                        "properties": {
-                            "type": {
-                                "type": "string",
-                                "enum": ["contains"],
-                                "description": "Filter type (currently only contains is supported)",
+                        "description": "Optional filter for results. Use type='contains' to filter by name substring, or type='object_type' to filter by TABLE or VIEW.",
+                        "oneOf": [
+                            {
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": ["contains"],
+                                        "description": "Filter by name substring (case-insensitive)",
+                                    },
+                                    "value": {
+                                        "type": "string",
+                                        "description": "Substring to match in object names",
+                                        "minLength": 1,
+                                    },
+                                },
+                                "required": ["type", "value"],
                             },
-                            "value": {
-                                "type": "string",
-                                "description": "Substring to match in table names",
-                                "minLength": 1,
+                            {
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": ["object_type"],
+                                        "description": "Filter by object type",
+                                    },
+                                    "value": {
+                                        "type": "string",
+                                        "enum": ["TABLE", "VIEW"],
+                                        "description": "Object type to filter by",
+                                    },
+                                },
+                                "required": ["type", "value"],
                             },
-                        },
-                        "required": ["type", "value"],
+                        ],
                     },
                 },
                 "required": ["database", "schema"],

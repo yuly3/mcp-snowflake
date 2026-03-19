@@ -5,8 +5,7 @@ A Model Context Protocol (MCP) server that connects to Snowflake databases and e
 ## Features
 
 - **List Schemas**: Retrieve a list of schemas from a specified database
-- **List Tables**: Retrieve a list of tables from a specified database and schema
-- **List Views**: Retrieve a list of views from a specified database and schema
+- **List Tables**: Retrieve a list of tables and views from a specified database and schema (supports filtering by name or object type)
 - **Describe Table**: Retrieve detailed structure information for a specified table
 - **Execute Query**: Execute read-only SQL queries and return results
 - **Sample Table Data**: Retrieve sample data from a specified table using Snowflake's SAMPLE ROW clause
@@ -63,7 +62,6 @@ describe_table = true  # Optional
 execute_query = true  # Optional
 list_schemas = true  # Optional
 list_tables = true  # Optional
-list_views = true  # Optional
 profile_semi_structured_columns = true  # Optional
 sample_table_data = true  # Optional
 
@@ -110,7 +108,6 @@ Set the following environment variables:
 - `TOOLS__EXECUTE_QUERY`: Enable/disable execute_query tool ("true" or "false", default: "true")
 - `TOOLS__LIST_SCHEMAS`: Enable/disable list_schemas tool ("true" or "false", default: "true")
 - `TOOLS__LIST_TABLES`: Enable/disable list_tables tool ("true" or "false", default: "true")
-- `TOOLS__LIST_VIEWS`: Enable/disable list_views tool ("true" or "false", default: "true")
 - `TOOLS__PROFILE_SEMI_STRUCTURED_COLUMNS`: Enable/disable profile_semi_structured_columns tool ("true" or "false", default: "true")
 - `TOOLS__SAMPLE_TABLE_DATA`: Enable/disable sample_table_data tool ("true" or "false", default: "true")
 - `EXECUTE_QUERY__TIMEOUT_SECONDS_DEFAULT`: Default `timeout_seconds` for execute_query when not specified by the caller (default: 30, must be <= `timeout_seconds_max`)
@@ -183,8 +180,7 @@ uvx mcp-snowflake --config {your-config-path}
 
 #### Tool List
 - [`list_schemas`](#list_schemas) - Retrieve a list of schemas from a specified database
-- [`list_tables`](#list_tables) - Retrieve a list of tables from a specified database and schema
-- [`list_views`](#list_views) - Retrieve a list of views from a specified database and schema
+- [`list_tables`](#list_tables) - Retrieve a list of tables and views from a specified database and schema
 - [`describe_table`](#describe_table) - Retrieve detailed structure information for a specified table
 - [`execute_query`](#execute_query) - Execute read-only SQL queries and return structured results
 - [`sample_table_data`](#sample_table_data) - Retrieve sample data from a specified table
@@ -222,16 +218,16 @@ schemas: (none)
 ```
 
 #### list_tables
-Retrieve a list of tables from a specified database and schema.
+Retrieve a list of tables and views from a specified database and schema.
 
 **Parameters:**
-- `database` (string, required): Database name to retrieve tables from
-- `schema` (string, required): Schema name to retrieve tables from
-- `filter` (object, optional): Name filter
-  - `type` (string, required): Filter type (`contains`)
-  - `value` (string, required): Substring to match in table names (case-insensitive)
+- `database` (string, required): Database name to retrieve objects from
+- `schema` (string, required): Schema name to retrieve objects from
+- `filter` (object, optional): Filter for results. One of:
+  - Name filter: `{"type": "contains", "value": "<substring>"}` — case-insensitive name substring match
+  - Object type filter: `{"type": "object_type", "value": "TABLE"}` or `{"type": "object_type", "value": "VIEW"}`
 
-**Example:**
+**Examples:**
 ```json
 {
   "name": "list_tables",
@@ -246,63 +242,38 @@ Retrieve a list of tables from a specified database and schema.
 }
 ```
 
-**Response Format:**
-The list_tables tool returns a compact, token-efficient text format:
-
-```
-database: MY_DATABASE
-schema: PUBLIC
-table_count: 3
-tables: CUSTOMERS, ORDERS, PRODUCTS
-```
-
-When no tables match, the output is:
-
-```
-database: MY_DATABASE
-schema: PUBLIC
-table_count: 0
-tables: (none)
-```
-
-#### list_views
-Retrieve a list of views from a specified database and schema.
-
-**Parameters:**
-- `database` (string, required): Database name to retrieve views from
-- `schema` (string, required): Schema name to retrieve views from
-- `filter` (object, optional): Name filter
-  - `type` (string, required): Filter type (`contains`)
-  - `value` (string, required): Substring to match in view names (case-insensitive)
-
-**Example:**
 ```json
 {
-  "name": "list_views",
+  "name": "list_tables",
   "arguments": {
     "database": "MY_DATABASE",
     "schema": "PUBLIC",
     "filter": {
-      "type": "contains",
-      "value": "order"
+      "type": "object_type",
+      "value": "VIEW"
     }
   }
 }
 ```
 
 **Response Format:**
+The list_tables tool returns a compact, token-efficient text format:
+
 ```
 database: MY_DATABASE
 schema: PUBLIC
-view_count: 3
-views: CUSTOMER_VIEW, ORDER_SUMMARY, PRODUCT_CATALOG
+object_count: 5
+tables: CUSTOMERS, ORDERS, PRODUCTS
+views: CUSTOMER_VIEW, ORDER_SUMMARY
 ```
 
-When no views match:
+When no objects match:
+
 ```
 database: MY_DATABASE
 schema: PUBLIC
-view_count: 0
+object_count: 0
+tables: (none)
 views: (none)
 ```
 

@@ -196,7 +196,6 @@ password = "test"
         assert settings.tools.execute_query is True
         assert settings.tools.list_schemas is True
         assert settings.tools.list_tables is True
-        assert settings.tools.list_views is True
         assert settings.tools.profile_semi_structured_columns is True
         assert settings.tools.sample_table_data is True
     finally:
@@ -493,7 +492,6 @@ def test_enabled_tool_names_default() -> None:
         "execute_query",
         "list_schemas",
         "list_tables",
-        "list_views",
         "profile_semi_structured_columns",
         "sample_table_data",
     }
@@ -515,7 +513,6 @@ def test_enabled_tool_names_partial() -> None:
         "analyze_table_statistics",
         "list_schemas",
         "list_tables",
-        "list_views",
     }
 
     assert tools_settings.enabled_tool_names() == expected_enabled
@@ -531,7 +528,6 @@ def test_enabled_tool_names_all_disabled() -> None:
     tools_settings.execute_query = False
     tools_settings.list_schemas = False
     tools_settings.list_tables = False
-    tools_settings.list_views = False
     tools_settings.profile_semi_structured_columns = False
     tools_settings.sample_table_data = False
 

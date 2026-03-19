@@ -1,5 +1,6 @@
 """Table metadata domain models using attrs."""
 
+import enum
 from typing import NewType
 
 import attrs
@@ -10,6 +11,19 @@ DataBase = NewType("DataBase", str)
 Schema = NewType("Schema", str)
 Table = NewType("Table", str)
 View = NewType("View", str)
+
+
+class ObjectKind(enum.Enum):
+    TABLE = "TABLE"
+    VIEW = "VIEW"
+
+
+@attrs.define(frozen=True, slots=True)
+class SchemaObject:
+    """An object (table or view) in a schema."""
+
+    name: str
+    kind: ObjectKind
 
 
 def _to_snowflake_data_type(value: str | SnowflakeDataType) -> SnowflakeDataType:

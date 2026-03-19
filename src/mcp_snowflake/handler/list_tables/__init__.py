@@ -6,9 +6,9 @@ from typing import Protocol
 
 from pydantic import BaseModel, Field
 
-from kernel.table_metadata import DataBase, Schema, Table
+from kernel.table_metadata import DataBase, ObjectKind, Schema, SchemaObject
 
-from ..name_filter import NameFilter, apply_name_filter
+from ..name_filter import ListObjectsFilter, apply_list_objects_filter
 from ._serializer import (
     CompactListTablesResultSerializer,
     ListTablesResult,
@@ -31,24 +31,24 @@ __all__ = [
 class ListTablesArgs(BaseModel):
     database: DataBase
     schema_: Schema = Field(alias="schema")
-    filter_: NameFilter | None = Field(default=None, alias="filter")
+    filter_: ListObjectsFilter | None = Field(default=None, alias="filter", discriminator="type_")
 
 
 class EffectListTables(Protocol):
-    def list_tables(self, database: DataBase, schema: Schema) -> Awaitable[list[Table]]:
-        """List tables in a database schema.
+    def list_objects(self, database: DataBase, schema: Schema) -> Awaitable[list[SchemaObject]]:
+        """List objects (tables and views) in a database schema.
 
         Parameters
         ----------
         database : DataBase
-            The database name to list tables from.
+            The database name to list objects from.
         schema : Schema
-            The schema name to list tables from.
+            The schema name to list objects from.
 
         Returns
         -------
-        Awaitable[list[Table]]
-            The list of tables in the schema.
+        Awaitable[list[SchemaObject]]
+            The list of objects in the schema.
 
         Raises
         ------
@@ -101,11 +101,15 @@ async def handle_list_tables(
     NotSupportedError
         When an unsupported database feature is used
     """
-    tables = await effect_handler.list_tables(args.database, args.schema_)
-    filtered_tables = apply_name_filter([str(table) for table in tables], args.filter_)
+    objects = await effect_handler.list_objects(args.database, args.schema_)
+    filtered = apply_list_objects_filter(objects, args.filter_)
+
+    tables = [obj.name for obj in filtered if obj.kind == ObjectKind.TABLE]
+    views = [obj.name for obj in filtered if obj.kind == ObjectKind.VIEW]
 
     return ListTablesResult(
         database=args.database,
         schema=args.schema_,
-        tables=filtered_tables,
+        tables=tables,
+        views=views,
     )

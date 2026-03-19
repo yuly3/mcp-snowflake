@@ -19,7 +19,6 @@ client_store_temporary_credential = true  # ID token cache for externalbrowser
 # execute_query = true
 # list_schemas = true
 # list_tables = true
-# list_views = true
 # profile_semi_structured_columns = true
 # sample_table_data = true
 

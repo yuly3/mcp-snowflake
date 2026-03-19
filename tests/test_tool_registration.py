@@ -81,7 +81,6 @@ def test_build_tools_respects_settings(
         "analyze_table_statistics",
         "execute_query",
         "list_tables",
-        "list_views",
         "profile_semi_structured_columns",
     }
 

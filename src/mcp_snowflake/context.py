@@ -11,7 +11,6 @@ from .adapter import (
     ExecuteQueryEffectHandler,
     ListSchemasEffectHandler,
     ListTablesEffectHandler,
-    ListViewsEffectHandler,
     ProfileSemiStructuredColumnsEffectHandler,
     SampleTableDataEffectHandler,
 )
@@ -29,7 +28,6 @@ from .tool import (
     ExecuteQueryTool,
     ListSchemasTool,
     ListTablesTool,
-    ListViewsTool,
     ProfileSemiStructuredColumnsTool,
     SampleTableDataTool,
     Tool,
@@ -84,7 +82,6 @@ class ServerContext:
             ),
             ListSchemasTool(ListSchemasEffectHandler(self._snowflake_client)),
             ListTablesTool(ListTablesEffectHandler(self._snowflake_client)),
-            ListViewsTool(ListViewsEffectHandler(self._snowflake_client)),
             ProfileSemiStructuredColumnsTool(
                 ProfileSemiStructuredColumnsEffectHandler(
                     self._snowflake_client,

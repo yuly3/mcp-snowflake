@@ -3,18 +3,33 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from kernel.table_metadata import ObjectKind, SchemaObject
+
 
 class ContainsNameFilter(BaseModel):
     type_: Literal["contains"] = Field(alias="type")
     value: str = Field(min_length=1)
 
 
-type NameFilter = ContainsNameFilter
+class ObjectTypeFilter(BaseModel):
+    type_: Literal["object_type"] = Field(alias="type")
+    value: Literal["TABLE", "VIEW"]
 
 
-def apply_name_filter(names: Sequence[str], name_filter: NameFilter | None) -> list[str]:
-    if name_filter is None:
-        return list(names)
+type ListObjectsFilter = ContainsNameFilter | ObjectTypeFilter
 
-    query = name_filter.value.casefold()
-    return [name for name in names if query in name.casefold()]
+
+def apply_list_objects_filter(
+    objects: Sequence[SchemaObject],
+    filter_: ListObjectsFilter | None,
+) -> list[SchemaObject]:
+    if filter_ is None:
+        return list(objects)
+
+    match filter_:
+        case ContainsNameFilter():
+            query = filter_.value.casefold()
+            return [obj for obj in objects if query in obj.name.casefold()]
+        case ObjectTypeFilter():
+            target_kind = ObjectKind(filter_.value)
+            return [obj for obj in objects if obj.kind == target_kind]

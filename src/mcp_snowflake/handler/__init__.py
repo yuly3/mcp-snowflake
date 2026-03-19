@@ -14,6 +14,7 @@ from .describe_table import (
     EffectDescribeTable,
     handle_describe_table,
 )
+from .errors import MissingResponseColumnError
 from .execute_query import (
     CompactQueryResultSerializer,
     EffectExecuteQuery,
@@ -37,14 +38,6 @@ from .list_tables import (
     ListTablesResult,
     ListTablesResultSerializer,
     handle_list_tables,
-)
-from .list_views import (
-    CompactListViewsResultSerializer,
-    EffectListViews,
-    ListViewsArgs,
-    ListViewsResult,
-    ListViewsResultSerializer,
-    handle_list_views,
 )
 from .profile_semi_structured_columns import (
     CompactProfileSemiStructuredColumnsResultSerializer,
@@ -71,7 +64,6 @@ __all__ = [
     "CompactDescribeTableResultSerializer",
     "CompactListSchemasResultSerializer",
     "CompactListTablesResultSerializer",
-    "CompactListViewsResultSerializer",
     "CompactProfileSemiStructuredColumnsResultSerializer",
     "CompactQueryResultSerializer",
     "CompactSampleTableDataResultSerializer",
@@ -83,7 +75,6 @@ __all__ = [
     "EffectExecuteQuery",
     "EffectListSchemas",
     "EffectListTables",
-    "EffectListViews",
     "EffectProfileSemiStructuredColumns",
     "EffectSampleTableData",
     "ExecuteQueryArgs",
@@ -93,9 +84,7 @@ __all__ = [
     "ListTablesArgs",
     "ListTablesResult",
     "ListTablesResultSerializer",
-    "ListViewsArgs",
-    "ListViewsResult",
-    "ListViewsResultSerializer",
+    "MissingResponseColumnError",
     "ProfileSemiStructuredColumnsArgs",
     "ProfileSemiStructuredColumnsResult",
     "ProfileSemiStructuredColumnsResultSerializer",
@@ -109,7 +98,6 @@ __all__ = [
     "handle_execute_query",
     "handle_list_schemas",
     "handle_list_tables",
-    "handle_list_views",
     "handle_profile_semi_structured_columns",
     "handle_sample_table_data",
 ]

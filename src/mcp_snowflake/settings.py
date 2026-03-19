@@ -57,7 +57,6 @@ class ToolsSettings(BaseModel):
     execute_query: bool = Field(True, init=False)
     list_schemas: bool = Field(True, init=False)
     list_tables: bool = Field(True, init=False)
-    list_views: bool = Field(True, init=False)
     profile_semi_structured_columns: bool = Field(True, init=False)
     sample_table_data: bool = Field(True, init=False)
 
@@ -74,8 +73,6 @@ class ToolsSettings(BaseModel):
             enabled_tools.add("list_schemas")
         if self.list_tables:
             enabled_tools.add("list_tables")
-        if self.list_views:
-            enabled_tools.add("list_views")
         if self.profile_semi_structured_columns:
             enabled_tools.add("profile_semi_structured_columns")
         if self.sample_table_data:
