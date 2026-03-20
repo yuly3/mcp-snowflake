@@ -495,6 +495,7 @@ def test_enabled_tool_names_default() -> None:
         "list_tables",
         "profile_semi_structured_columns",
         "sample_table_data",
+        "search_columns",
     }
 
     assert tools_settings.enabled_tool_names() == expected_all_tools
@@ -515,6 +516,7 @@ def test_enabled_tool_names_partial() -> None:
         "list_databases",
         "list_schemas",
         "list_tables",
+        "search_columns",
     }
 
     assert tools_settings.enabled_tool_names() == expected_enabled
@@ -533,5 +535,6 @@ def test_enabled_tool_names_all_disabled() -> None:
     tools_settings.list_tables = False
     tools_settings.profile_semi_structured_columns = False
     tools_settings.sample_table_data = False
+    tools_settings.search_columns = False
 
     assert tools_settings.enabled_tool_names() == set()

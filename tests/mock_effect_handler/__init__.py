@@ -6,6 +6,7 @@ from .list_schemas import MockListSchemas
 from .list_tables import MockListTables
 from .profile_semi_structured_columns import MockProfileSemiStructuredColumns
 from .sample_table_data import MockSampleTableData
+from .search_columns import MockSearchColumns
 
 __all__ = [
     "MockAnalyzeTableStatistics",
@@ -16,4 +17,5 @@ __all__ = [
     "MockListTables",
     "MockProfileSemiStructuredColumns",
     "MockSampleTableData",
+    "MockSearchColumns",
 ]

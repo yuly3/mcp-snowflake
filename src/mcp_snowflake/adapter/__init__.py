@@ -14,6 +14,7 @@ from .profile_semi_structured_columns_handler import (
     ProfileSemiStructuredColumnsEffectHandler,
 )
 from .sample_table_data_handler import SampleTableDataEffectHandler
+from .search_columns_handler import SearchColumnsEffectHandler
 
 __all__ = [
     "AnalyzeTableStatisticsEffectHandler",
@@ -24,4 +25,5 @@ __all__ = [
     "ListTablesEffectHandler",
     "ProfileSemiStructuredColumnsEffectHandler",
     "SampleTableDataEffectHandler",
+    "SearchColumnsEffectHandler",
 ]

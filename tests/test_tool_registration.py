@@ -83,6 +83,7 @@ def test_build_tools_respects_settings(
         "list_databases",
         "list_tables",
         "profile_semi_structured_columns",
+        "search_columns",
     }
 
     assert registered_tool_names == expected_enabled

@@ -62,6 +62,14 @@ from .sample_table_data import (
     SampleTableDataResultSerializer,
     handle_sample_table_data,
 )
+from .search_columns import (
+    CompactSearchColumnsResultSerializer,
+    EffectSearchColumns,
+    SearchColumnsArgs,
+    SearchColumnsResult,
+    SearchColumnsResultSerializer,
+    handle_search_columns,
+)
 
 __all__ = [
     "AnalyzeTableStatisticsArgs",
@@ -75,6 +83,7 @@ __all__ = [
     "CompactProfileSemiStructuredColumnsResultSerializer",
     "CompactQueryResultSerializer",
     "CompactSampleTableDataResultSerializer",
+    "CompactSearchColumnsResultSerializer",
     "DescribeTableArgs",
     "DescribeTableResult",
     "DescribeTableResultSerializer",
@@ -86,6 +95,7 @@ __all__ = [
     "EffectListTables",
     "EffectProfileSemiStructuredColumns",
     "EffectSampleTableData",
+    "EffectSearchColumns",
     "ExecuteQueryArgs",
     "ListDatabasesResult",
     "ListDatabasesResultSerializer",
@@ -104,6 +114,9 @@ __all__ = [
     "SampleTableDataArgs",
     "SampleTableDataResult",
     "SampleTableDataResultSerializer",
+    "SearchColumnsArgs",
+    "SearchColumnsResult",
+    "SearchColumnsResultSerializer",
     "handle_analyze_table_statistics",
     "handle_describe_table",
     "handle_execute_query",
@@ -112,4 +125,5 @@ __all__ = [
     "handle_list_tables",
     "handle_profile_semi_structured_columns",
     "handle_sample_table_data",
+    "handle_search_columns",
 ]

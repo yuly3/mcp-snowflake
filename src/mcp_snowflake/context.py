@@ -14,6 +14,7 @@ from .adapter import (
     ListTablesEffectHandler,
     ProfileSemiStructuredColumnsEffectHandler,
     SampleTableDataEffectHandler,
+    SearchColumnsEffectHandler,
 )
 from .settings import (
     AnalyzeTableStatisticsSettings,
@@ -32,6 +33,7 @@ from .tool import (
     ListTablesTool,
     ProfileSemiStructuredColumnsTool,
     SampleTableDataTool,
+    SearchColumnsTool,
     Tool,
 )
 
@@ -92,6 +94,7 @@ class ServerContext:
                     path_query_timeout_seconds=profile_semi_structured_columns_settings.path_query_timeout_seconds,
                 ),
             ),
+            SearchColumnsTool(SearchColumnsEffectHandler(self._snowflake_client)),
             SampleTableDataTool(
                 self._json_converter,
                 SampleTableDataEffectHandler(self._snowflake_client),

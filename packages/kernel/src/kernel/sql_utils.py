@@ -43,6 +43,22 @@ def quote_ident(name: str) -> str:
     return f'"{escaped}"'
 
 
+def quote_literal(value: str) -> str:
+    """Wrap a value in single quotes with proper escaping for SQL string literals.
+
+    Parameters
+    ----------
+    value : str
+        The string value to quote
+
+    Returns
+    -------
+    str
+        The quoted string literal (e.g. ``'hello'``, ``'it''s'``)
+    """
+    return "'" + value.replace("'", "''") + "'"
+
+
 def fully_qualified(database: DataBase, schema: Schema | None, name: Table) -> str:
     """Create a fully qualified identifier.
 

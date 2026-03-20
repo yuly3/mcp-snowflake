@@ -2,7 +2,7 @@
 
 import pytest
 
-from kernel.sql_utils import fully_qualified, quote_ident
+from kernel.sql_utils import fully_qualified, quote_ident, quote_literal
 from kernel.table_metadata import DataBase, Schema, Table
 
 
@@ -42,6 +42,25 @@ class TestQuoteIdent:
         """Leading/trailing whitespace should be trimmed."""
         assert quote_ident("  MYTABLE  ") == "MYTABLE"
         assert quote_ident(" my table ") == '"my table"'
+
+
+class TestQuoteLiteral:
+    """Test cases for quote_literal function."""
+
+    def test_simple_string(self) -> None:
+        assert quote_literal("hello") == "'hello'"
+
+    def test_empty_string(self) -> None:
+        assert quote_literal("") == "''"
+
+    def test_single_quote_escaped(self) -> None:
+        assert quote_literal("it's") == "'it''s'"
+
+    def test_multiple_quotes(self) -> None:
+        assert quote_literal("a'b'c") == "'a''b''c'"
+
+    def test_percent_pattern(self) -> None:
+        assert quote_literal("%unit_id%") == "'%unit_id%'"
 
 
 class TestFullyQualified:

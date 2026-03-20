@@ -60,6 +60,7 @@ class ToolsSettings(BaseModel):
     list_tables: bool = Field(True, init=False)
     profile_semi_structured_columns: bool = Field(True, init=False)
     sample_table_data: bool = Field(True, init=False)
+    search_columns: bool = Field(True, init=False)
 
     def enabled_tool_names(self) -> set[str]:
         """Return the set of enabled tool names."""
@@ -80,6 +81,8 @@ class ToolsSettings(BaseModel):
             enabled_tools.add("profile_semi_structured_columns")
         if self.sample_table_data:
             enabled_tools.add("sample_table_data")
+        if self.search_columns:
+            enabled_tools.add("search_columns")
         return enabled_tools
 
 

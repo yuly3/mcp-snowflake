@@ -11,6 +11,7 @@ A Model Context Protocol (MCP) server that connects to Snowflake databases and e
 - [`sample_table_data`](docs/tools/sample_table_data.md) - Retrieve sample data from a specified table using Snowflake's SAMPLE ROW clause
 - [`analyze_table_statistics`](docs/tools/analyze_table_statistics.md) - Generate comprehensive statistical analysis for table columns using approximation functions
 - [`profile_semi_structured_columns`](docs/tools/profile_semi_structured_columns.md) - Profile VARIANT/ARRAY/OBJECT columns with sampled flatten-based analysis
+- [`search_columns`](docs/tools/search_columns.md) - Search for columns across tables by name pattern and/or data type
 
 ## Installation
 

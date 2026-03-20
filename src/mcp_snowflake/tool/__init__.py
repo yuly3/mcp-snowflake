@@ -7,6 +7,7 @@ from .list_schemas import ListSchemasTool
 from .list_tables import ListTablesTool
 from .profile_semi_structured_columns import ProfileSemiStructuredColumnsTool
 from .sample_table_data import SampleTableDataTool
+from .search_columns import SearchColumnsTool
 
 __all__ = [
     "AnalyzeTableStatisticsTool",
@@ -17,5 +18,6 @@ __all__ = [
     "ListTablesTool",
     "ProfileSemiStructuredColumnsTool",
     "SampleTableDataTool",
+    "SearchColumnsTool",
     "Tool",
 ]
