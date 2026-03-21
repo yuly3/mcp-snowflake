@@ -14,16 +14,17 @@ logger = logging.getLogger(__name__)
 class ListSchemasEffectHandler:
     """EffectHandler for ListSchemas operations."""
 
-    def __init__(self, client: SnowflakeClient) -> None:
+    def __init__(self, client: SnowflakeClient, query_timeout_seconds: int = 10) -> None:
         """Initialize with SnowflakeClient."""
         self.client = client
+        self.query_timeout = timedelta(seconds=query_timeout_seconds)
 
     async def list_schemas(self, database: DataBase) -> list[Schema]:
         """Get list of schemas in a database."""
         query = f"SHOW SCHEMAS IN DATABASE {quote_ident(database)}"
 
         try:
-            results = await self.client.execute_query(query, timedelta(seconds=10))
+            results = await self.client.execute_query(query, self.query_timeout)
         except Exception:
             logger.exception(
                 "failed to execute list schemas operation",

@@ -17,16 +17,17 @@ _REQUIRED_COLUMNS = frozenset({"name", "kind"})
 class ListTablesEffectHandler:
     """EffectHandler for ListTables operations."""
 
-    def __init__(self, client: SnowflakeClient) -> None:
+    def __init__(self, client: SnowflakeClient, query_timeout_seconds: int = 10) -> None:
         """Initialize with SnowflakeClient."""
         self.client = client
+        self.query_timeout = timedelta(seconds=query_timeout_seconds)
 
     async def list_objects(self, database: DataBase, schema: Schema) -> list[SchemaObject]:
         """Get list of objects (tables and views) in a database schema."""
         query = f"SHOW OBJECTS IN SCHEMA {quote_ident(database)}.{quote_ident(schema)}"
 
         try:
-            results = await self.client.execute_query(query, timedelta(seconds=10))
+            results = await self.client.execute_query(query, self.query_timeout)
         except Exception:
             logger.exception(
                 "failed to execute list objects operation",

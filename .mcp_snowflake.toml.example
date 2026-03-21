@@ -34,7 +34,31 @@ client_store_temporary_credential = true  # ID token cache for externalbrowser
 # Timeout for analyze_table_statistics query
 # query_timeout_seconds = 60  # Optional (max: 3600)
 
+# [describe_table]
+# Timeout for describe_table query
+# query_timeout_seconds = 10  # Optional (max: 3600)
+
+# [list_databases]
+# Timeout for list_databases query
+# query_timeout_seconds = 10  # Optional (max: 3600)
+
+# [list_schemas]
+# Timeout for list_schemas query
+# query_timeout_seconds = 10  # Optional (max: 3600)
+
+# [list_tables]
+# Timeout for list_tables query
+# query_timeout_seconds = 10  # Optional (max: 3600)
+
 # [profile_semi_structured_columns]
 # Timeouts for semi-structured profiling queries
 # base_query_timeout_seconds = 90   # Optional (max: 3600)
 # path_query_timeout_seconds = 180  # Optional (max: 3600, must be >= base_query_timeout_seconds)
+
+# [sample_table_data]
+# Timeout for sample_table_data query
+# query_timeout_seconds = 60  # Optional (max: 3600)
+
+# [search_columns]
+# Timeout for search_columns query
+# query_timeout_seconds = 30  # Optional (max: 3600)

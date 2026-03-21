@@ -72,8 +72,14 @@ def test_build_tools_respects_settings(
         mock_snowflake_settings,
         base_settings.tools,
         base_settings.analyze_table_statistics,
+        base_settings.describe_table,
         base_settings.execute_query,
+        base_settings.list_databases,
+        base_settings.list_schemas,
+        base_settings.list_tables,
         base_settings.profile_semi_structured_columns,
+        base_settings.sample_table_data,
+        base_settings.search_columns,
     )
 
     registered_tool_names = set(server_context.tool_names())
@@ -107,8 +113,14 @@ def test_analyze_table_statistics_timeout_setting_is_applied(
         mock_snowflake_settings,
         base_settings.tools,
         base_settings.analyze_table_statistics,
+        base_settings.describe_table,
         base_settings.execute_query,
+        base_settings.list_databases,
+        base_settings.list_schemas,
+        base_settings.list_tables,
         base_settings.profile_semi_structured_columns,
+        base_settings.sample_table_data,
+        base_settings.search_columns,
     )
 
     tool = server_context.tool("analyze_table_statistics")

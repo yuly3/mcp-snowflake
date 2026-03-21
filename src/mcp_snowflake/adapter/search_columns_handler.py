@@ -85,9 +85,10 @@ ORDER BY TABLE_SCHEMA, TABLE_NAME"""  # noqa: S608
 class SearchColumnsEffectHandler:
     """EffectHandler for SearchColumns operations."""
 
-    def __init__(self, client: SnowflakeClient) -> None:
+    def __init__(self, client: SnowflakeClient, query_timeout_seconds: int = 30) -> None:
         """Initialize with SnowflakeClient."""
         self.client = client
+        self.query_timeout = timedelta(seconds=query_timeout_seconds)
 
     async def search_columns(
         self,
@@ -104,7 +105,7 @@ class SearchColumnsEffectHandler:
         )
 
         try:
-            results = await self.client.execute_query(query, timedelta(seconds=30))
+            results = await self.client.execute_query(query, self.query_timeout)
         except Exception:
             logger.exception(
                 "failed to execute search columns operation",

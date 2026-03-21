@@ -42,10 +42,34 @@ timeout_seconds_max = 300  # Optional
 # Query timeout for analyze_table_statistics (default: 60)
 query_timeout_seconds = 60  # Optional (max: 3600)
 
+[describe_table]
+# Query timeout for describe_table (default: 10)
+query_timeout_seconds = 10  # Optional (max: 3600)
+
+[list_databases]
+# Query timeout for list_databases (default: 10)
+query_timeout_seconds = 10  # Optional (max: 3600)
+
+[list_schemas]
+# Query timeout for list_schemas (default: 10)
+query_timeout_seconds = 10  # Optional (max: 3600)
+
+[list_tables]
+# Query timeout for list_tables (default: 10)
+query_timeout_seconds = 10  # Optional (max: 3600)
+
 [profile_semi_structured_columns]
 # Query timeouts for semi-structured profiling (default base: 90, path: 180)
 base_query_timeout_seconds = 90  # Optional (max: 3600)
 path_query_timeout_seconds = 180  # Optional (max: 3600, must be >= base_query_timeout_seconds)
+
+[sample_table_data]
+# Query timeout for sample_table_data (default: 60)
+query_timeout_seconds = 60  # Optional (max: 3600)
+
+[search_columns]
+# Query timeout for search_columns (default: 30)
+query_timeout_seconds = 30  # Optional (max: 3600)
 ```
 
 `snowflake.secondary_roles` behavior:
@@ -82,8 +106,14 @@ Set the following environment variables:
 - `EXECUTE_QUERY__TIMEOUT_SECONDS_DEFAULT`: Default `timeout_seconds` for execute_query when not specified by the caller (default: 30, must be <= `timeout_seconds_max`)
 - `EXECUTE_QUERY__TIMEOUT_SECONDS_MAX`: Maximum allowed `timeout_seconds` for execute_query (default: 300, max: 3600). Values above 3600 fail server startup.
 - `ANALYZE_TABLE_STATISTICS__QUERY_TIMEOUT_SECONDS`: Query timeout for analyze_table_statistics (default: 60, max: 3600)
+- `DESCRIBE_TABLE__QUERY_TIMEOUT_SECONDS`: Query timeout for describe_table (default: 10, max: 3600)
+- `LIST_DATABASES__QUERY_TIMEOUT_SECONDS`: Query timeout for list_databases (default: 10, max: 3600)
+- `LIST_SCHEMAS__QUERY_TIMEOUT_SECONDS`: Query timeout for list_schemas (default: 10, max: 3600)
+- `LIST_TABLES__QUERY_TIMEOUT_SECONDS`: Query timeout for list_tables (default: 10, max: 3600)
 - `PROFILE_SEMI_STRUCTURED_COLUMNS__BASE_QUERY_TIMEOUT_SECONDS`: Base query timeout for profile_semi_structured_columns (default: 90, max: 3600)
 - `PROFILE_SEMI_STRUCTURED_COLUMNS__PATH_QUERY_TIMEOUT_SECONDS`: Path query timeout for profile_semi_structured_columns (default: 180, max: 3600, must be >= base_query_timeout_seconds)
+- `SAMPLE_TABLE_DATA__QUERY_TIMEOUT_SECONDS`: Query timeout for sample_table_data (default: 60, max: 3600)
+- `SEARCH_COLUMNS__QUERY_TIMEOUT_SECONDS`: Query timeout for search_columns (default: 30, max: 3600)
 
 Example:
 ```bash

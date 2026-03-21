@@ -128,14 +128,56 @@ class ProfileSemiStructuredColumnsSettings(BaseModel):
         return self
 
 
+class DescribeTableSettings(BaseModel):
+    """Settings for describe_table tool behavior."""
+
+    query_timeout_seconds: int = Field(10, ge=1, le=3600, init=False)
+
+
+class ListDatabasesSettings(BaseModel):
+    """Settings for list_databases tool behavior."""
+
+    query_timeout_seconds: int = Field(10, ge=1, le=3600, init=False)
+
+
+class ListSchemasSettings(BaseModel):
+    """Settings for list_schemas tool behavior."""
+
+    query_timeout_seconds: int = Field(10, ge=1, le=3600, init=False)
+
+
+class ListTablesSettings(BaseModel):
+    """Settings for list_tables tool behavior."""
+
+    query_timeout_seconds: int = Field(10, ge=1, le=3600, init=False)
+
+
+class SampleTableDataSettings(BaseModel):
+    """Settings for sample_table_data tool behavior."""
+
+    query_timeout_seconds: int = Field(60, ge=1, le=3600, init=False)
+
+
+class SearchColumnsSettings(BaseModel):
+    """Settings for search_columns tool behavior."""
+
+    query_timeout_seconds: int = Field(30, ge=1, le=3600, init=False)
+
+
 class Settings(BaseSettings):
     snowflake: SnowflakeSettings = Field(default_factory=SnowflakeSettings)
     tools: ToolsSettings = Field(default_factory=ToolsSettings)
     analyze_table_statistics: AnalyzeTableStatisticsSettings = Field(default_factory=AnalyzeTableStatisticsSettings)
     execute_query: ExecuteQuerySettings = Field(default_factory=ExecuteQuerySettings)
+    describe_table: DescribeTableSettings = Field(default_factory=DescribeTableSettings)
+    list_databases: ListDatabasesSettings = Field(default_factory=ListDatabasesSettings)
+    list_schemas: ListSchemasSettings = Field(default_factory=ListSchemasSettings)
+    list_tables: ListTablesSettings = Field(default_factory=ListTablesSettings)
     profile_semi_structured_columns: ProfileSemiStructuredColumnsSettings = Field(
         default_factory=ProfileSemiStructuredColumnsSettings
     )
+    sample_table_data: SampleTableDataSettings = Field(default_factory=SampleTableDataSettings)
+    search_columns: SearchColumnsSettings = Field(default_factory=SearchColumnsSettings)
 
     @classmethod
     def settings_customise_sources(

@@ -28,8 +28,14 @@ def test_settings(config_path: Path) -> None:
     assert settings.analyze_table_statistics.query_timeout_seconds == 60
     assert settings.execute_query.timeout_seconds_default == 30
     assert settings.execute_query.timeout_seconds_max == 300
+    assert settings.describe_table.query_timeout_seconds == 10
+    assert settings.list_databases.query_timeout_seconds == 10
+    assert settings.list_schemas.query_timeout_seconds == 10
+    assert settings.list_tables.query_timeout_seconds == 10
     assert settings.profile_semi_structured_columns.base_query_timeout_seconds == 90
     assert settings.profile_semi_structured_columns.path_query_timeout_seconds == 180
+    assert settings.sample_table_data.query_timeout_seconds == 60
+    assert settings.search_columns.query_timeout_seconds == 30
 
 
 def test_settings_externalbrowser_without_password() -> None:
@@ -538,3 +544,62 @@ def test_enabled_tool_names_all_disabled() -> None:
     tools_settings.search_columns = False
 
     assert tools_settings.enabled_tool_names() == set()
+
+
+_TOML_HEADER = """\
+[snowflake]
+account = "test"
+role = "test"
+warehouse = "test"
+user = "test"
+password = "test"
+"""
+
+
+def _build_settings_from_toml(toml_body: str) -> Settings:
+    toml_content = _TOML_HEADER + toml_body
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+        _ = f.write(toml_content)
+        temp_file = f.name
+    try:
+        return Settings.build(SettingsConfigDict(toml_file=temp_file))
+    finally:
+        Path(temp_file).unlink()
+
+
+@pytest.mark.parametrize(
+    ("section", "attr", "override", "default"),
+    [
+        ("describe_table", "describe_table", 30, 10),
+        ("list_databases", "list_databases", 30, 10),
+        ("list_schemas", "list_schemas", 30, 10),
+        ("list_tables", "list_tables", 30, 10),
+        ("sample_table_data", "sample_table_data", 120, 60),
+        ("search_columns", "search_columns", 90, 30),
+    ],
+)
+def test_query_timeout_toml_override(section: str, attr: str, override: int, default: int) -> None:
+    """Test that TOML config can override query_timeout_seconds for each tool."""
+    settings = _build_settings_from_toml(f"\n[{section}]\nquery_timeout_seconds = {override}\n")
+    assert getattr(settings, attr).query_timeout_seconds == override
+
+    # Also verify the default value
+    settings_default = _build_settings_from_toml("")
+    assert getattr(settings_default, attr).query_timeout_seconds == default
+
+
+@pytest.mark.parametrize(
+    "section",
+    [
+        "describe_table",
+        "list_databases",
+        "list_schemas",
+        "list_tables",
+        "sample_table_data",
+        "search_columns",
+    ],
+)
+def test_query_timeout_greater_than_one_hour_fails(section: str) -> None:
+    """Test that query_timeout_seconds above one hour fails validation."""
+    with pytest.raises(ValidationError, match="less than or equal to 3600"):
+        _ = _build_settings_from_toml(f"\n[{section}]\nquery_timeout_seconds = 3601\n")

@@ -18,8 +18,14 @@ from .adapter import (
 )
 from .settings import (
     AnalyzeTableStatisticsSettings,
+    DescribeTableSettings,
     ExecuteQuerySettings,
+    ListDatabasesSettings,
+    ListSchemasSettings,
+    ListTablesSettings,
     ProfileSemiStructuredColumnsSettings,
+    SampleTableDataSettings,
+    SearchColumnsSettings,
     SnowflakeSettings,
     ToolsSettings,
 )
@@ -53,8 +59,14 @@ class ServerContext:
         snowflake_settings: SnowflakeSettings,
         tools_settings: ToolsSettings,
         analyze_table_statistics_settings: AnalyzeTableStatisticsSettings,
+        describe_table_settings: DescribeTableSettings,
         execute_query_settings: ExecuteQuerySettings,
+        list_databases_settings: ListDatabasesSettings,
+        list_schemas_settings: ListSchemasSettings,
+        list_tables_settings: ListTablesSettings,
         profile_semi_structured_columns_settings: ProfileSemiStructuredColumnsSettings,
+        sample_table_data_settings: SampleTableDataSettings,
+        search_columns_settings: SearchColumnsSettings,
     ) -> None:
         """Prepare the server context with client and tools.
 
@@ -77,16 +89,36 @@ class ServerContext:
                     query_timeout_seconds=analyze_table_statistics_settings.query_timeout_seconds,
                 ),
             ),
-            DescribeTableTool(DescribeTableEffectHandler(self._snowflake_client)),
+            DescribeTableTool(
+                DescribeTableEffectHandler(
+                    self._snowflake_client,
+                    query_timeout_seconds=describe_table_settings.query_timeout_seconds,
+                )
+            ),
             ExecuteQueryTool(
                 self._json_converter,
                 ExecuteQueryEffectHandler(self._snowflake_client),
                 timeout_seconds_default=execute_query_settings.timeout_seconds_default,
                 timeout_seconds_max=execute_query_settings.timeout_seconds_max,
             ),
-            ListDatabasesTool(ListDatabasesEffectHandler(self._snowflake_client)),
-            ListSchemasTool(ListSchemasEffectHandler(self._snowflake_client)),
-            ListTablesTool(ListTablesEffectHandler(self._snowflake_client)),
+            ListDatabasesTool(
+                ListDatabasesEffectHandler(
+                    self._snowflake_client,
+                    query_timeout_seconds=list_databases_settings.query_timeout_seconds,
+                )
+            ),
+            ListSchemasTool(
+                ListSchemasEffectHandler(
+                    self._snowflake_client,
+                    query_timeout_seconds=list_schemas_settings.query_timeout_seconds,
+                )
+            ),
+            ListTablesTool(
+                ListTablesEffectHandler(
+                    self._snowflake_client,
+                    query_timeout_seconds=list_tables_settings.query_timeout_seconds,
+                )
+            ),
             ProfileSemiStructuredColumnsTool(
                 ProfileSemiStructuredColumnsEffectHandler(
                     self._snowflake_client,
@@ -94,10 +126,18 @@ class ServerContext:
                     path_query_timeout_seconds=profile_semi_structured_columns_settings.path_query_timeout_seconds,
                 ),
             ),
-            SearchColumnsTool(SearchColumnsEffectHandler(self._snowflake_client)),
+            SearchColumnsTool(
+                SearchColumnsEffectHandler(
+                    self._snowflake_client,
+                    query_timeout_seconds=search_columns_settings.query_timeout_seconds,
+                )
+            ),
             SampleTableDataTool(
                 self._json_converter,
-                SampleTableDataEffectHandler(self._snowflake_client),
+                SampleTableDataEffectHandler(
+                    self._snowflake_client,
+                    query_timeout_seconds=sample_table_data_settings.query_timeout_seconds,
+                ),
             ),
         ]
 

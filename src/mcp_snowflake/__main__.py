@@ -72,8 +72,14 @@ async def main() -> None:
             settings.snowflake,
             settings.tools,
             settings.analyze_table_statistics,
+            settings.describe_table,
             settings.execute_query,
+            settings.list_databases,
+            settings.list_schemas,
+            settings.list_tables,
             settings.profile_semi_structured_columns,
+            settings.sample_table_data,
+            settings.search_columns,
         )
 
         logger.info("Snowflake client initialized successfully")

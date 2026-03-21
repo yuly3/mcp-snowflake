@@ -14,9 +14,10 @@ logger = logging.getLogger(__name__)
 class SampleTableDataEffectHandler:
     """EffectHandler for SampleTableData operations."""
 
-    def __init__(self, client: SnowflakeClient) -> None:
+    def __init__(self, client: SnowflakeClient, query_timeout_seconds: int = 60) -> None:
         """Initialize with SnowflakeClient."""
         self.client = client
+        self.query_timeout = timedelta(seconds=query_timeout_seconds)
 
     async def sample_table_data(
         self,
@@ -62,5 +63,4 @@ class SampleTableDataEffectHandler:
             sample_size,
         )
 
-        timeout = timedelta(seconds=60)
-        return await self.client.execute_query(query, timeout)
+        return await self.client.execute_query(query, self.query_timeout)

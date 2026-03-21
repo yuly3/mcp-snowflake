@@ -14,9 +14,10 @@ logger = logging.getLogger(__name__)
 class DescribeTableEffectHandler:
     """EffectHandler for DescribeTable operations."""
 
-    def __init__(self, client: SnowflakeClient) -> None:
+    def __init__(self, client: SnowflakeClient, query_timeout_seconds: int = 10) -> None:
         """Initialize with SnowflakeClient."""
         self.client = client
+        self.query_timeout = timedelta(seconds=query_timeout_seconds)
 
     async def describe_table(
         self,
@@ -28,7 +29,7 @@ class DescribeTableEffectHandler:
         query = f"DESCRIBE TABLE {fully_qualified(database, schema, table)}"
 
         try:
-            results = await self.client.execute_query(query, timedelta(seconds=10))
+            results = await self.client.execute_query(query, self.query_timeout)
         except Exception:
             logger.exception(
                 "failed to describe table",
