@@ -4,6 +4,7 @@ A Model Context Protocol (MCP) server that connects to Snowflake databases and e
 
 ## Features
 
+- [`list_databases`](docs/tools/list_databases.md) - Retrieve a list of accessible databases
 - [`list_schemas`](docs/tools/list_schemas.md) - Retrieve a list of schemas from a specified database
 - [`list_tables`](docs/tools/list_tables.md) - Retrieve a list of tables and views from a specified database and schema (supports filtering by name or object type)
 - [`describe_table`](docs/tools/describe_table.md) - Retrieve detailed structure information for a specified table

@@ -25,6 +25,7 @@ client_store_temporary_credential = true  # ID token cache for externalbrowser
 analyze_table_statistics = true  # Optional
 describe_table = true  # Optional
 execute_query = true  # Optional
+list_databases = true  # Optional
 list_schemas = true  # Optional
 list_tables = true  # Optional
 profile_semi_structured_columns = true  # Optional
@@ -72,6 +73,7 @@ Set the following environment variables:
 - `TOOLS__ANALYZE_TABLE_STATISTICS`: Enable/disable analyze_table_statistics tool ("true" or "false", default: "true")
 - `TOOLS__DESCRIBE_TABLE`: Enable/disable describe_table tool ("true" or "false", default: "true")
 - `TOOLS__EXECUTE_QUERY`: Enable/disable execute_query tool ("true" or "false", default: "true")
+- `TOOLS__LIST_DATABASES`: Enable/disable list_databases tool ("true" or "false", default: "true")
 - `TOOLS__LIST_SCHEMAS`: Enable/disable list_schemas tool ("true" or "false", default: "true")
 - `TOOLS__LIST_TABLES`: Enable/disable list_tables tool ("true" or "false", default: "true")
 - `TOOLS__PROFILE_SEMI_STRUCTURED_COLUMNS`: Enable/disable profile_semi_structured_columns tool ("true" or "false", default: "true")

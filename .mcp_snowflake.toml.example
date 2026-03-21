@@ -17,10 +17,12 @@ client_store_temporary_credential = true  # ID token cache for externalbrowser
 # analyze_table_statistics = true
 # describe_table = true
 # execute_query = true
+# list_databases = true
 # list_schemas = true
 # list_tables = true
 # profile_semi_structured_columns = true
 # sample_table_data = true
+# search_columns = true
 
 # [execute_query]
 # Default timeout_seconds when not specified by the caller
