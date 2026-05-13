@@ -80,6 +80,9 @@ ignore = [
     ".ruff_cache",
 ]
 
+[tool.uv]
+exclude-newer = "1 week"
+
 [tool.uv.sources]
 cattrs-converter = { workspace = true }
 expression = { workspace = true }
