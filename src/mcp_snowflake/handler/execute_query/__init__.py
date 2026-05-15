@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field, ValidationInfo, model_validator
 
 from cattrs_converter import JsonImmutableConverter
 from kernel import DataProcessingResult
+from snowflake_sql_parser import SQLAnalyzer
 
-from ...sql_analyzer import SQLWriteDetector
 from ...stopwatch import StopWatch
 from ._serializer import (
     CompactQueryResultSerializer,
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT_SECONDS = 30
 DEFAULT_TIMEOUT_SECONDS_MAX = 300
+_SQL_ANALYZER = SQLAnalyzer()
 
 # Public API exports
 __all__ = [
@@ -126,10 +127,9 @@ async def handle_execute_query(
         When an unsupported database feature is used
     """
     # SQL safety check
-    detector = SQLWriteDetector()
-    if detector.is_write_sql(args.sql):
-        msg = "Write operations are not allowed. Only read operations (SELECT, SHOW, DESCRIBE, etc.) are permitted."
-        raise ValueError(msg)
+    report = _SQL_ANALYZER.analyze(args.sql)
+    if report.is_blocked:
+        raise ValueError(report.user_message)
 
     stopwatch = StopWatch.start()
 

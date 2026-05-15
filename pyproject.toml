@@ -11,7 +11,7 @@ dependencies = [
     "pydantic-settings>=2.13.1",
     "pydantic>=2.12.5",
     "snowflake-connector-python[secure-local-storage]>=4.3.0",
-    "sqlparse>=0.5.5",
+    "snowflake-sql-parser",
 ]
 description = "Model Context Protocol (MCP) server for Snowflake database connectivity and SQL query execution"
 name = "mcp-snowflake"
@@ -42,25 +42,24 @@ exclude = [
     "**/__pycache__",
     "**/node_modules",
     ".venv",
-    "stub/sqlparse/**/*",
 ]
-stubPath = "./stub"
 typeCheckingMode = "standard"
 
 reportConstantRedefinition = "error"
 reportDeprecated = "warning"
-reportDuplicateImport = "warning"
+reportDuplicateImport = "error"
 reportImportCycles = "error"
-reportMatchNotExhaustive = "warning"
+reportMatchNotExhaustive = "error"
 reportMissingParameterType = "error"
 reportMissingTypeArgument = "error"
-reportUnknownLambdaType = "warning"
+reportUnknownLambdaType = "error"
 reportUnknownVariableType = "information"
 reportUnnecessaryCast = "error"
 reportUnnecessaryComparison = "error"
 reportUnnecessaryContains = "error"
 reportUnnecessaryIsInstance = "error"
 reportUnnecessaryTypeIgnoreComment = "error"
+reportUnreachable = "error"
 reportUntypedBaseClass = "warning"
 reportUntypedClassDecorator = "warning"
 reportUntypedFunctionDecorator = "warning"
@@ -87,10 +86,12 @@ exclude-newer = "1 week"
 cattrs-converter = { workspace = true }
 expression = { workspace = true }
 kernel = { workspace = true }
+snowflake-sql-parser = { workspace = true }
 
 [tool.uv.workspace]
 members = [
     "packages/cattrs-converter",
     "packages/expression",
     "packages/kernel",
+    "packages/snowflake-sql-parser",
 ]

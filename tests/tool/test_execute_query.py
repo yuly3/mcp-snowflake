@@ -193,6 +193,66 @@ class TestExecuteQueryTool:
         assert isinstance(result[0], types.TextContent)
         assert "Error:" in result[0].text
         assert "Write operations are not allowed" in result[0].text
+        assert "DML statements are not allowed" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_perform_invalid_sql_input(self) -> None:
+        """Invalid SQL input should be reported without hitting the database."""
+        converter = JsonImmutableConverter()
+        mock_effect = MockExecuteQuery()
+        tool = ExecuteQueryTool(converter, mock_effect)
+
+        result = await tool.perform({"sql": "SELECT 'unterminated"})
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert result[0].text.startswith("Error: Invalid SQL input:")
+        assert "Unterminated single-quoted string" in result[0].text
+        assert mock_effect.called_with_sql is None
+
+    @pytest.mark.asyncio
+    async def test_perform_list_allowed(self) -> None:
+        """LIST should pass the read-only gate."""
+        converter = JsonImmutableConverter()
+        mock_effect = MockExecuteQuery(result_data=[{"name": "path/file.csv"}])
+        tool = ExecuteQueryTool(converter, mock_effect)
+
+        result = await tool.perform({"sql": "LIST @mystage"})
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert "row_count: 1" in result[0].text
+        assert 'name: "path/file.csv"' in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_perform_blocks_write_cte_definition(self) -> None:
+        """Write statements inside CTE definitions should be rejected."""
+        converter = JsonImmutableConverter()
+        mock_effect = MockExecuteQuery()
+        tool = ExecuteQueryTool(converter, mock_effect)
+
+        result = await tool.perform({"sql": "WITH cte AS (DELETE FROM users WHERE 1 = 1) SELECT 1"})
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert "Error:" in result[0].text
+        assert "CTE definitions must be read-only: DML statements are not allowed" in result[0].text
+        assert mock_effect.called_with_sql is None
+
+    @pytest.mark.asyncio
+    async def test_perform_reports_unsupported_with_body_keyword_as_invalid_sql(self) -> None:
+        """Unsupported WITH bodies should be reported as invalid SQL input."""
+        converter = JsonImmutableConverter()
+        mock_effect = MockExecuteQuery()
+        tool = ExecuteQueryTool(converter, mock_effect)
+
+        result = await tool.perform({"sql": "WITH cte AS (SELECT 1) INSERT INTO users SELECT * FROM cte"})
+
+        assert len(result) == 1
+        assert isinstance(result[0], types.TextContent)
+        assert result[0].text.startswith("Error: Invalid SQL input:")
+        assert "WITH statement body could not be determined" in result[0].text
+        assert mock_effect.called_with_sql is None
 
     @pytest.mark.asyncio
     async def test_perform_with_empty_arguments(self) -> None:

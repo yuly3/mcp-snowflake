@@ -82,12 +82,12 @@ def parse_statistics_result(
                     count=count,
                     null_count=null_count,
                     distinct_count_approx=result_row[f"{prefix}_DISTINCT"],
-                    min=float(option.unwrap_or(result_row[f"{prefix}_MIN"], 0.0)),
-                    max=float(option.unwrap_or(result_row[f"{prefix}_MAX"], 0.0)),
-                    avg=float(option.unwrap_or(result_row[f"{prefix}_AVG"], 0.0)),
-                    percentile_25=float(option.unwrap_or(result_row[f"{prefix}_Q1"], 0.0)),
-                    percentile_50=float(option.unwrap_or(result_row[f"{prefix}_MEDIAN"], 0.0)),
-                    percentile_75=float(option.unwrap_or(result_row[f"{prefix}_Q3"], 0.0)),
+                    min=float(option.get_or(result_row[f"{prefix}_MIN"], 0.0)),
+                    max=float(option.get_or(result_row[f"{prefix}_MAX"], 0.0)),
+                    avg=float(option.get_or(result_row[f"{prefix}_AVG"], 0.0)),
+                    percentile_25=float(option.get_or(result_row[f"{prefix}_Q1"], 0.0)),
+                    percentile_50=float(option.get_or(result_row[f"{prefix}_MEDIAN"], 0.0)),
+                    percentile_75=float(option.get_or(result_row[f"{prefix}_Q3"], 0.0)),
                 )
                 if include_null_empty_profile:
                     stats["quality_profile"] = ColumnQualityProfileDict(
@@ -164,8 +164,8 @@ def parse_statistics_result(
                     count=count,
                     null_count=null_count,
                     distinct_count_approx=result_row[f"{prefix}_DISTINCT"],
-                    min_date=str(option.unwrap_or(min_date, "")),
-                    max_date=str(option.unwrap_or(max_date, "")),
+                    min_date=str(option.get_or(min_date, "")),
+                    max_date=str(option.get_or(max_date, "")),
                     date_range_days=result_row[f"{prefix}_RANGE_DAYS"] or 0,
                 )
                 if include_null_empty_profile:
@@ -183,16 +183,16 @@ def parse_statistics_result(
                     null_count=null_count,
                     true_count=result_row[f"{prefix}_TRUE_COUNT"],
                     false_count=result_row[f"{prefix}_FALSE_COUNT"],
-                    true_percentage=float(option.unwrap_or(result_row[f"{prefix}_TRUE_PERCENTAGE"], 0.0)),
-                    false_percentage=float(option.unwrap_or(result_row[f"{prefix}_FALSE_PERCENTAGE"], 0.0)),
+                    true_percentage=float(option.get_or(result_row[f"{prefix}_TRUE_PERCENTAGE"], 0.0)),
+                    false_percentage=float(option.get_or(result_row[f"{prefix}_FALSE_PERCENTAGE"], 0.0)),
                     true_percentage_with_nulls=float(
-                        option.unwrap_or(
+                        option.get_or(
                             result_row[f"{prefix}_TRUE_PERCENTAGE_WITH_NULLS"],
                             0.0,
                         )
                     ),
                     false_percentage_with_nulls=float(
-                        option.unwrap_or(
+                        option.get_or(
                             result_row[f"{prefix}_FALSE_PERCENTAGE_WITH_NULLS"],
                             0.0,
                         )

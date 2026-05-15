@@ -12,6 +12,7 @@ members = [
     "expression",
     "kernel",
     "mcp-snowflake",
+    "snowflake-sql-parser",
 ]
 
 [[package]]
@@ -531,7 +532,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "snowflake-connector-python", extra = ["secure-local-storage"] },
-    { name = "sqlparse" },
+    { name = "snowflake-sql-parser" },
 ]
 
 [package.dev-dependencies]
@@ -555,7 +556,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
     { name = "snowflake-connector-python", extras = ["secure-local-storage"], specifier = ">=4.3.0" },
-    { name = "sqlparse", specifier = ">=0.5.5" },
+    { name = "snowflake-sql-parser", editable = "packages/snowflake-sql-parser" },
 ]
 
 [package.metadata.requires-dev]
@@ -1014,21 +1015,29 @@ secure-local-storage = [
 ]
 
 [[package]]
+name = "snowflake-sql-parser"
+version = "0.1.0"
+source = { editable = "packages/snowflake-sql-parser" }
+dependencies = [
+    { name = "attrs" },
+    { name = "expression" },
+    { name = "more-itertools" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "attrs", specifier = ">=25.3.0" },
+    { name = "expression", editable = "packages/expression" },
+    { name = "more-itertools", specifier = ">=11.0.2" },
+]
+
+[[package]]
 name = "sortedcontainers"
 version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e8/c4/ba2f8066cceb6f23394729afe52f3bf7adec04bf9ed2c820b39e19299111/sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88", size = 30594, upload-time = "2021-05-16T22:03:42.897Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0", size = 29575, upload-time = "2021-05-16T22:03:41.177Z" },
-]
-
-[[package]]
-name = "sqlparse"
-version = "0.5.5"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/90/76/437d71068094df0726366574cf3432a4ed754217b436eb7429415cf2d480/sqlparse-0.5.5.tar.gz", hash = "sha256:e20d4a9b0b8585fdf63b10d30066c7c94c5d7a7ec47c889a2d83a3caa93ff28e", size = 120815, upload-time = "2025-12-19T07:17:45.073Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/49/4b/359f28a903c13438ef59ebeee215fb25da53066db67b305c125f1c6d2a25/sqlparse-0.5.5-py3-none-any.whl", hash = "sha256:12a08b3bf3eec877c519589833aed092e2444e68240a3577e8e26148acc7b1ba", size = 46138, upload-time = "2025-12-19T07:17:46.573Z" },
 ]
 
 [[package]]

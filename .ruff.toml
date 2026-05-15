@@ -144,4 +144,5 @@ known-first-party = [
     "cattrs_converter",
     "expression",
     "kernel",
+    "snowflake_sql_parser",
 ]

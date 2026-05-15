@@ -10,6 +10,7 @@ from mcp_snowflake.handler.execute_query import (
     QueryResult,
     handle_execute_query,
 )
+from snowflake_sql_parser import DiagnosticCode, SQLAnalysisError
 
 from ...mock_effect_handler import MockExecuteQuery
 
@@ -101,10 +102,204 @@ class TestExecuteQueryHandler:
         args = ExecuteQueryArgs(sql="INSERT INTO users (name) VALUES ('Charlie')")
 
         # Execute handler - should raise ValueError for write operations
-        with pytest.raises(ValueError, match="Write operations are not allowed"):
+        with pytest.raises(ValueError, match="DML statements are not allowed"):
             _ = await handle_execute_query(json_converter, args, effect_handler)
 
         # Verify effect handler was not called
+        assert effect_handler.called_with_sql is None
+        assert effect_handler.called_with_timeout is None
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_with_call_blocked(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that WITH ... CALL is blocked."""
+        effect_handler = MockExecuteQuery()
+        args = ExecuteQueryArgs(
+            sql="WITH p AS PROCEDURE () RETURNS VARCHAR LANGUAGE SQL AS $$BEGIN RETURN 'ok'; END;$$ CALL p()"
+        )
+
+        with pytest.raises(ValueError, match="CALL statements are not allowed"):
+            _ = await handle_execute_query(json_converter, args, effect_handler)
+
+        assert effect_handler.called_with_sql is None
+        assert effect_handler.called_with_timeout is None
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_with_call_blocked_after_additional_cte_bindings(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that WITH ... AS PROCEDURE ..., cte AS (...) CALL ... is blocked."""
+        effect_handler = MockExecuteQuery()
+        args = ExecuteQueryArgs(
+            sql="WITH p AS PROCEDURE () RETURNS VARCHAR LANGUAGE SQL AS $$BEGIN RETURN 'ok'; END;$$, cte AS (SELECT 1) CALL p()"
+        )
+
+        with pytest.raises(ValueError, match="CALL statements are not allowed"):
+            _ = await handle_execute_query(json_converter, args, effect_handler)
+
+        assert effect_handler.called_with_sql is None
+        assert effect_handler.called_with_timeout is None
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_propagates_sql_analysis_error(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that SQL analysis failures are surfaced to callers."""
+        effect_handler = MockExecuteQuery()
+        args = ExecuteQueryArgs(sql="SELECT 'unterminated")
+
+        with pytest.raises(SQLAnalysisError) as exc_info:
+            _ = await handle_execute_query(json_converter, args, effect_handler)
+
+        diagnostic = exc_info.value.diagnostic
+        assert diagnostic is not None
+        assert diagnostic.code is DiagnosticCode.UNTERMINATED_STRING
+        assert effect_handler.called_with_sql is None
+        assert effect_handler.called_with_timeout is None
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_explain_insert_allowed(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that EXPLAIN retains read-only behavior."""
+        effect_handler = MockExecuteQuery(result_data=[{"plan": "ok"}])
+        args = ExecuteQueryArgs(sql="EXPLAIN INSERT INTO users VALUES (1)")
+
+        result = await handle_execute_query(json_converter, args, effect_handler)
+
+        assert isinstance(result, QueryResult)
+        assert result.row_count == 1
+        assert effect_handler.called_with_sql == "EXPLAIN INSERT INTO users VALUES (1)"
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_explain_using_insert_allowed(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that EXPLAIN USING retains read-only behavior."""
+        effect_handler = MockExecuteQuery(result_data=[{"plan": "ok"}])
+        args = ExecuteQueryArgs(sql="EXPLAIN USING JSON INSERT INTO users VALUES (1)")
+
+        result = await handle_execute_query(json_converter, args, effect_handler)
+
+        assert isinstance(result, QueryResult)
+        assert result.row_count == 1
+        assert effect_handler.called_with_sql == "EXPLAIN USING JSON INSERT INTO users VALUES (1)"
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_list_allowed(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that LIST is allowed as read-only metadata."""
+        effect_handler = MockExecuteQuery(result_data=[{"name": "path/file.csv"}])
+        args = ExecuteQueryArgs(sql="LIST @mystage")
+
+        result = await handle_execute_query(json_converter, args, effect_handler)
+
+        assert isinstance(result, QueryResult)
+        assert result.row_count == 1
+        assert effect_handler.called_with_sql == "LIST @mystage"
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_allows_variant_path_key_named_into(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that semi-structured path keys do not trigger SELECT ... INTO blocking."""
+        effect_handler = MockExecuteQuery(result_data=[{"value": "ok"}])
+        args = ExecuteQueryArgs(sql="SELECT src:into FROM car_sales")
+
+        result = await handle_execute_query(json_converter, args, effect_handler)
+
+        assert isinstance(result, QueryResult)
+        assert result.row_count == 1
+        assert effect_handler.called_with_sql == "SELECT src:into FROM car_sales"
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_allows_recursive_named_cte(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that a CTE named recursive is treated as a valid identifier."""
+        effect_handler = MockExecuteQuery(result_data=[{"value": 1}])
+        sql = "WITH recursive AS (SELECT 1 AS value) SELECT * FROM recursive"
+        args = ExecuteQueryArgs(sql=sql)
+
+        result = await handle_execute_query(json_converter, args, effect_handler)
+
+        assert isinstance(result, QueryResult)
+        assert result.row_count == 1
+        assert effect_handler.called_with_sql == sql
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_rejects_unsupported_with_body_keyword(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that unsupported WITH bodies surface as invalid SQL input."""
+        effect_handler = MockExecuteQuery()
+        args = ExecuteQueryArgs(sql="WITH cte AS (SELECT 1) INSERT INTO users SELECT * FROM cte")
+
+        with pytest.raises(SQLAnalysisError) as exc_info:
+            _ = await handle_execute_query(json_converter, args, effect_handler)
+
+        diagnostic = exc_info.value.diagnostic
+        assert diagnostic is not None
+        assert diagnostic.code is DiagnosticCode.UNPARSABLE_WITH_BODY
+        assert effect_handler.called_with_sql is None
+        assert effect_handler.called_with_timeout is None
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_blocks_write_cte_definition(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that CTE definitions must remain read-only."""
+        effect_handler = MockExecuteQuery()
+        args = ExecuteQueryArgs(sql="WITH cte AS (DELETE FROM users WHERE 1 = 1) SELECT 1")
+
+        with pytest.raises(ValueError, match="CTE definitions must be read-only: DML statements are not allowed"):
+            _ = await handle_execute_query(json_converter, args, effect_handler)
+
+        assert effect_handler.called_with_sql is None
+        assert effect_handler.called_with_timeout is None
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_blocks_select_for_update_in_cte_definition(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that non-read-only SELECT clauses are blocked inside CTE definitions."""
+        effect_handler = MockExecuteQuery()
+        args = ExecuteQueryArgs(sql="WITH cte AS (SELECT * FROM users FOR UPDATE) SELECT 1")
+
+        with pytest.raises(
+            ValueError,
+            match=r"CTE definitions must be read-only: SELECT \.\.\. FOR UPDATE is not read-only",
+        ):
+            _ = await handle_execute_query(json_converter, args, effect_handler)
+
+        assert effect_handler.called_with_sql is None
+        assert effect_handler.called_with_timeout is None
+
+    @pytest.mark.asyncio
+    async def test_handle_execute_query_blocks_explain_with_unparsable_subject(
+        self,
+        json_converter: JsonImmutableConverter,
+    ) -> None:
+        """Test that EXPLAIN still requires a parseable nested statement."""
+        effect_handler = MockExecuteQuery()
+        args = ExecuteQueryArgs(sql="EXPLAIN WITH cte AS (SELECT 1)")
+
+        with pytest.raises(ValueError, match="WITH statement body could not be determined"):
+            _ = await handle_execute_query(json_converter, args, effect_handler)
+
         assert effect_handler.called_with_sql is None
         assert effect_handler.called_with_timeout is None
 
