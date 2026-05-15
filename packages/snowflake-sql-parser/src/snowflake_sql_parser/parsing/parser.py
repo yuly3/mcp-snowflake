@@ -42,7 +42,7 @@ class ParserContext:
     span: TextSpan
     stream: TokenStream
     dialect: Dialect
-    spec: StatementParserSpec | None = None
+    spec: StatementParserSpec
 
     def first_keyword(self) -> str | None:
         """Return the leading word token, if any."""
@@ -50,19 +50,10 @@ class ParserContext:
         return _statement_keyword(self.stream.peek())
 
     @internal_contract
-    def require_spec(self) -> StatementParserSpec:
-        """Return the active registry spec."""
-
-        spec = self.spec
-        if spec is None:
-            raise ParserInvariantError("Statement parser spec is required")
-        return spec
-
-    @internal_contract
     def require_family_policy(self) -> PolicyKind:
         """Return the policy for family-classified statements."""
 
-        family_policy = self.require_spec().family_policy
+        family_policy = self.spec.family_policy
         if family_policy is None:
             raise ParserInvariantError("Statement parser spec must define a family policy")
         return family_policy
@@ -202,7 +193,7 @@ def _parse_by_kind(kind: StatementParserKind, context: ParserContext) -> Stateme
 def parse_family(context: ParserContext) -> StatementNode:
     """Parse a family-classified statement."""
 
-    spec = context.require_spec()
+    spec = context.spec
     keyword = context.first_keyword()
     if keyword is None:
         return UnknownStatementNode(

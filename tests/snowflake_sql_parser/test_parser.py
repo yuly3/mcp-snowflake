@@ -1,11 +1,8 @@
 import pytest
 
-from expression.contract import ContractViolationError
 from snowflake_sql_parser import DiagnosticCode, SQLAnalysisError
-from snowflake_sql_parser.core import ExplainNode, PipeChainNode, QueryNode, StatementFamilyNode, TextSpan, WithNode
-from snowflake_sql_parser.dialects import SNOWFLAKE_DIALECT
-from snowflake_sql_parser.lexing import TokenStream
-from snowflake_sql_parser.parsing import ParserContext, build_split_statement, parse_statement
+from snowflake_sql_parser.core import ExplainNode, PipeChainNode, QueryNode, StatementFamilyNode, WithNode
+from snowflake_sql_parser.parsing import build_split_statement, parse_statement
 
 
 def test_parser_builds_with_body_tree() -> None:
@@ -463,20 +460,3 @@ def test_parser_classifies_documented_control_flow_variants_as_scripting(
     assert isinstance(node, StatementFamilyNode)
     assert node.keyword == keyword
     assert node.family == "scripting"
-
-
-def test_parser_context_require_spec_raises_contract_violation() -> None:
-    context = ParserContext(
-        text="SELECT 1",
-        span=TextSpan(0, 8),
-        stream=TokenStream.from_sql("SELECT 1", keywords=SNOWFLAKE_DIALECT.keywords),
-        dialect=SNOWFLAKE_DIALECT,
-    )
-
-    with pytest.raises(ContractViolationError) as exc_info:
-        _ = context.require_spec()
-
-    error = exc_info.value
-    assert error.function_name == "require_spec"
-    assert error.original_exception is not None
-    assert type(error.original_exception).__name__ == "ParserInvariantError"
