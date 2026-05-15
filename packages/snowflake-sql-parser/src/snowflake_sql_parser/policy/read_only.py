@@ -21,7 +21,6 @@ from ..core import (
     UnknownStatementNode,
     WithNode,
 )
-from ..core.contracts import internal_contract
 from ..core.invariants import ParserInvariantError
 from ..core.reasons import blocked_statement_reason
 
@@ -41,7 +40,6 @@ class SafetyDecision:
 class ReadOnlySafetyPolicy:
     """Evaluate statement nodes under the read-only safety policy."""
 
-    @internal_contract
     def evaluate(self, node: StatementNode) -> SafetyDecision:
         match node:
             case PipeChainNode():
