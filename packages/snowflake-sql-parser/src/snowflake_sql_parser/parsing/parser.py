@@ -164,12 +164,12 @@ def parse_statement(
         dialect=active_dialect,
         spec=spec,
     )
-    return _parse_by_kind(spec.parser_kind, context)
+    return _parse_by_kind(context)
 
 
 @analysis_contract
-def _parse_by_kind(kind: StatementParserKind, context: ParserContext) -> StatementNode:
-    match kind:
+def _parse_by_kind(context: ParserContext) -> StatementNode:
+    match context.spec.parser_kind:
         case StatementParserKind.FAMILY:
             return parse_family(context)
         case StatementParserKind.METADATA:
