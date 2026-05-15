@@ -2,12 +2,10 @@
 
 import attrs
 
+from ..core import DiagnosticCode, SplitStatement, SQLAnalysisError, TextPiece, TextSpan
 from ..core.contracts import analysis_contract
-from ..core.diagnostics import DiagnosticCode
-from ..core.errors import SQLAnalysisError
-from ..core.models import SplitStatement, TextPiece, TextSpan
-from ..dialects.snowflake import SNOWFLAKE_DIALECT
-from ..lexing.lexer import Token, TokenType, tokenize
+from ..dialects import SNOWFLAKE_DIALECT
+from ..lexing import Token, TokenType, tokenize
 
 _SCRIPTING_HEADER_KEYWORDS = frozenset({"IF", "FOR", "WHILE", "CASE"})
 _SCRIPTING_BODY_KEYWORDS = frozenset({"BEGIN", "LOOP", "REPEAT"})

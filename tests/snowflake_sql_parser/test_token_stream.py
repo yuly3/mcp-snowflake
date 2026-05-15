@@ -1,8 +1,8 @@
 import pytest
 
 from snowflake_sql_parser import DiagnosticCode, SQLAnalysisError, TextSpan
-from snowflake_sql_parser.dialects.snowflake import SNOWFLAKE_DIALECT
-from snowflake_sql_parser.lexing.token_stream import TokenStream
+from snowflake_sql_parser.dialects import SNOWFLAKE_DIALECT
+from snowflake_sql_parser.lexing import TokenStream
 
 
 def test_token_stream_supports_checkpoints_and_sequence_matching() -> None:

@@ -4,8 +4,7 @@ from enum import StrEnum
 
 import attrs
 
-from ..core.models import StatementFamily
-from ..core.syntax import PolicyKind
+from ..core import PolicyKind, StatementFamily
 
 
 class StatementParserKind(StrEnum):

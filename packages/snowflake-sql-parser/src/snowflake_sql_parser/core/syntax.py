@@ -24,7 +24,7 @@ class SqlScript:
 
 
 @attrs.define(frozen=True, slots=True)
-class StatementNode:
+class _StatementNode:
     """Base class for statement-level syntax nodes."""
 
     span: TextSpan
@@ -33,28 +33,28 @@ class StatementNode:
 
 
 @attrs.define(frozen=True, slots=True)
-class PipeChainNode(StatementNode):
+class PipeChainNode(_StatementNode):
     """A statement composed of Snowflake pipe-chain segments."""
 
-    segments: tuple[StatementNode, ...]
+    segments: tuple["StatementNode", ...]
 
 
 @attrs.define(frozen=True, slots=True)
-class WithNode(StatementNode):
+class WithNode(_StatementNode):
     """A WITH statement that delegates policy to its body."""
 
-    body: StatementNode | None
+    body: "StatementNode | None"
 
 
 @attrs.define(frozen=True, slots=True)
-class ExplainNode(StatementNode):
+class ExplainNode(_StatementNode):
     """An EXPLAIN statement wrapping another statement."""
 
-    subject: StatementNode | None
+    subject: "StatementNode | None"
 
 
 @attrs.define(frozen=True, slots=True)
-class QueryNode(StatementNode):
+class QueryNode(_StatementNode):
     """A query statement with top-level Snowflake constructs."""
 
     keyword: str
@@ -62,7 +62,7 @@ class QueryNode(StatementNode):
 
 
 @attrs.define(frozen=True, slots=True)
-class StatementFamilyNode(StatementNode):
+class StatementFamilyNode(_StatementNode):
     """A statement classified only by family and default policy."""
 
     keyword: str
@@ -71,7 +71,10 @@ class StatementFamilyNode(StatementNode):
 
 
 @attrs.define(frozen=True, slots=True)
-class UnknownStatementNode(StatementNode):
+class UnknownStatementNode(_StatementNode):
     """A statement that could not be proven read-only."""
 
     keyword: str | None = None
+
+
+type StatementNode = PipeChainNode | WithNode | ExplainNode | QueryNode | StatementFamilyNode | UnknownStatementNode

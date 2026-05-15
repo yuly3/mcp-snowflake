@@ -4,8 +4,7 @@ from collections.abc import Mapping
 
 import attrs
 
-from ..core.models import QueryConstruct
-from ..core.syntax import PolicyKind
+from ..core import PolicyKind, QueryConstruct
 from ..parsing.registry import StatementParserKind, StatementParserSpec, StatementRegistry
 
 METADATA_KEYWORDS = frozenset({"SHOW", "DESCRIBE", "DESC", "LIST", "LS"})

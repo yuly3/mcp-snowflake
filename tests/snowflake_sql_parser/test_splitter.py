@@ -1,7 +1,7 @@
 import pytest
 
 from snowflake_sql_parser import DiagnosticCode, SQLAnalysisError
-from snowflake_sql_parser.parsing.splitter import build_split_statement, split_statements
+from snowflake_sql_parser.parsing import build_split_statement, split_statements
 
 
 def test_splitter_respects_string_boundaries() -> None:

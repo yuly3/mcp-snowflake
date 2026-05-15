@@ -2,12 +2,10 @@ import pytest
 
 from expression.contract import ContractViolationError
 from snowflake_sql_parser import DiagnosticCode, SQLAnalysisError
-from snowflake_sql_parser.core.models import TextSpan
-from snowflake_sql_parser.core.syntax import ExplainNode, PipeChainNode, QueryNode, StatementFamilyNode, WithNode
-from snowflake_sql_parser.dialects.snowflake import SNOWFLAKE_DIALECT
-from snowflake_sql_parser.lexing.token_stream import TokenStream
-from snowflake_sql_parser.parsing.parser import ParserContext, parse_statement
-from snowflake_sql_parser.parsing.splitter import build_split_statement
+from snowflake_sql_parser.core import ExplainNode, PipeChainNode, QueryNode, StatementFamilyNode, TextSpan, WithNode
+from snowflake_sql_parser.dialects import SNOWFLAKE_DIALECT
+from snowflake_sql_parser.lexing import TokenStream
+from snowflake_sql_parser.parsing import ParserContext, build_split_statement, parse_statement
 
 
 def test_parser_builds_with_body_tree() -> None:

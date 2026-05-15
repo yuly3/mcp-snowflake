@@ -1,17 +1,7 @@
-import attrs
 import pytest
 
-from expression.contract import ContractViolationError
-from snowflake_sql_parser.core.models import TextSpan
-from snowflake_sql_parser.core.syntax import StatementNode
-from snowflake_sql_parser.parsing.parser import parse_statement
-from snowflake_sql_parser.parsing.splitter import build_split_statement
-from snowflake_sql_parser.policy.read_only import ReadOnlySafetyPolicy, SafetyDecision
-
-
-@attrs.define(frozen=True, slots=True)
-class FakeStatementNode(StatementNode):
-    pass
+from snowflake_sql_parser.parsing import build_split_statement, parse_statement
+from snowflake_sql_parser.policy import ReadOnlySafetyPolicy, SafetyDecision
 
 
 def _evaluate(sql: str) -> SafetyDecision:
@@ -261,13 +251,3 @@ def test_policy_blocks_call_with_named_arguments_and_into_clause() -> None:
     assert decision.family == "scripting"
     assert decision.diagnostic is not None
     assert decision.diagnostic.message == "CALL statements are not allowed"
-
-
-def test_policy_wraps_unknown_nodes_as_contract_violation() -> None:
-    with pytest.raises(ContractViolationError) as exc_info:
-        _ = ReadOnlySafetyPolicy().evaluate(FakeStatementNode(span=TextSpan(0, 8), text="SELECT 1"))
-
-    error = exc_info.value
-    assert error.function_name == "evaluate"
-    assert error.original_exception is not None
-    assert type(error.original_exception).__name__ == "ParserInvariantError"

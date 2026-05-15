@@ -4,27 +4,30 @@ from collections.abc import Mapping
 
 import attrs
 
-from ..core.contracts import analysis_contract, internal_contract
-from ..core.diagnostics import Diagnostic, DiagnosticCode
-from ..core.errors import SQLAnalysisError
-from ..core.invariants import ParserInvariantError
-from ..core.models import QueryConstruct, SplitStatement, StatementFamily, TextSpan
-from ..core.syntax import (
+from ..core import (
+    Diagnostic,
+    DiagnosticCode,
     ExplainNode,
     PipeChainNode,
     PolicyKind,
+    QueryConstruct,
     QueryNode,
+    SplitStatement,
+    SQLAnalysisError,
     SqlScript,
+    StatementFamily,
     StatementFamilyNode,
     StatementNode,
+    TextSpan,
     UnknownStatementNode,
     WithNode,
 )
+from ..core.contracts import analysis_contract, internal_contract
+from ..core.invariants import ParserInvariantError
+from ..dialects import SNOWFLAKE_DIALECT
 from ..dialects.base import Dialect
-from ..dialects.snowflake import SNOWFLAKE_DIALECT
-from ..lexing.lexer import Token
-from ..lexing.token_stream import TokenStream
-from ..policy.read_only import ReadOnlySafetyPolicy, SafetyDecision
+from ..lexing import Token, TokenStream
+from ..policy import ReadOnlySafetyPolicy, SafetyDecision
 from .registry import StatementParserKind, StatementParserSpec
 from .splitter import build_split_statement, split_statements
 

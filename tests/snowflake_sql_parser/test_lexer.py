@@ -1,8 +1,8 @@
 import pytest
 
 from snowflake_sql_parser import DiagnosticCode, SQLAnalysisError, TextSpan
-from snowflake_sql_parser.dialects.snowflake import SNOWFLAKE_DIALECT
-from snowflake_sql_parser.lexing.lexer import TokenType, tokenize
+from snowflake_sql_parser.dialects import SNOWFLAKE_DIALECT
+from snowflake_sql_parser.lexing import TokenType, tokenize
 
 
 def test_tokenize_preserves_strings_and_skips_comments() -> None:

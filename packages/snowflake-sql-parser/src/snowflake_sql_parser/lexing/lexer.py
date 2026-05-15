@@ -5,10 +5,8 @@ from typing import Literal
 
 import attrs
 
+from ..core import DiagnosticCode, SQLAnalysisError, TextSpan
 from ..core.contracts import analysis_contract
-from ..core.diagnostics import DiagnosticCode
-from ..core.errors import SQLAnalysisError
-from ..core.models import TextSpan
 
 type TokenKind = Literal[
     "word",

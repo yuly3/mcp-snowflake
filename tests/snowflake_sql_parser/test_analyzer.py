@@ -10,7 +10,7 @@ from snowflake_sql_parser import (
     StatementAnalysis,
     TextSpan,
 )
-from snowflake_sql_parser.core.syntax import SqlScript, WithNode
+from snowflake_sql_parser.core import SqlScript, WithNode
 
 
 def _analyze_statement(sql: str) -> StatementAnalysis:

@@ -4,17 +4,23 @@ from typing import TYPE_CHECKING
 
 from expression import option
 
+from .core import (
+    AnalysisReport,
+    DiagnosticCode,
+    ExplainNode,
+    PipeChainNode,
+    SQLAnalysisError,
+    StatementAnalysis,
+    StatementNode,
+    WithNode,
+)
 from .core.contracts import analysis_contract, internal_contract
-from .core.diagnostics import DiagnosticCode
-from .core.errors import SQLAnalysisError
 from .core.invariants import ParserInvariantError
-from .core.models import AnalysisReport, StatementAnalysis
-from .core.syntax import ExplainNode, PipeChainNode, StatementNode, WithNode
-from .parsing.parser import parse_script
-from .policy.read_only import ReadOnlySafetyPolicy, SafetyDecision
+from .parsing import parse_script
+from .policy import ReadOnlySafetyPolicy, SafetyDecision
 
 if TYPE_CHECKING:
-    from .core.diagnostics import Diagnostic
+    from .core import Diagnostic
 
 _DEFAULT_POLICY = ReadOnlySafetyPolicy()
 
@@ -84,18 +90,22 @@ def _statement_diagnostic(
     node: StatementNode,
     decision: SafetyDecision,
 ) -> "Diagnostic | None":
-    if isinstance(node, PipeChainNode):
-        return None
-    if isinstance(node, WithNode) and node.body is not None and not node.diagnostics:
-        return None
-    return decision.diagnostic
+    match node:
+        case PipeChainNode():
+            return None
+        case WithNode() if node.body is not None and not node.diagnostics:
+            return None
+        case _:
+            return decision.diagnostic
 
 
 def _node_children(node: StatementNode) -> tuple[StatementNode, ...]:
-    if isinstance(node, PipeChainNode):
-        return node.segments
-    if isinstance(node, WithNode):
-        return option.map_or(node.body, (), lambda body: (body,))
-    if isinstance(node, ExplainNode):
-        return option.map_or(node.subject, (), lambda subject: (subject,))
-    return ()
+    match node:
+        case PipeChainNode():
+            return node.segments
+        case WithNode():
+            return option.map_or(node.body, (), lambda body: (body,))
+        case ExplainNode():
+            return option.map_or(node.subject, (), lambda subject: (subject,))
+        case _:
+            return ()

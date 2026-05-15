@@ -3,7 +3,7 @@
 from collections.abc import Mapping
 from typing import Protocol
 
-from ..core.models import QueryConstruct
+from ..core import QueryConstruct
 from ..parsing.registry import StatementRegistry
 
 

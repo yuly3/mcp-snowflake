@@ -7,21 +7,23 @@ from more_itertools import first
 
 from expression import option
 
-from ..core.contracts import internal_contract
-from ..core.diagnostics import Diagnostic, DiagnosticCode
-from ..core.invariants import ParserInvariantError
-from ..core.models import QueryConstruct, StatementFamily
-from ..core.reasons import blocked_statement_reason
-from ..core.syntax import (
+from ..core import (
+    Diagnostic,
+    DiagnosticCode,
     ExplainNode,
     PipeChainNode,
     PolicyKind,
+    QueryConstruct,
     QueryNode,
+    StatementFamily,
     StatementFamilyNode,
     StatementNode,
     UnknownStatementNode,
     WithNode,
 )
+from ..core.contracts import internal_contract
+from ..core.invariants import ParserInvariantError
+from ..core.reasons import blocked_statement_reason
 
 
 @attrs.define(frozen=True, slots=True)
@@ -41,20 +43,19 @@ class ReadOnlySafetyPolicy:
 
     @internal_contract
     def evaluate(self, node: StatementNode) -> SafetyDecision:
-        if isinstance(node, PipeChainNode):
-            return self._evaluate_pipe_chain(node)
-        if isinstance(node, WithNode):
-            return self._evaluate_with(node)
-        if isinstance(node, ExplainNode):
-            return self._evaluate_explain(node)
-        if isinstance(node, QueryNode):
-            return self._evaluate_query(node)
-        if isinstance(node, StatementFamilyNode):
-            return self._evaluate_family(node)
-        if isinstance(node, UnknownStatementNode):
-            return self._evaluate_unknown(node)
-
-        raise ParserInvariantError(f"Unhandled statement node: {type(node)!r}")
+        match node:
+            case PipeChainNode():
+                return self._evaluate_pipe_chain(node)
+            case WithNode():
+                return self._evaluate_with(node)
+            case ExplainNode():
+                return self._evaluate_explain(node)
+            case QueryNode():
+                return _evaluate_query(node)
+            case StatementFamilyNode():
+                return _evaluate_family(node)
+            case UnknownStatementNode():
+                return _evaluate_unknown(node)
 
     def _evaluate_pipe_chain(self, node: PipeChainNode) -> SafetyDecision:
         decisions = tuple(map(self.evaluate, node.segments))
@@ -95,6 +96,7 @@ class ReadOnlySafetyPolicy:
                 nested=(nested,),
                 diagnostic=node.diagnostics[0],
             )
+
         return SafetyDecision(
             family=nested.family,
             top_level_keyword="WITH",
@@ -133,6 +135,7 @@ class ReadOnlySafetyPolicy:
                 nested=(nested,),
                 diagnostic=diagnostic,
             )
+
         return SafetyDecision(
             family="metadata",
             top_level_keyword="EXPLAIN",
@@ -141,77 +144,83 @@ class ReadOnlySafetyPolicy:
             nested=(nested,),
         )
 
-    def _evaluate_query(self, node: QueryNode) -> SafetyDecision:
-        if "INTO" in node.constructs:
-            return self._block(
-                family="query",
-                keyword=node.keyword,
-                constructs=node.constructs,
-                reason="SELECT ... INTO is not read-only",
-            )
-        if "FOR_UPDATE" in node.constructs:
-            return self._block(
-                family="query",
-                keyword=node.keyword,
-                constructs=node.constructs,
-                reason="SELECT ... FOR UPDATE is not read-only",
-            )
-        return SafetyDecision(
+
+def _evaluate_query(node: QueryNode) -> SafetyDecision:
+    if "INTO" in node.constructs:
+        return _block(
             family="query",
+            keyword=node.keyword,
+            constructs=node.constructs,
+            reason="SELECT ... INTO is not read-only",
+        )
+
+    if "FOR_UPDATE" in node.constructs:
+        return _block(
+            family="query",
+            keyword=node.keyword,
+            constructs=node.constructs,
+            reason="SELECT ... FOR UPDATE is not read-only",
+        )
+
+    return SafetyDecision(
+        family="query",
+        top_level_keyword=node.keyword,
+        is_read_only=True,
+        constructs=node.constructs,
+    )
+
+
+def _evaluate_family(node: StatementFamilyNode) -> SafetyDecision:
+    if node.policy_kind is PolicyKind.ALLOW:
+        return SafetyDecision(
+            family=node.family,
             top_level_keyword=node.keyword,
             is_read_only=True,
-            constructs=node.constructs,
         )
 
-    def _evaluate_family(self, node: StatementFamilyNode) -> SafetyDecision:
-        if node.policy_kind is PolicyKind.ALLOW:
-            return SafetyDecision(
-                family=node.family,
-                top_level_keyword=node.keyword,
-                is_read_only=True,
-            )
-        if node.policy_kind is not PolicyKind.BLOCK:
-            raise ParserInvariantError(f"Unhandled family policy: {node.policy_kind!r}")
-        return self._block(
-            family=node.family,
-            keyword=node.keyword,
-            reason=blocked_statement_reason(node.keyword, node.family),
-        )
+    if node.policy_kind is not PolicyKind.BLOCK:
+        raise ParserInvariantError(f"Unhandled family policy: {node.policy_kind!r}")
 
-    def _evaluate_unknown(self, node: UnknownStatementNode) -> SafetyDecision:
-        diagnostic = _node_diagnostic(
-            node,
-            code=DiagnosticCode.UNKNOWN_STATEMENT,
-            message="Statement type is not proven read-only",
-        )
-        return SafetyDecision(
-            family="unknown",
-            top_level_keyword=node.keyword,
-            is_read_only=False,
-            diagnostic=diagnostic,
-        )
+    return _block(
+        family=node.family,
+        keyword=node.keyword,
+        reason=blocked_statement_reason(node.keyword, node.family),
+    )
 
-    def _block(
-        self,
-        *,
-        family: StatementFamily,
-        keyword: str | None,
-        reason: str,
-        constructs: frozenset[QueryConstruct] = frozenset(),
-        nested: tuple[SafetyDecision, ...] = (),
-    ) -> SafetyDecision:
-        return SafetyDecision(
-            family=family,
-            top_level_keyword=keyword,
-            is_read_only=False,
-            constructs=constructs,
-            nested=nested,
-            diagnostic=Diagnostic(
-                code=DiagnosticCode.BLOCKED_STATEMENT,
-                message=reason,
-                span=None,
-            ),
-        )
+
+def _evaluate_unknown(node: UnknownStatementNode) -> SafetyDecision:
+    diagnostic = _node_diagnostic(
+        node,
+        code=DiagnosticCode.UNKNOWN_STATEMENT,
+        message="Statement type is not proven read-only",
+    )
+    return SafetyDecision(
+        family="unknown",
+        top_level_keyword=node.keyword,
+        is_read_only=False,
+        diagnostic=diagnostic,
+    )
+
+
+def _block(
+    family: StatementFamily,
+    keyword: str | None,
+    reason: str,
+    constructs: frozenset[QueryConstruct] = frozenset(),
+    nested: tuple[SafetyDecision, ...] = (),
+) -> SafetyDecision:
+    return SafetyDecision(
+        family=family,
+        top_level_keyword=keyword,
+        is_read_only=False,
+        constructs=constructs,
+        nested=nested,
+        diagnostic=Diagnostic(
+            code=DiagnosticCode.BLOCKED_STATEMENT,
+            message=reason,
+            span=None,
+        ),
+    )
 
 
 def _node_diagnostic(
