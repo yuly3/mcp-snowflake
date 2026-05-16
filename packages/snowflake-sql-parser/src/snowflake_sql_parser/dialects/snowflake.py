@@ -5,7 +5,17 @@ from collections.abc import Mapping
 import attrs
 
 from ..core import PolicyKind, QueryConstruct
-from ..parsing.registry import StatementParserKind, StatementParserSpec, StatementRegistry
+from ..parsing.registry import (
+    AlterParserSpec,
+    BeginParserSpec,
+    ExecuteParserSpec,
+    ExplainParserSpec,
+    FamilyParserSpec,
+    QueryParserSpec,
+    StartParserSpec,
+    StatementRegistry,
+    WithParserSpec,
+)
 
 METADATA_KEYWORDS = frozenset({"SHOW", "DESCRIBE", "DESC", "LIST", "LS"})
 QUERY_KEYWORDS = frozenset({"SELECT"})
@@ -113,97 +123,68 @@ class SnowflakeDialect:
 def _build_registry() -> StatementRegistry:
     return StatementRegistry(
         specs=(
-            StatementParserSpec(
-                keywords=frozenset({"SELECT"}),
-                parser_kind=StatementParserKind.QUERY,
-                default_family="query",
-            ),
-            StatementParserSpec(
+            QueryParserSpec(keywords=frozenset({"SELECT"})),
+            FamilyParserSpec(
                 keywords=frozenset({"SHOW", "DESCRIBE", "DESC", "LIST", "LS"}),
-                parser_kind=StatementParserKind.METADATA,
                 default_family="metadata",
                 family_policy=PolicyKind.ALLOW,
             ),
-            StatementParserSpec(
-                keywords=frozenset({"EXPLAIN"}),
-                parser_kind=StatementParserKind.EXPLAIN,
-                default_family="metadata",
-            ),
-            StatementParserSpec(
-                keywords=frozenset({"WITH"}),
-                parser_kind=StatementParserKind.WITH,
-                default_family="unknown",
-            ),
-            StatementParserSpec(
+            ExplainParserSpec(keywords=frozenset({"EXPLAIN"})),
+            WithParserSpec(keywords=frozenset({"WITH"})),
+            FamilyParserSpec(
                 keywords=DML_KEYWORDS,
-                parser_kind=StatementParserKind.FAMILY,
                 default_family="dml",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            FamilyParserSpec(
                 keywords=frozenset({"CREATE", "DROP", "UNDROP", "RENAME"}),
-                parser_kind=StatementParserKind.FAMILY,
                 default_family="ddl",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            AlterParserSpec(
                 keywords=frozenset({"ALTER"}),
-                parser_kind=StatementParserKind.ALTER,
-                default_family="ddl",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            FamilyParserSpec(
                 keywords=frozenset({"COPY"}),
-                parser_kind=StatementParserKind.FAMILY,
                 default_family="copy",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            FamilyParserSpec(
                 keywords=FILE_TRANSFER_KEYWORDS,
-                parser_kind=StatementParserKind.FAMILY,
                 default_family="file_transfer",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            FamilyParserSpec(
                 keywords=ACCESS_CONTROL_KEYWORDS,
-                parser_kind=StatementParserKind.FAMILY,
                 default_family="access_control",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            FamilyParserSpec(
                 keywords=SESSION_KEYWORDS,
-                parser_kind=StatementParserKind.FAMILY,
                 default_family="session",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            FamilyParserSpec(
                 keywords=TRANSACTION_KEYWORDS,
-                parser_kind=StatementParserKind.FAMILY,
                 default_family="transaction",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            BeginParserSpec(
                 keywords=frozenset({"BEGIN"}),
-                parser_kind=StatementParserKind.BEGIN,
-                default_family="transaction",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            FamilyParserSpec(
                 keywords=SCRIPTING_KEYWORDS,
-                parser_kind=StatementParserKind.FAMILY,
                 default_family="scripting",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            ExecuteParserSpec(
                 keywords=frozenset({"EXECUTE"}),
-                parser_kind=StatementParserKind.EXECUTE,
-                default_family="dynamic_sql",
                 family_policy=PolicyKind.BLOCK,
             ),
-            StatementParserSpec(
+            StartParserSpec(
                 keywords=frozenset({"START"}),
-                parser_kind=StatementParserKind.START,
-                default_family="transaction",
                 family_policy=PolicyKind.BLOCK,
             ),
         )

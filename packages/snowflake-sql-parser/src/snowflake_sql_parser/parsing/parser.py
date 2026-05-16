@@ -9,7 +9,6 @@ from ..core import (
     DiagnosticCode,
     ExplainNode,
     PipeChainNode,
-    PolicyKind,
     QueryConstruct,
     QueryNode,
     SplitStatement,
@@ -23,12 +22,21 @@ from ..core import (
     WithNode,
 )
 from ..core.contracts import analysis_contract, internal_contract
-from ..core.invariants import ParserInvariantError
 from ..dialects import SNOWFLAKE_DIALECT
 from ..dialects.base import Dialect
 from ..lexing import Token, TokenStream
 from ..policy import ReadOnlySafetyPolicy, SafetyDecision
-from .registry import StatementParserKind, StatementParserSpec
+from .registry import (
+    AlterParserSpec,
+    BeginParserSpec,
+    ExecuteParserSpec,
+    ExplainParserSpec,
+    FamilyParserSpec,
+    QueryParserSpec,
+    StartParserSpec,
+    StatementParserSpec,
+    WithParserSpec,
+)
 from .splitter import build_split_statement, split_statements
 
 _READ_ONLY_POLICY = ReadOnlySafetyPolicy()
@@ -42,21 +50,11 @@ class ParserContext:
     span: TextSpan
     stream: TokenStream
     dialect: Dialect
-    spec: StatementParserSpec
 
     def first_keyword(self) -> str | None:
         """Return the leading word token, if any."""
 
         return _statement_keyword(self.stream.peek())
-
-    @internal_contract
-    def require_family_policy(self) -> PolicyKind:
-        """Return the policy for family-classified statements."""
-
-        family_policy = self.spec.family_policy
-        if family_policy is None:
-            raise ParserInvariantError("Statement parser spec must define a family policy")
-        return family_policy
 
     @internal_contract
     def parse_nested_from_token_index(self, index: int) -> StatementNode:
@@ -162,38 +160,34 @@ def parse_statement(
         span=statement.span,
         stream=stream,
         dialect=active_dialect,
-        spec=spec,
     )
-    return _parse_by_kind(context)
+    return _parse_by_kind(context, spec)
 
 
 @analysis_contract
-def _parse_by_kind(context: ParserContext) -> StatementNode:
-    match context.spec.parser_kind:
-        case StatementParserKind.FAMILY:
-            return parse_family(context)
-        case StatementParserKind.METADATA:
-            return parse_metadata(context)
-        case StatementParserKind.QUERY:
+def _parse_by_kind(context: ParserContext, spec: StatementParserSpec) -> StatementNode:
+    match spec:
+        case FamilyParserSpec():
+            return parse_family(context, spec)
+        case QueryParserSpec():
             return parse_query(context)
-        case StatementParserKind.WITH:
+        case WithParserSpec():
             return parse_with(context)
-        case StatementParserKind.EXPLAIN:
+        case ExplainParserSpec():
             return parse_explain(context)
-        case StatementParserKind.BEGIN:
-            return parse_begin(context)
-        case StatementParserKind.ALTER:
-            return parse_alter(context)
-        case StatementParserKind.EXECUTE:
-            return parse_execute(context)
-        case StatementParserKind.START:
-            return parse_start(context)
+        case BeginParserSpec():
+            return parse_begin(context, spec)
+        case AlterParserSpec():
+            return parse_alter(context, spec)
+        case ExecuteParserSpec():
+            return parse_execute(context, spec)
+        case StartParserSpec():
+            return parse_start(context, spec)
 
 
-def parse_family(context: ParserContext) -> StatementNode:
+def parse_family(context: ParserContext, spec: FamilyParserSpec) -> StatementNode:
     """Parse a family-classified statement."""
 
-    spec = context.spec
     keyword = context.first_keyword()
     if keyword is None:
         return UnknownStatementNode(
@@ -213,14 +207,8 @@ def parse_family(context: ParserContext) -> StatementNode:
         text=context.text,
         keyword=keyword,
         family=spec.default_family,
-        policy_kind=context.require_family_policy(),
+        policy_kind=spec.family_policy,
     )
-
-
-def parse_metadata(context: ParserContext) -> StatementNode:
-    """Parse a read-only metadata statement."""
-
-    return parse_family(context)
 
 
 def parse_query(context: ParserContext) -> StatementNode:
@@ -311,7 +299,7 @@ def parse_explain(context: ParserContext) -> StatementNode:
     )
 
 
-def parse_begin(context: ParserContext) -> StatementNode:
+def parse_begin(context: ParserContext, spec: BeginParserSpec) -> StatementNode:
     """Parse BEGIN as transaction or scripting."""
 
     family: StatementFamily = "transaction"
@@ -324,11 +312,11 @@ def parse_begin(context: ParserContext) -> StatementNode:
         text=context.text,
         keyword="BEGIN",
         family=family,
-        policy_kind=context.require_family_policy(),
+        policy_kind=spec.family_policy,
     )
 
 
-def parse_alter(context: ParserContext) -> StatementNode:
+def parse_alter(context: ParserContext, spec: AlterParserSpec) -> StatementNode:
     """Parse ALTER with session special-casing."""
 
     family: StatementFamily = "session" if _next_word(context.stream.tokens, 0) == "SESSION" else "ddl"
@@ -337,11 +325,11 @@ def parse_alter(context: ParserContext) -> StatementNode:
         text=context.text,
         keyword="ALTER",
         family=family,
-        policy_kind=context.require_family_policy(),
+        policy_kind=spec.family_policy,
     )
 
 
-def parse_execute(context: ParserContext) -> StatementNode:
+def parse_execute(context: ParserContext, spec: ExecuteParserSpec) -> StatementNode:
     """Parse EXECUTE statements with EXECUTE IMMEDIATE special-casing."""
 
     if _next_word(context.stream.tokens, 0) == "IMMEDIATE":
@@ -350,7 +338,7 @@ def parse_execute(context: ParserContext) -> StatementNode:
             text=context.text,
             keyword="EXECUTE",
             family="dynamic_sql",
-            policy_kind=context.require_family_policy(),
+            policy_kind=spec.family_policy,
         )
 
     return UnknownStatementNode(
@@ -367,7 +355,7 @@ def parse_execute(context: ParserContext) -> StatementNode:
     )
 
 
-def parse_start(context: ParserContext) -> StatementNode:
+def parse_start(context: ParserContext, spec: StartParserSpec) -> StatementNode:
     """Parse START statements with START TRANSACTION special-casing."""
 
     if _next_word(context.stream.tokens, 0) == "TRANSACTION":
@@ -376,7 +364,7 @@ def parse_start(context: ParserContext) -> StatementNode:
             text=context.text,
             keyword="START",
             family="transaction",
-            policy_kind=context.require_family_policy(),
+            policy_kind=spec.family_policy,
         )
 
     return UnknownStatementNode(

@@ -1,34 +1,82 @@
 """Registry for statement-level parser dispatch."""
 
-from enum import StrEnum
-
 import attrs
 
 from ..core import PolicyKind, StatementFamily
 
 
-class StatementParserKind(StrEnum):
-    """Named parser implementation used for statement dispatch."""
+@attrs.define(frozen=True, slots=True)
+class FamilyParserSpec:
+    """A spec for statements classified by a static family and policy."""
 
-    FAMILY = "family"
-    METADATA = "metadata"
-    QUERY = "query"
-    WITH = "with"
-    EXPLAIN = "explain"
-    BEGIN = "begin"
-    ALTER = "alter"
-    EXECUTE = "execute"
-    START = "start"
+    keywords: frozenset[str]
+    default_family: StatementFamily
+    family_policy: PolicyKind
 
 
 @attrs.define(frozen=True, slots=True)
-class StatementParserSpec:
-    """A statement parser registration entry."""
+class QueryParserSpec:
+    """A spec for query statements."""
 
     keywords: frozenset[str]
-    parser_kind: StatementParserKind
-    default_family: StatementFamily
-    family_policy: PolicyKind | None = None
+
+
+@attrs.define(frozen=True, slots=True)
+class WithParserSpec:
+    """A spec for WITH statements."""
+
+    keywords: frozenset[str]
+
+
+@attrs.define(frozen=True, slots=True)
+class ExplainParserSpec:
+    """A spec for EXPLAIN statements."""
+
+    keywords: frozenset[str]
+
+
+@attrs.define(frozen=True, slots=True)
+class BeginParserSpec:
+    """A spec for BEGIN statements with dynamic family resolution."""
+
+    keywords: frozenset[str]
+    family_policy: PolicyKind
+
+
+@attrs.define(frozen=True, slots=True)
+class AlterParserSpec:
+    """A spec for ALTER statements with dynamic family resolution."""
+
+    keywords: frozenset[str]
+    family_policy: PolicyKind
+
+
+@attrs.define(frozen=True, slots=True)
+class ExecuteParserSpec:
+    """A spec for EXECUTE statements."""
+
+    keywords: frozenset[str]
+    family_policy: PolicyKind
+
+
+@attrs.define(frozen=True, slots=True)
+class StartParserSpec:
+    """A spec for START statements."""
+
+    keywords: frozenset[str]
+    family_policy: PolicyKind
+
+
+type StatementParserSpec = (
+    FamilyParserSpec
+    | QueryParserSpec
+    | WithParserSpec
+    | ExplainParserSpec
+    | BeginParserSpec
+    | AlterParserSpec
+    | ExecuteParserSpec
+    | StartParserSpec
+)
 
 
 @attrs.define(frozen=True, slots=True)
