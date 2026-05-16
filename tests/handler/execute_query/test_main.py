@@ -5,12 +5,13 @@ from pydantic import ValidationError
 
 from cattrs_converter import JsonImmutableConverter
 from kernel import DataProcessingResult
+from mcp_snowflake.handler.errors import SQLAnalysisFailedError, SQLBlockedError
 from mcp_snowflake.handler.execute_query import (
     ExecuteQueryArgs,
     QueryResult,
     handle_execute_query,
 )
-from snowflake_sql_parser import DiagnosticCode, SQLAnalysisError
+from snowflake_sql_parser import DiagnosticCode
 
 from ...mock_effect_handler import MockExecuteQuery
 
@@ -101,8 +102,7 @@ class TestExecuteQueryHandler:
         # Test args with write SQL
         args = ExecuteQueryArgs(sql="INSERT INTO users (name) VALUES ('Charlie')")
 
-        # Execute handler - should raise ValueError for write operations
-        with pytest.raises(ValueError, match="DML statements are not allowed"):
+        with pytest.raises(SQLBlockedError, match="DML statements are not allowed"):
             _ = await handle_execute_query(json_converter, args, effect_handler)
 
         # Verify effect handler was not called
@@ -120,7 +120,7 @@ class TestExecuteQueryHandler:
             sql="WITH p AS PROCEDURE () RETURNS VARCHAR LANGUAGE SQL AS $$BEGIN RETURN 'ok'; END;$$ CALL p()"
         )
 
-        with pytest.raises(ValueError, match="CALL statements are not allowed"):
+        with pytest.raises(SQLBlockedError, match="CALL statements are not allowed"):
             _ = await handle_execute_query(json_converter, args, effect_handler)
 
         assert effect_handler.called_with_sql is None
@@ -137,7 +137,7 @@ class TestExecuteQueryHandler:
             sql="WITH p AS PROCEDURE () RETURNS VARCHAR LANGUAGE SQL AS $$BEGIN RETURN 'ok'; END;$$, cte AS (SELECT 1) CALL p()"
         )
 
-        with pytest.raises(ValueError, match="CALL statements are not allowed"):
+        with pytest.raises(SQLBlockedError, match="CALL statements are not allowed"):
             _ = await handle_execute_query(json_converter, args, effect_handler)
 
         assert effect_handler.called_with_sql is None
@@ -152,7 +152,7 @@ class TestExecuteQueryHandler:
         effect_handler = MockExecuteQuery()
         args = ExecuteQueryArgs(sql="SELECT 'unterminated")
 
-        with pytest.raises(SQLAnalysisError) as exc_info:
+        with pytest.raises(SQLAnalysisFailedError) as exc_info:
             _ = await handle_execute_query(json_converter, args, effect_handler)
 
         diagnostic = exc_info.value.diagnostic
@@ -246,7 +246,7 @@ class TestExecuteQueryHandler:
         effect_handler = MockExecuteQuery()
         args = ExecuteQueryArgs(sql="WITH cte AS (SELECT 1) INSERT INTO users SELECT * FROM cte")
 
-        with pytest.raises(SQLAnalysisError) as exc_info:
+        with pytest.raises(SQLAnalysisFailedError) as exc_info:
             _ = await handle_execute_query(json_converter, args, effect_handler)
 
         diagnostic = exc_info.value.diagnostic
@@ -264,7 +264,7 @@ class TestExecuteQueryHandler:
         effect_handler = MockExecuteQuery()
         args = ExecuteQueryArgs(sql="WITH cte AS (DELETE FROM users WHERE 1 = 1) SELECT 1")
 
-        with pytest.raises(ValueError, match="CTE definitions must be read-only: DML statements are not allowed"):
+        with pytest.raises(SQLBlockedError, match="CTE definitions must be read-only: DML statements are not allowed"):
             _ = await handle_execute_query(json_converter, args, effect_handler)
 
         assert effect_handler.called_with_sql is None
@@ -280,7 +280,7 @@ class TestExecuteQueryHandler:
         args = ExecuteQueryArgs(sql="WITH cte AS (SELECT * FROM users FOR UPDATE) SELECT 1")
 
         with pytest.raises(
-            ValueError,
+            SQLBlockedError,
             match=r"CTE definitions must be read-only: SELECT \.\.\. FOR UPDATE is not read-only",
         ):
             _ = await handle_execute_query(json_converter, args, effect_handler)
@@ -297,7 +297,7 @@ class TestExecuteQueryHandler:
         effect_handler = MockExecuteQuery()
         args = ExecuteQueryArgs(sql="EXPLAIN WITH cte AS (SELECT 1)")
 
-        with pytest.raises(ValueError, match="WITH statement body could not be determined"):
+        with pytest.raises(SQLBlockedError, match="WITH statement body could not be determined"):
             _ = await handle_execute_query(json_converter, args, effect_handler)
 
         assert effect_handler.called_with_sql is None

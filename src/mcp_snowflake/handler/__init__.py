@@ -14,7 +14,12 @@ from .describe_table import (
     EffectDescribeTable,
     handle_describe_table,
 )
-from .errors import MissingResponseColumnError
+from .errors import (
+    MissingResponseColumnError,
+    SQLAnalysisFailedError,
+    SQLBlockedError,
+    SQLNotExecutableError,
+)
 from .execute_query import (
     CompactQueryResultSerializer,
     EffectExecuteQuery,
@@ -111,6 +116,9 @@ __all__ = [
     "ProfileSemiStructuredColumnsResultSerializer",
     "QueryResult",
     "QueryResultSerializer",
+    "SQLAnalysisFailedError",
+    "SQLBlockedError",
+    "SQLNotExecutableError",
     "SampleTableDataArgs",
     "SampleTableDataResult",
     "SampleTableDataResultSerializer",

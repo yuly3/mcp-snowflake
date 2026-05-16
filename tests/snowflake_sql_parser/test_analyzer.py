@@ -3,7 +3,8 @@ import pytest
 import snowflake_sql_parser.analyzer as analyzer_module
 from expression.contract import ContractViolationError
 from snowflake_sql_parser import (
-    AnalysisReport,
+    AllowedAnalysis,
+    BlockedAnalysis,
     DiagnosticCode,
     SQLAnalysisError,
     SQLAnalyzer,
@@ -11,6 +12,7 @@ from snowflake_sql_parser import (
     TextSpan,
 )
 from snowflake_sql_parser.core import SqlScript, WithNode
+from snowflake_sql_parser.core.models import build_analysis_report
 
 
 def _analyze_statement(sql: str) -> StatementAnalysis:
@@ -20,16 +22,11 @@ def _analyze_statement(sql: str) -> StatementAnalysis:
 def test_analyzer_aggregates_multi_statement_sql() -> None:
     report = SQLAnalyzer().analyze("SELECT 1; INSERT INTO t VALUES (1)")
 
-    assert report.status == "blocked"
-    assert report.is_blocked
-    assert not report.is_allowed
-    assert not report.is_read_only
+    assert isinstance(report, BlockedAnalysis)
     assert len(report.statements) == 2
     assert report.statements[0].is_read_only
     assert not report.statements[1].is_read_only
-    assert report.block_reason == "DML statements are not allowed"
-    assert report.user_message == "Write operations are not allowed: DML statements are not allowed"
-    assert report.denial is not None
+    assert report.denial.reason == "DML statements are not allowed"
     assert report.denial.statement_index == 1
     assert report.denial.path == (1,)
     assert report.diagnostics == (report.denial.diagnostic,)
@@ -69,14 +66,8 @@ def test_analyzer_counts_statement_after_labeled_repeat_block() -> None:
 def test_analyzer_reports_allowed_status_for_read_only_sql() -> None:
     report = SQLAnalyzer().analyze("SELECT 1")
 
-    assert report.status == "allowed"
-    assert report.is_allowed
-    assert not report.is_blocked
-    assert report.is_read_only
-    assert report.denial is None
-    assert report.block_reason is None
-    assert report.user_message == "SQL is allowed."
-    assert report.diagnostics == ()
+    assert isinstance(report, AllowedAnalysis)
+    assert all(statement.is_read_only for statement in report.statements)
 
 
 def test_analyzer_rejects_comment_only_input() -> None:
@@ -261,10 +252,11 @@ def test_analyzer_blocks_with_call_body_after_additional_cte_bindings() -> None:
     report = SQLAnalyzer().analyze(
         "WITH p AS PROCEDURE () RETURNS VARCHAR LANGUAGE SQL AS $$BEGIN RETURN 'ok'; END;$$, cte AS (SELECT 1) CALL p()"
     )
+    assert isinstance(report, BlockedAnalysis)
     analysis = report.statements[0]
 
     assert not analysis.is_read_only
-    assert report.block_reason == "CALL statements are not allowed"
+    assert report.denial.reason == "CALL statements are not allowed"
     assert analysis.top_level_keyword == "WITH"
     assert analysis.family == "scripting"
     assert analysis.nested[0].top_level_keyword == "CALL"
@@ -282,10 +274,10 @@ def test_analyzer_blocks_with_call_body_after_additional_cte_bindings() -> None:
 )
 def test_analyzer_blocks_documented_anonymous_procedure_variants(sql: str) -> None:
     report = SQLAnalyzer().analyze(sql)
+    assert isinstance(report, BlockedAnalysis)
     analysis = report.statements[0]
 
-    assert report.is_blocked
-    assert report.block_reason == "CALL statements are not allowed"
+    assert report.denial.reason == "CALL statements are not allowed"
     assert not analysis.is_read_only
     assert analysis.top_level_keyword == "WITH"
     assert analysis.family == "scripting"
@@ -306,10 +298,10 @@ def test_analyzer_blocks_documented_anonymous_procedure_variants(sql: str) -> No
 )
 def test_analyzer_blocks_documented_staged_anonymous_procedure_forms(sql: str) -> None:
     report = SQLAnalyzer().analyze(sql)
+    assert isinstance(report, BlockedAnalysis)
     analysis = report.statements[0]
 
-    assert report.is_blocked
-    assert report.block_reason == "CALL statements are not allowed"
+    assert report.denial.reason == "CALL statements are not allowed"
     assert not analysis.is_read_only
     assert analysis.top_level_keyword == "WITH"
     assert analysis.family == "scripting"
@@ -320,10 +312,11 @@ def test_analyzer_blocks_with_call_into_body_after_additional_cte_bindings() -> 
     report = SQLAnalyzer().analyze(
         "WITH p AS PROCEDURE () RETURNS VARCHAR LANGUAGE SQL AS $$BEGIN RETURN 'ok'; END;$$, cte AS (SELECT 1) CALL p() INTO :ret1"
     )
+    assert isinstance(report, BlockedAnalysis)
     analysis = report.statements[0]
 
     assert not analysis.is_read_only
-    assert report.block_reason == "CALL statements are not allowed"
+    assert report.denial.reason == "CALL statements are not allowed"
     assert analysis.top_level_keyword == "WITH"
     assert analysis.family == "scripting"
     assert analysis.nested[0].top_level_keyword == "CALL"
@@ -425,9 +418,8 @@ def test_analyzer_allows_pipe_chain_with_positional_select_dollar_reference() ->
 def test_analyzer_reports_nested_denial_path_for_pipe_chain() -> None:
     report = SQLAnalyzer().analyze("SHOW TABLES ->> CREATE TABLE t (id INT)")
 
-    assert report.is_blocked
-    assert report.block_reason == "DDL statements are not allowed"
-    assert report.denial is not None
+    assert isinstance(report, BlockedAnalysis)
+    assert report.denial.reason == "DDL statements are not allowed"
     assert report.denial.statement_index == 0
     assert report.denial.path == (0, 1)
     assert report.denial.statement.family == "ddl"
@@ -438,8 +430,8 @@ def test_analyzer_reports_nested_denial_path_for_pipe_chain() -> None:
 def test_analyzer_aggregates_nested_diagnostics_from_all_statements() -> None:
     report = SQLAnalyzer().analyze("SHOW TABLES ->> CREATE TABLE t (id INT); SHOW TABLES ->> INSERT INTO u VALUES (1)")
 
-    assert report.is_blocked
-    assert report.block_reason == "DDL statements are not allowed"
+    assert isinstance(report, BlockedAnalysis)
+    assert report.denial.reason == "DDL statements are not allowed"
     assert [diagnostic.message for diagnostic in report.diagnostics] == [
         "DDL statements are not allowed",
         "DML statements are not allowed",
@@ -448,11 +440,9 @@ def test_analyzer_aggregates_nested_diagnostics_from_all_statements() -> None:
 
 def test_analyzer_allows_explain_insert() -> None:
     report = SQLAnalyzer().analyze("EXPLAIN INSERT INTO t VALUES (1)")
+    assert isinstance(report, AllowedAnalysis)
     analysis = report.statements[0]
 
-    assert report.is_allowed
-    assert report.denial is None
-    assert report.diagnostics == ()
     assert analysis.is_read_only
     assert analysis.family == "metadata"
     assert analysis.nested[0].family == "dml"
@@ -461,18 +451,14 @@ def test_analyzer_allows_explain_insert() -> None:
 def test_analyzer_allows_explain_with_using_clause() -> None:
     report = SQLAnalyzer().analyze("EXPLAIN USING JSON INSERT INTO t VALUES (1)")
 
-    assert report.is_allowed
-    assert report.denial is None
-    assert report.diagnostics == ()
+    assert isinstance(report, AllowedAnalysis)
     assert report.statements[0].nested[0].family == "dml"
 
 
 def test_analyzer_allows_explain_with_with_subject() -> None:
     report = SQLAnalyzer().analyze("EXPLAIN USING JSON WITH cte AS (SELECT 1) SELECT * FROM cte")
 
-    assert report.is_allowed
-    assert report.denial is None
-    assert report.diagnostics == ()
+    assert isinstance(report, AllowedAnalysis)
     assert report.statements[0].nested[0].top_level_keyword == "WITH"
     assert report.statements[0].nested[0].family == "query"
 
@@ -480,9 +466,8 @@ def test_analyzer_allows_explain_with_with_subject() -> None:
 def test_analyzer_blocks_explain_unknown_subject() -> None:
     report = SQLAnalyzer().analyze("EXPLAIN MYSTERY 1")
 
-    assert report.is_blocked
-    assert report.block_reason == "Statement type is not proven read-only"
-    assert report.denial is not None
+    assert isinstance(report, BlockedAnalysis)
+    assert report.denial.reason == "Statement type is not proven read-only"
     assert report.denial.diagnostic.code is DiagnosticCode.UNKNOWN_STATEMENT
     assert report.statements[0].family == "metadata"
     assert report.statements[0].nested[0].family == "unknown"
@@ -491,9 +476,8 @@ def test_analyzer_blocks_explain_unknown_subject() -> None:
 def test_analyzer_blocks_explain_with_unparsable_with_subject() -> None:
     report = SQLAnalyzer().analyze("EXPLAIN WITH cte AS (SELECT 1)")
 
-    assert report.is_blocked
-    assert report.block_reason == "WITH statement body could not be determined"
-    assert report.denial is not None
+    assert isinstance(report, BlockedAnalysis)
+    assert report.denial.reason == "WITH statement body could not be determined"
     assert report.denial.diagnostic.code is DiagnosticCode.UNPARSABLE_WITH_BODY
     assert report.statements[0].family == "metadata"
     assert report.statements[0].nested[0].family == "unknown"
@@ -664,9 +648,10 @@ def test_analyzer_blocks_unparsable_with_body_without_exception() -> None:
 def test_analyzer_keeps_nested_control_flow_inside_begin_statement() -> None:
     report = SQLAnalyzer().analyze("BEGIN IF (TRUE) THEN SELECT 1; END IF; END;")
 
+    assert isinstance(report, BlockedAnalysis)
     assert len(report.statements) == 1
     assert report.statements[0].family == "scripting"
-    assert report.block_reason == "Snowflake Scripting blocks are not allowed"
+    assert report.denial.reason == "Snowflake Scripting blocks are not allowed"
 
 
 def test_analyzer_classifies_if_with_elseif_and_nested_begin_as_scripting() -> None:
@@ -761,12 +746,10 @@ def test_analysis_report_uses_fallback_denial_when_diagnostic_is_missing() -> No
         constructs=frozenset(),
     )
 
-    report = AnalysisReport.from_statements((statement,))
+    report = build_analysis_report((statement,))
 
-    assert report.is_blocked
-    assert report.block_reason == "Statement is not proven read-only"
-    assert report.user_message == "Write operations are not allowed: Statement is not proven read-only"
-    assert report.denial is not None
+    assert isinstance(report, BlockedAnalysis)
+    assert report.denial.reason == "Statement is not proven read-only"
     assert report.denial.statement_index == 0
     assert report.denial.path == (0,)
     assert report.denial.diagnostic.code is DiagnosticCode.BLOCKED_STATEMENT

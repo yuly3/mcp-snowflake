@@ -13,12 +13,13 @@ from snowflake.connector import (
 
 from cattrs_converter import JsonImmutableConverter
 from expression.contract import ContractViolationError
-from snowflake_sql_parser import SQLAnalysisError
 
 from ..handler import (
     CompactQueryResultSerializer,
     EffectExecuteQuery,
     ExecuteQueryArgs,
+    SQLAnalysisFailedError,
+    SQLBlockedError,
     handle_execute_query,
 )
 from .base import Tool
@@ -80,14 +81,13 @@ class ExecuteQueryTool(Tool):
             text = f"Error: Referential integrity constraint violation: {e}"
         except NotSupportedError as e:
             text = f"Error: Unsupported database feature used: {e}"
-        except SQLAnalysisError as e:
+        except SQLAnalysisFailedError as e:
             detail = str(e) if e.diagnostic is None else e.diagnostic.message
             text = f"Error: Invalid SQL input: {detail}"
+        except SQLBlockedError as e:
+            text = f"Error: {e}"
         except ContractViolationError as e:
             text = f"Error: Unexpected error: {e}"
-        except ValueError as e:
-            # For SQL analyzer errors (write operations not allowed)
-            text = f"Error: {e}"
         else:
             text = query_result.serialize_with(CompactQueryResultSerializer())
         return [types.TextContent(type="text", text=text)]

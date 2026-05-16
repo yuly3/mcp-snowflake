@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING
 from expression import option
 
 from .core import (
+    AllowedAnalysis,
     AnalysisReport,
+    BlockedAnalysis,
     DiagnosticCode,
     ExplainNode,
     PipeChainNode,
@@ -16,6 +18,7 @@ from .core import (
 )
 from .core.contracts import analysis_contract, internal_contract
 from .core.invariants import ParserInvariantError
+from .core.models import build_analysis_report
 from .parsing import parse_script
 from .policy import ReadOnlySafetyPolicy, SafetyDecision
 
@@ -40,19 +43,19 @@ class SQLAnalyzer:
             )
 
         analyses = tuple(_analyze_node(statement, policy=_DEFAULT_POLICY) for statement in script.statements)
-        return AnalysisReport.from_statements(analyses)
+        return build_analysis_report(analyses)
 
     @analysis_contract
     def is_read_only_sql(self, sql: str) -> bool:
         """Return whether the input SQL is read-only."""
 
-        return self.analyze(sql).is_allowed
+        return isinstance(self.analyze(sql), AllowedAnalysis)
 
     @analysis_contract
     def is_write_sql(self, sql: str) -> bool:
         """Return whether the input SQL is not read-only."""
 
-        return self.analyze(sql).is_blocked
+        return isinstance(self.analyze(sql), BlockedAnalysis)
 
 
 def _analyze_node(

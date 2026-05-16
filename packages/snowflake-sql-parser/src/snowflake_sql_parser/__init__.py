@@ -4,9 +4,10 @@ from .analyzer import SQLAnalyzer
 from .core.diagnostics import Diagnostic, DiagnosticCode, DiagnosticSeverity
 from .core.errors import SQLAnalysisError
 from .core.models import (
+    AllowedAnalysis,
     AnalysisDenial,
     AnalysisReport,
-    AnalysisStatus,
+    BlockedAnalysis,
     QueryConstruct,
     SplitStatement,
     StatementAnalysis,
@@ -15,9 +16,10 @@ from .core.models import (
 )
 
 __all__ = [
+    "AllowedAnalysis",
     "AnalysisDenial",
     "AnalysisReport",
-    "AnalysisStatus",
+    "BlockedAnalysis",
     "Diagnostic",
     "DiagnosticCode",
     "DiagnosticSeverity",

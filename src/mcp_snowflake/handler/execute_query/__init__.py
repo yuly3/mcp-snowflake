@@ -10,9 +10,14 @@ from pydantic import BaseModel, Field, ValidationInfo, model_validator
 
 from cattrs_converter import JsonImmutableConverter
 from kernel import DataProcessingResult
-from snowflake_sql_parser import SQLAnalyzer
+from snowflake_sql_parser import (
+    BlockedAnalysis,
+    SQLAnalysisError,
+    SQLAnalyzer,
+)
 
 from ...stopwatch import StopWatch
+from ..errors import SQLAnalysisFailedError, SQLBlockedError
 from ._serializer import (
     CompactQueryResultSerializer,
     QueryResult,
@@ -113,6 +118,10 @@ async def handle_execute_query(
 
     Raises
     ------
+    SQLAnalysisFailedError
+        If the SQL analyzer could not classify the input.
+    SQLBlockedError
+        If the SQL analyzer classified the input as not read-only.
     TimeoutError
         If query execution times out
     ProgrammingError
@@ -126,10 +135,13 @@ async def handle_execute_query(
     NotSupportedError
         When an unsupported database feature is used
     """
-    # SQL safety check
-    report = _SQL_ANALYZER.analyze(args.sql)
-    if report.is_blocked:
-        raise ValueError(report.user_message)
+    try:
+        report = _SQL_ANALYZER.analyze(args.sql)
+    except SQLAnalysisError as e:
+        raise SQLAnalysisFailedError(e) from e
+
+    if isinstance(report, BlockedAnalysis):
+        raise SQLBlockedError(report.denial)
 
     stopwatch = StopWatch.start()
 

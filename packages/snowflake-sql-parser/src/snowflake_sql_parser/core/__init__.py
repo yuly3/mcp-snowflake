@@ -3,9 +3,10 @@
 from .diagnostics import Diagnostic, DiagnosticCode, DiagnosticSeverity
 from .errors import SQLAnalysisError
 from .models import (
+    AllowedAnalysis,
     AnalysisDenial,
     AnalysisReport,
-    AnalysisStatus,
+    BlockedAnalysis,
     QueryConstruct,
     SplitStatement,
     StatementAnalysis,
@@ -26,9 +27,10 @@ from .syntax import (
 )
 
 __all__ = [
+    "AllowedAnalysis",
     "AnalysisDenial",
     "AnalysisReport",
-    "AnalysisStatus",
+    "BlockedAnalysis",
     "Diagnostic",
     "DiagnosticCode",
     "DiagnosticSeverity",

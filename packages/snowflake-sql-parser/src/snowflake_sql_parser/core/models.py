@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Literal, Self
 import attrs
 
 from .diagnostics import Diagnostic, DiagnosticCode
+from .invariants import ParserInvariantError
 from .text import TextSpan
 
 if TYPE_CHECKING:
@@ -36,8 +37,6 @@ type QueryConstruct = Literal[
     "FOR_UPDATE",
     "INTO",
 ]
-
-type AnalysisStatus = Literal["allowed", "blocked"]
 
 
 @attrs.define(frozen=True, slots=True)
@@ -104,57 +103,49 @@ class AnalysisDenial:
 
 
 @attrs.define(frozen=True, slots=True)
-class AnalysisReport:
-    """Aggregated analysis result for a SQL input."""
+class AllowedAnalysis:
+    """Analysis result for an SQL input that is fully read-only."""
 
     statements: tuple[StatementAnalysis, ...]
-    status: AnalysisStatus
-    denial: AnalysisDenial | None = None
-    diagnostics: tuple[Diagnostic, ...] = ()
 
-    @classmethod
-    def from_statements(cls, statements: tuple[StatementAnalysis, ...]) -> Self:
-        denial = select_primary_denial(statements)
-        diagnostic_list: list[Diagnostic] = []
+
+@attrs.define(frozen=True, slots=True)
+class BlockedAnalysis:
+    """Analysis result for an SQL input that contains a non-read-only statement."""
+
+    statements: tuple[StatementAnalysis, ...]
+    denial: AnalysisDenial
+    diagnostics: tuple[Diagnostic, ...]
+
+
+type AnalysisReport = AllowedAnalysis | BlockedAnalysis
+
+
+def build_analysis_report(statements: tuple[StatementAnalysis, ...]) -> AnalysisReport:
+    """Build the appropriate report variant from per-statement analyses."""
+
+    denial = select_primary_denial(statements)
+    if denial is None:
         for statement in statements:
-            if statement.is_read_only:
-                continue
-            for diagnostic in statement.iter_diagnostics():
-                if diagnostic not in diagnostic_list:
-                    diagnostic_list.append(diagnostic)
-        if denial is not None and denial.diagnostic not in diagnostic_list:
-            diagnostic_list.append(denial.diagnostic)
+            if not statement.is_read_only:
+                raise ParserInvariantError("No primary denial found but a statement is not read-only")
+        return AllowedAnalysis(statements=statements)
 
-        return cls(
-            statements=statements,
-            status="allowed" if denial is None else "blocked",
-            denial=denial,
-            diagnostics=tuple(diagnostic_list),
-        )
+    diagnostic_list: list[Diagnostic] = []
+    for statement in statements:
+        if statement.is_read_only:
+            continue
+        for diagnostic in statement.iter_diagnostics():
+            if diagnostic not in diagnostic_list:
+                diagnostic_list.append(diagnostic)
+    if denial.diagnostic not in diagnostic_list:
+        diagnostic_list.append(denial.diagnostic)
 
-    @property
-    def is_allowed(self) -> bool:
-        return self.status == "allowed"
-
-    @property
-    def is_read_only(self) -> bool:
-        return self.is_allowed
-
-    @property
-    def is_blocked(self) -> bool:
-        return self.status == "blocked"
-
-    @property
-    def block_reason(self) -> str | None:
-        if self.denial is None:
-            return None
-        return self.denial.reason
-
-    @property
-    def user_message(self) -> str:
-        if self.denial is None:
-            return "SQL is allowed."
-        return f"Write operations are not allowed: {self.denial.reason}"
+    return BlockedAnalysis(
+        statements=statements,
+        denial=denial,
+        diagnostics=tuple(diagnostic_list),
+    )
 
 
 def select_primary_denial(
