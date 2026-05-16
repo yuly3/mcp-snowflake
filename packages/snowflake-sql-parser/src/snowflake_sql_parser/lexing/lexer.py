@@ -81,7 +81,7 @@ def tokenize(
     tokens: list[Token] = []
     index = 0
     text_length = len(sql)
-    keyword_set = keywords if keywords is not None else frozenset()
+    keyword_set: frozenset[str] = frozenset() if keywords is None else keywords
 
     while index < text_length:
         char = sql[index]
