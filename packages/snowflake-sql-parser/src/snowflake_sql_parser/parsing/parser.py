@@ -22,7 +22,7 @@ from ..core import (
     UnknownStatementNode,
     WithNode,
 )
-from ..core.contracts import analysis_contract, internal_contract
+from ..core.contracts import analysis_contract
 from ..dialects import SNOWFLAKE_DIALECT
 from ..dialects.base import Dialect
 from ..lexing import Token, TokenStream
@@ -57,15 +57,13 @@ class ParserContext:
 
         return _statement_keyword(self.stream.peek())
 
-    @internal_contract
-    def parse_nested_from_token_index(self, index: int) -> StatementNode:
-        """Parse a nested statement starting at the given token index."""
+    def parse_nested_from_token(self, token: Token) -> StatementNode:
+        """Parse a nested statement starting at the given token."""
 
-        absolute_start = self.stream.tokens[index].span.start
-        local_start = absolute_start - self.span.start
+        local_start = token.span.start - self.span.start
         nested_statement = build_split_statement(
             self.text[local_start:],
-            offset=absolute_start,
+            offset=token.span.start,
         )
         return parse_statement(nested_statement, dialect=self.dialect)
 
@@ -238,8 +236,8 @@ def parse_with(context: ParserContext) -> StatementNode:
         dialect=context.dialect,
     )
     diagnostics = () if cte_diagnostic is None else (cte_diagnostic,)
-    body_index = _find_with_body_candidate_index(context.stream.tokens)
-    if body_index is None:
+    body_token = _find_with_body_candidate_token(context.stream.tokens)
+    if body_token is None:
         diagnostics = diagnostics or (
             Diagnostic(
                 code=DiagnosticCode.UNPARSABLE_WITH_BODY,
@@ -254,7 +252,6 @@ def parse_with(context: ParserContext) -> StatementNode:
             diagnostics=diagnostics,
         )
 
-    body_token = context.stream.tokens[body_index]
     if body_token.kind != "word" or body_token.normalized not in context.dialect.with_body_start_keywords:
         raise SQLAnalysisError.from_diagnostic(
             Diagnostic(
@@ -267,7 +264,7 @@ def parse_with(context: ParserContext) -> StatementNode:
     return WithNode(
         span=context.span,
         text=context.text,
-        body=context.parse_nested_from_token_index(body_index),
+        body=context.parse_nested_from_token(body_token),
         diagnostics=diagnostics,
     )
 
@@ -275,11 +272,11 @@ def parse_with(context: ParserContext) -> StatementNode:
 def parse_explain(context: ParserContext) -> StatementNode:
     """Parse an EXPLAIN statement."""
 
-    subject_index = _find_explain_subject_index(
+    subject_token = _find_explain_subject_token(
         context.stream.tokens,
         context.dialect.explain_output_formats,
     )
-    if subject_index is None:
+    if subject_token is None:
         return ExplainNode(
             span=context.span,
             text=context.text,
@@ -296,7 +293,7 @@ def parse_explain(context: ParserContext) -> StatementNode:
     return ExplainNode(
         span=context.span,
         text=context.text,
-        subject=context.parse_nested_from_token_index(subject_index),
+        subject=context.parse_nested_from_token(subject_token),
     )
 
 
@@ -423,7 +420,7 @@ def _parse_query_constructs(
     return constructs
 
 
-def _find_with_body_candidate_index(tokens: tuple[Token, ...]) -> int | None:
+def _find_with_body_candidate_token(tokens: tuple[Token, ...]) -> Token | None:
     index = 1
     has_recursive_modifier = _is_with_recursive_modifier(tokens, index)
     if has_recursive_modifier:
@@ -474,7 +471,7 @@ def _find_with_body_candidate_index(tokens: tuple[Token, ...]) -> int | None:
         if tokens[index].text == ",":
             index += 1
             continue
-        return index
+        return tokens[index]
 
     return None
 
@@ -758,10 +755,10 @@ def _iter_with_cte_definition_ranges(tokens: tuple[Token, ...]) -> tuple[tuple[i
     return tuple(ranges)
 
 
-def _find_explain_subject_index(
+def _find_explain_subject_token(
     tokens: tuple[Token, ...],
     explain_output_formats: frozenset[str],
-) -> int | None:
+) -> Token | None:
     start_index = 1
     if len(tokens) > 1 and tokens[1].kind == "word" and tokens[1].normalized == "USING":
         format_index = _next_token_index(tokens, 1)
@@ -772,13 +769,13 @@ def _find_explain_subject_index(
         ):
             return None
         start_index = format_index + 1
-    return _statement_body_start(tokens, start_index)
+    return _first_statement_body_token(tokens, start_index)
 
 
-def _statement_body_start(tokens: tuple[Token, ...], start: int) -> int | None:
-    for index, token in enumerate(tokens[start:], start=start):
+def _first_statement_body_token(tokens: tuple[Token, ...], start: int) -> Token | None:
+    for token in tokens[start:]:
         if token.kind in {"word", "quoted_identifier"}:
-            return index
+            return token
     return None
 
 
