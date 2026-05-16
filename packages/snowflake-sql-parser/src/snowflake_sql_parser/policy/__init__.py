@@ -1,8 +1,7 @@
 """Safety policy package."""
 
-from .read_only import ReadOnlySafetyPolicy, SafetyDecision
+from .read_only import ReadOnlySafetyPolicy
 
 __all__ = [
     "ReadOnlySafetyPolicy",
-    "SafetyDecision",
 ]

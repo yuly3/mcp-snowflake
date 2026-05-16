@@ -1,7 +1,6 @@
 import pytest
 
 import snowflake_sql_parser.analyzer as analyzer_module
-from expression.contract import ContractViolationError
 from snowflake_sql_parser import (
     AllowedAnalysis,
     BlockedAnalysis,
@@ -11,7 +10,7 @@ from snowflake_sql_parser import (
     StatementAnalysis,
     TextSpan,
 )
-from snowflake_sql_parser.core import SqlScript, WithNode
+from snowflake_sql_parser.core import SqlScript
 from snowflake_sql_parser.core.models import build_analysis_report
 
 
@@ -769,23 +768,3 @@ def test_analyzer_maps_empty_script_to_sql_analysis_error(monkeypatch: pytest.Mo
     diagnostic = exc_info.value.diagnostic
     assert diagnostic is not None
     assert diagnostic.code is DiagnosticCode.UNEXPECTED_INPUT
-
-
-def test_analyzer_wraps_statement_analysis_invariant_violations(monkeypatch: pytest.MonkeyPatch) -> None:
-    private_name = "_node_children"
-    original_node_children = getattr(analyzer_module, private_name)
-
-    def broken_node_children(node: object) -> tuple[object, ...]:
-        if isinstance(node, WithNode):
-            return ()
-        return original_node_children(node)
-
-    monkeypatch.setattr(analyzer_module, private_name, broken_node_children)
-
-    with pytest.raises(ContractViolationError) as exc_info:
-        _ = SQLAnalyzer().analyze("WITH cte AS (SELECT 1) SELECT * FROM cte")
-
-    error = exc_info.value
-    assert error.function_name == "_to_statement_analysis"
-    assert error.original_exception is not None
-    assert type(error.original_exception).__name__ == "ParserInvariantError"

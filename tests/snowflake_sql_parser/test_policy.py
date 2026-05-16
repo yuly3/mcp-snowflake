@@ -1,11 +1,12 @@
 import pytest
 
+from snowflake_sql_parser.core import StatementAnalysis
 from snowflake_sql_parser.parsing import build_split_statement, parse_statement
-from snowflake_sql_parser.policy import ReadOnlySafetyPolicy, SafetyDecision
+from snowflake_sql_parser.policy import ReadOnlySafetyPolicy
 
 
-def _evaluate(sql: str) -> SafetyDecision:
-    return ReadOnlySafetyPolicy().evaluate(parse_statement(build_split_statement(sql)))
+def _evaluate(sql: str) -> StatementAnalysis:
+    return ReadOnlySafetyPolicy().analyze(parse_statement(build_split_statement(sql)))
 
 
 def test_policy_blocks_with_call_body() -> None:
@@ -13,9 +14,10 @@ def test_policy_blocks_with_call_body() -> None:
 
     assert not decision.is_read_only
     assert decision.top_level_keyword == "WITH"
+    assert decision.diagnostic is None
     assert decision.nested[0].top_level_keyword == "CALL"
-    assert decision.diagnostic is not None
-    assert decision.diagnostic.message == "CALL statements are not allowed"
+    assert decision.nested[0].diagnostic is not None
+    assert decision.nested[0].diagnostic.message == "CALL statements are not allowed"
 
 
 def test_policy_blocks_write_cte_definition() -> None:
@@ -169,9 +171,10 @@ def test_policy_blocks_pipe_chain_when_any_segment_is_blocked() -> None:
     decision = _evaluate("SHOW TABLES ->> CREATE TABLE t (id INT)")
 
     assert not decision.is_read_only
+    assert decision.diagnostic is None
     assert decision.nested[1].family == "ddl"
-    assert decision.diagnostic is not None
-    assert decision.diagnostic.message == "DDL statements are not allowed"
+    assert decision.nested[1].diagnostic is not None
+    assert decision.nested[1].diagnostic.message == "DDL statements are not allowed"
 
 
 def test_policy_allows_pipe_chain_with_middle_with_segment() -> None:
@@ -217,9 +220,10 @@ def test_policy_blocks_with_call_into_body_after_additional_cte_bindings() -> No
     assert not decision.is_read_only
     assert decision.top_level_keyword == "WITH"
     assert decision.family == "scripting"
+    assert decision.diagnostic is None
     assert decision.nested[0].top_level_keyword == "CALL"
-    assert decision.diagnostic is not None
-    assert decision.diagnostic.message == "CALL statements are not allowed"
+    assert decision.nested[0].diagnostic is not None
+    assert decision.nested[0].diagnostic.message == "CALL statements are not allowed"
 
 
 @pytest.mark.parametrize(
@@ -238,9 +242,10 @@ def test_policy_blocks_documented_anonymous_procedure_variants(sql: str) -> None
     assert not decision.is_read_only
     assert decision.top_level_keyword == "WITH"
     assert decision.family == "scripting"
+    assert decision.diagnostic is None
     assert decision.nested[0].top_level_keyword == "CALL"
-    assert decision.diagnostic is not None
-    assert decision.diagnostic.message == "CALL statements are not allowed"
+    assert decision.nested[0].diagnostic is not None
+    assert decision.nested[0].diagnostic.message == "CALL statements are not allowed"
 
 
 def test_policy_blocks_call_with_named_arguments_and_into_clause() -> None:

@@ -14,6 +14,7 @@ from ..core import (
     SplitStatement,
     SQLAnalysisError,
     SqlScript,
+    StatementAnalysis,
     StatementFamily,
     StatementFamilyNode,
     StatementNode,
@@ -25,7 +26,7 @@ from ..core.contracts import analysis_contract, internal_contract
 from ..dialects import SNOWFLAKE_DIALECT
 from ..dialects.base import Dialect
 from ..lexing import Token, TokenStream
-from ..policy import ReadOnlySafetyPolicy, SafetyDecision
+from ..policy import ReadOnlySafetyPolicy
 from .registry import (
     AlterParserSpec,
     BeginParserSpec,
@@ -721,13 +722,13 @@ def _evaluate_cte_definition_read_only(
     definition_end_index: int,
     *,
     dialect: Dialect,
-) -> SafetyDecision:
+) -> StatementAnalysis:
     absolute_start = tokens[definition_start_index].span.start
     absolute_end = tokens[definition_end_index].span.start
     local_start = absolute_start - span.start
     local_end = absolute_end - span.start
     definition_statement = build_split_statement(text[local_start:local_end], offset=absolute_start)
-    return _READ_ONLY_POLICY.evaluate(parse_statement(definition_statement, dialect=dialect))
+    return _READ_ONLY_POLICY.analyze(parse_statement(definition_statement, dialect=dialect))
 
 
 def _iter_with_cte_definition_ranges(tokens: tuple[Token, ...]) -> tuple[tuple[int, int], ...]:
