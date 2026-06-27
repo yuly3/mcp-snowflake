@@ -1,6 +1,6 @@
 [project]
 dependencies = [
-    "attrs>=25.3.0",
+    "attrs>=26.1.0",
     "cattrs-converter",
 ]
 description = "domain layer components"
