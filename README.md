@@ -19,7 +19,7 @@ A Model Context Protocol (MCP) server that connects to Snowflake databases and e
 ### Prerequisites
 
 - Python 3.13 or higher
-- uv (Python package manager)
+- uv 0.11.28 or higher
 - Access to a Snowflake account
 
 ### Setup
@@ -30,7 +30,17 @@ A Model Context Protocol (MCP) server that connects to Snowflake databases and e
    cd mcp-snowflake
    ```
 
-2. Install using uv:
+2. Check your uv version:
+   ```bash
+   uv --version
+   ```
+
+   If your uv version is outdated, update uv:
+   ```bash
+   uv self update
+   ```
+
+3. Install using uv:
    ```bash
    uv tool install -e .
    ```
