@@ -68,21 +68,17 @@ class DescribeTableTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            description="Retrieve the structure (columns, data types, etc.) of a specified table",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "database": {
                         "type": "string",
-                        "description": "Database name containing the table",
                     },
                     "schema": {
                         "type": "string",
-                        "description": "Schema name containing the table",
                     },
                     "table": {
                         "type": "string",
-                        "description": "Name of the table to describe",
                     },
                 },
                 "required": ["database", "schema", "table"],

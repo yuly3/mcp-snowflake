@@ -33,7 +33,6 @@ class TestListDatabasesTool:
         definition = tool.definition
 
         assert definition.name == "list_databases"
-        assert definition.description is not None
         assert definition.inputSchema is not None
 
         input_schema = definition.inputSchema

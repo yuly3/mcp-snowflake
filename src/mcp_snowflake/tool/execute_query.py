@@ -96,17 +96,15 @@ class ExecuteQueryTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            description="Execute a read-only SQL query and return the results. Only SELECT, SHOW, DESCRIBE, EXPLAIN and similar read operations are allowed.",
+            description="Read-only SQL.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "sql": {
                         "type": "string",
-                        "description": "SQL query to execute (read operations only)",
                     },
                     "timeout_seconds": {
                         "type": "integer",
-                        "description": f"Query timeout in seconds (default: {self.timeout_seconds_default}, max: {self.timeout_seconds_max})",
                         "default": self.timeout_seconds_default,
                         "minimum": 1,
                         "maximum": self.timeout_seconds_max,

@@ -37,9 +37,6 @@ class TestExecuteQueryTool:
         definition = tool.definition
 
         assert definition.name == "execute_query"
-        assert definition.description is not None
-        assert "execute" in definition.description.lower()
-        assert "sql" in definition.description.lower()
         assert definition.inputSchema is not None
 
         # Check required fields
@@ -52,7 +49,6 @@ class TestExecuteQueryTool:
         assert "sql" in properties
         assert "timeout_seconds" in properties
         assert properties["timeout_seconds"]["maximum"] == 300
-        assert properties["timeout_seconds"]["description"] == "Query timeout in seconds (default: 30, max: 300)"
 
     def test_definition_property_with_custom_timeout_max(self) -> None:
         """Test definition property with custom timeout max."""
@@ -64,7 +60,6 @@ class TestExecuteQueryTool:
         assert definition.inputSchema is not None
         timeout = definition.inputSchema["properties"]["timeout_seconds"]
         assert timeout["maximum"] == 1800
-        assert timeout["description"] == "Query timeout in seconds (default: 30, max: 1800)"
 
     def test_definition_property_with_custom_timeout_default(self) -> None:
         """Test definition property with custom default timeout."""
@@ -77,7 +72,6 @@ class TestExecuteQueryTool:
         timeout = definition.inputSchema["properties"]["timeout_seconds"]
         assert timeout["default"] == 60
         assert timeout["maximum"] == 300
-        assert timeout["description"] == "Query timeout in seconds (default: 60, max: 300)"
 
     @pytest.mark.asyncio
     async def test_perform_success(self) -> None:

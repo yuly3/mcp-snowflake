@@ -92,26 +92,23 @@ class AnalyzeTableStatisticsTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            description="Analyze table statistics using Snowflake's high-performance approximation functions (APPROX_PERCENTILE, APPROX_TOP_K, APPROX_COUNT_DISTINCT) to efficiently retrieve statistical information for numeric, string, date, and boolean columns",
+            description="Analyze approximate table statistics for numeric, string, date, and boolean columns.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "database": {
                         "type": "string",
-                        "description": "Database name containing the table",
                     },
                     "schema": {
                         "type": "string",
-                        "description": "Schema name containing the table",
                     },
                     "table": {
                         "type": "string",
-                        "description": "Name of the table to analyze",
                     },
                     "columns": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "List of column names to analyze (if not specified, all columns will be analyzed)",
+                        "description": "Columns to analyze; empty means all.",
                         "default": [],
                     },
                     "top_k_limit": {
@@ -119,17 +116,17 @@ class AnalyzeTableStatisticsTool(Tool):
                         "minimum": 1,
                         "maximum": 100,
                         "default": 10,
-                        "description": "Number of top values to retrieve for string columns",
+                        "description": "Top values for string columns.",
                     },
                     "include_null_empty_profile": {
                         "type": "boolean",
                         "default": True,
-                        "description": "Include per-column quality profile (NULL ratio for all types and empty string ratio for STRING columns)",
+                        "description": "NULL and empty-string ratios.",
                     },
                     "include_blank_string_profile": {
                         "type": "boolean",
                         "default": False,
-                        "description": "When quality profile is enabled, include TRIM-based blank string profile for STRING columns",
+                        "description": "TRIM-blank ratios for strings.",
                     },
                 },
                 "required": ["database", "schema", "table"],

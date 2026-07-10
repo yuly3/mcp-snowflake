@@ -34,9 +34,6 @@ class TestListTablesTool:
         definition = tool.definition
 
         assert definition.name == "list_tables"
-        assert definition.description is not None
-        assert "tables" in definition.description
-        assert "views" in definition.description
         assert definition.inputSchema is not None
 
         # Check required fields

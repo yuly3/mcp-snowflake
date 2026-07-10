@@ -35,8 +35,6 @@ class TestSampleTableDataTool:
         definition = tool.definition
 
         assert definition.name == "sample_table_data"
-        assert definition.description is not None
-        assert "sample data" in definition.description.lower()
         assert definition.inputSchema is not None
 
         # Check required fields
@@ -51,6 +49,7 @@ class TestSampleTableDataTool:
         assert "table" in properties
         assert "sample_size" in properties
         assert "columns" in properties
+        assert properties["columns"]["description"] == "Columns; empty means all."
 
     @pytest.mark.asyncio
     async def test_perform_success(self) -> None:

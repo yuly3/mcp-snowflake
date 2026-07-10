@@ -26,9 +26,7 @@ class TestAnalyzeTableStatisticsToolSuccess:
 
         assert definition.name == "analyze_table_statistics"
         assert definition.description is not None
-        assert "analyze" in definition.description.lower()
-        assert "statistics" in definition.description.lower()
-        assert "snowflake" in definition.description.lower()
+        assert "approximate" in definition.description.lower()
         assert definition.inputSchema is not None
 
         # Check required fields
@@ -48,11 +46,15 @@ class TestAnalyzeTableStatisticsToolSuccess:
 
         # Check optional properties defaults
         assert properties["columns"]["default"] == []
+        assert properties["columns"]["description"] == "Columns to analyze; empty means all."
         assert properties["top_k_limit"]["default"] == 10
+        assert properties["top_k_limit"]["description"] == "Top values for string columns."
         assert properties["top_k_limit"]["minimum"] == 1
         assert properties["top_k_limit"]["maximum"] == 100
         assert properties["include_null_empty_profile"]["default"] is True
+        assert properties["include_null_empty_profile"]["description"] == "NULL and empty-string ratios."
         assert properties["include_blank_string_profile"]["default"] is False
+        assert properties["include_blank_string_profile"]["description"] == "TRIM-blank ratios for strings."
 
     @pytest.mark.asyncio
     async def test_perform_success_basic(self) -> None:

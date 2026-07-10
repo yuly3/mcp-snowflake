@@ -71,36 +71,30 @@ class SearchColumnsTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            description="Search for columns across tables in a database by column name pattern and/or data type. At least one of 'column_name_pattern' or 'data_type' must be provided.",
+            description="Name ILIKE or type; one required.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "database": {
                         "type": "string",
-                        "description": "Database name to search in",
                     },
                     "column_name_pattern": {
                         "type": "string",
-                        "description": "Column name ILIKE pattern (e.g. '%unit_id%')",
                     },
                     "data_type": {
                         "type": "string",
-                        "description": "Data type to filter by (e.g. 'VARIANT', 'NUMBER')",
                     },
                     "schema": {
                         "type": "string",
-                        "description": "Schema name to filter by",
                     },
                     "table_name_pattern": {
                         "type": "string",
-                        "description": "Table name ILIKE pattern (e.g. '%ORDERS%')",
                     },
                     "limit": {
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 200,
                         "default": 50,
-                        "description": "Maximum number of tables to return (default: 50)",
                     },
                 },
                 "required": ["database"],

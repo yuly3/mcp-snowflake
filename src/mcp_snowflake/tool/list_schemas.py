@@ -68,13 +68,11 @@ class ListSchemasTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            description="Retrieve a list of schemas from a specified database",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "database": {
                         "type": "string",
-                        "description": "Database name to retrieve schemas from",
                     }
                 },
                 "required": ["database"],

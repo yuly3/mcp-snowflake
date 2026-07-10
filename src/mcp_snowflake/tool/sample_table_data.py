@@ -78,32 +78,27 @@ class SampleTableDataTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            description="Retrieve sample data from a specified table using SAMPLE ROW clause",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "database": {
                         "type": "string",
-                        "description": "Database name containing the table",
                     },
                     "schema": {
                         "type": "string",
-                        "description": "Schema name containing the table",
                     },
                     "table": {
                         "type": "string",
-                        "description": "Name of the table to sample",
                     },
                     "sample_size": {
                         "type": "integer",
-                        "description": "Number of sample rows to retrieve (default: 10)",
                         "default": 10,
                         "minimum": 1,
                     },
                     "columns": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "List of column names to retrieve (if not specified, all columns will be retrieved)",
+                        "description": "Columns; empty means all.",
                     },
                 },
                 "required": ["database", "schema", "table"],

@@ -71,32 +71,27 @@ class ListTablesTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            description="Retrieve a list of tables and views from a specified database and schema",
+            description="Tables/views.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "database": {
                         "type": "string",
-                        "description": "Database name to retrieve objects from",
                     },
                     "schema": {
                         "type": "string",
-                        "description": "Schema name to retrieve objects from",
                     },
                     "filter": {
                         "type": "object",
-                        "description": "Optional filter for results. Use type='contains' to filter by name substring, or type='object_type' to filter by TABLE or VIEW.",
                         "oneOf": [
                             {
                                 "properties": {
                                     "type": {
                                         "type": "string",
                                         "enum": ["contains"],
-                                        "description": "Filter by name substring (case-insensitive)",
                                     },
                                     "value": {
                                         "type": "string",
-                                        "description": "Substring to match in object names",
                                         "minLength": 1,
                                     },
                                 },
@@ -107,12 +102,10 @@ class ListTablesTool(Tool):
                                     "type": {
                                         "type": "string",
                                         "enum": ["object_type"],
-                                        "description": "Filter by object type",
                                     },
                                     "value": {
                                         "type": "string",
                                         "enum": ["TABLE", "VIEW"],
-                                        "description": "Object type to filter by",
                                     },
                                 },
                                 "required": ["type", "value"],

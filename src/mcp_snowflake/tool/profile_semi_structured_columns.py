@@ -88,59 +88,50 @@ class ProfileSemiStructuredColumnsTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            description="Profile semi-structured columns (VARIANT/ARRAY/OBJECT) with sampled flatten-based analysis. "
-            + "Returns column-level null/type/array stats and optional path-level distributions.",
+            description="VARIANT/ARRAY/OBJECT.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "database": {
                         "type": "string",
-                        "description": "Database name containing the table",
                     },
                     "schema": {
                         "type": "string",
-                        "description": "Schema name containing the table",
                     },
                     "table": {
                         "type": "string",
-                        "description": "Name of the table to profile",
                     },
                     "columns": {
                         "type": "array",
                         "items": {"type": "string"},
+                        "description": "Columns; empty means all VARIANT/ARRAY/OBJECT columns.",
                         "default": [],
-                        "description": "Columns to profile (empty selects all VARIANT/ARRAY/OBJECT columns)",
                     },
                     "sample_rows": {
                         "type": "integer",
                         "default": 10000,
                         "minimum": 1,
                         "maximum": 200000,
-                        "description": "Sample size in rows for approximate profiling",
                     },
                     "max_depth": {
                         "type": "integer",
                         "default": 4,
                         "minimum": 1,
                         "maximum": 20,
-                        "description": "Maximum recursive path depth for flatten-based path profiling",
                     },
                     "top_k_limit": {
                         "type": "integer",
                         "default": 20,
                         "minimum": 1,
                         "maximum": 100,
-                        "description": "Top-k limit for frequent values and keys",
                     },
                     "include_path_stats": {
                         "type": "boolean",
                         "default": True,
-                        "description": "Whether to include path-level profiling output",
                     },
                     "include_value_samples": {
                         "type": "boolean",
                         "default": False,
-                        "description": "Whether to include top_values samples in path-level output",
                     },
                 },
                 "required": ["database", "schema", "table"],

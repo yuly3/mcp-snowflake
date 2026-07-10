@@ -56,7 +56,6 @@ class ListDatabasesTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            description="Retrieve a list of accessible databases",
             inputSchema={
                 "type": "object",
                 "properties": {},

@@ -33,9 +33,6 @@ class TestDescribeTableTool:
         definition = tool.definition
 
         assert definition.name == "describe_table"
-        assert definition.description is not None
-        assert "structure" in definition.description
-        assert "columns" in definition.description
         assert definition.inputSchema is not None
 
         # Check required fields
