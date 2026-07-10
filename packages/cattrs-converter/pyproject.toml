@@ -5,7 +5,7 @@ dependencies = [
 description = "A converter for cattrs"
 name = "cattrs-converter"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 version = "0.1.0"
 
 [build-system]

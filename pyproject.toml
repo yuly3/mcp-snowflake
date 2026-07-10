@@ -16,7 +16,7 @@ dependencies = [
 description = "Model Context Protocol (MCP) server for Snowflake database connectivity and SQL query execution"
 name = "mcp-snowflake"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 version = "0.1.0"
 
 [project.scripts]
