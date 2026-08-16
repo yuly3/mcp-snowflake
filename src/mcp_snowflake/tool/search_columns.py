@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 import mcp.types as types
@@ -34,7 +34,7 @@ class SearchColumnsTool(Tool):
     async def perform(
         self,
         arguments: Mapping[str, Any] | None,
-    ) -> Sequence[types.Content]:
+    ) -> list[types.ContentBlock]:
         try:
             args = SearchColumnsArgs.model_validate(arguments or {})
         except ValidationError as e:
@@ -72,7 +72,7 @@ class SearchColumnsTool(Tool):
         return types.Tool(
             name=self.name,
             description="Name ILIKE or type; one required.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "database": {

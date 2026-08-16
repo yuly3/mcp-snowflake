@@ -1,6 +1,5 @@
 from collections.abc import Callable, Iterable, Iterator
 from functools import reduce
-from heapq import nlargest
 from itertools import chain, islice, takewhile
 from typing import TYPE_CHECKING
 
@@ -130,15 +129,6 @@ class Iter[T](Iterable[T]):
         ['a', 'bb', 'ccc']
         """
         return Iter(sorted(self._iterable, key=key, reverse=reverse))
-
-    def top_k(self, k: int, *, key: "Callable[[T], SupportsRichComparison] | None" = None) -> "Iter[T]":
-        """
-        Return the k largest items, sorted in descending order.
-
-        >>> Iter([1, 5, 2, 4, 3]).top_k(3).to_list()
-        [5, 4, 3]
-        """
-        return Iter(nlargest(k, self._iterable, key=key))
 
     def enumerate(self, start: int = 0) -> "Iter[tuple[int, T]]":
         """

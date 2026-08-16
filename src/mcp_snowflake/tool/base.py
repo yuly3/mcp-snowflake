@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 import mcp.types as types
@@ -14,7 +14,7 @@ class Tool(ABC):
     async def perform(
         self,
         arguments: Mapping[str, Any] | None,
-    ) -> Sequence[types.Content]: ...
+    ) -> list[types.ContentBlock]: ...
 
     @property
     @abstractmethod

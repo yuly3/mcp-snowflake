@@ -11,7 +11,7 @@ import pytest
 from pydantic_settings import SettingsConfigDict
 
 from mcp_snowflake.context import ServerContext
-from mcp_snowflake.settings import Settings, SnowflakeSettings
+from mcp_snowflake.settings import Settings
 from mcp_snowflake.tool import AnalyzeTableStatisticsTool
 
 if TYPE_CHECKING:
@@ -24,12 +24,6 @@ if TYPE_CHECKING:
 def mock_thread_pool_executor() -> ThreadPoolExecutor:
     """Create a mock ThreadPoolExecutor for testing."""
     return Mock(spec=ThreadPoolExecutor)
-
-
-@pytest.fixture
-def mock_snowflake_settings() -> SnowflakeSettings:
-    """Create a mock SnowflakeSettings for testing."""
-    return Mock(spec=SnowflakeSettings)
 
 
 @pytest.fixture
@@ -57,7 +51,6 @@ password = "test"  # nosec
 
 def test_build_tools_respects_settings(
     mock_thread_pool_executor: ThreadPoolExecutor,
-    mock_snowflake_settings: SnowflakeSettings,
     base_settings: Settings,
 ) -> None:
     """Test that build_tools only registers enabled tools."""
@@ -66,21 +59,7 @@ def test_build_tools_respects_settings(
     base_settings.tools.list_schemas = False  # Disabled
     base_settings.tools.sample_table_data = False  # Disabled
 
-    server_context = ServerContext()
-    server_context.prepare(
-        mock_thread_pool_executor,
-        mock_snowflake_settings,
-        base_settings.tools,
-        base_settings.analyze_table_statistics,
-        base_settings.describe_table,
-        base_settings.execute_query,
-        base_settings.list_databases,
-        base_settings.list_schemas,
-        base_settings.list_tables,
-        base_settings.profile_semi_structured_columns,
-        base_settings.sample_table_data,
-        base_settings.search_columns,
-    )
+    server_context = ServerContext(mock_thread_pool_executor, base_settings)
 
     registered_tool_names = set(server_context.tool_names())
     expected_enabled = {
@@ -101,27 +80,12 @@ def test_build_tools_respects_settings(
 
 def test_analyze_table_statistics_timeout_setting_is_applied(
     mock_thread_pool_executor: ThreadPoolExecutor,
-    mock_snowflake_settings: SnowflakeSettings,
     base_settings: Settings,
 ) -> None:
     """Test analyze_table_statistics timeout config is propagated to effect handler."""
     base_settings.analyze_table_statistics.query_timeout_seconds = 180
 
-    server_context = ServerContext()
-    server_context.prepare(
-        mock_thread_pool_executor,
-        mock_snowflake_settings,
-        base_settings.tools,
-        base_settings.analyze_table_statistics,
-        base_settings.describe_table,
-        base_settings.execute_query,
-        base_settings.list_databases,
-        base_settings.list_schemas,
-        base_settings.list_tables,
-        base_settings.profile_semi_structured_columns,
-        base_settings.sample_table_data,
-        base_settings.search_columns,
-    )
+    server_context = ServerContext(mock_thread_pool_executor, base_settings)
 
     tool = server_context.tool("analyze_table_statistics")
     assert isinstance(tool, AnalyzeTableStatisticsTool)

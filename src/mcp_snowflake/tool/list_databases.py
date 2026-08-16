@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 import mcp.types as types
@@ -31,7 +31,7 @@ class ListDatabasesTool(Tool):
     async def perform(
         self,
         arguments: Mapping[str, Any] | None,  # noqa: ARG002
-    ) -> Sequence[types.Content]:
+    ) -> list[types.ContentBlock]:
         try:
             result = await handle_list_databases(self.effect_handler)
         except TimeoutError as e:
@@ -56,7 +56,7 @@ class ListDatabasesTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {},
             },

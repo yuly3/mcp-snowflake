@@ -16,19 +16,7 @@ from .adapter import (
     SampleTableDataEffectHandler,
     SearchColumnsEffectHandler,
 )
-from .settings import (
-    AnalyzeTableStatisticsSettings,
-    DescribeTableSettings,
-    ExecuteQuerySettings,
-    ListDatabasesSettings,
-    ListSchemasSettings,
-    ListTablesSettings,
-    ProfileSemiStructuredColumnsSettings,
-    SampleTableDataSettings,
-    SearchColumnsSettings,
-    SnowflakeSettings,
-    ToolsSettings,
-)
+from .settings import Settings
 from .snowflake_client import SnowflakeClient
 from .tool import (
     AnalyzeTableStatisticsTool,
@@ -47,115 +35,78 @@ from .tool import (
 class ServerContext:
     """Context for managing Snowflake client and tools."""
 
-    def __init__(self) -> None:
-        """Initialize the server context with empty state."""
-        self._snowflake_client: SnowflakeClient | None = None
-        self._json_converter = JsonImmutableConverter()
-        self._tools: dict[str, Tool] = {}
-
-    def prepare(
-        self,
-        thread_pool_executor: ThreadPoolExecutor,
-        snowflake_settings: SnowflakeSettings,
-        tools_settings: ToolsSettings,
-        analyze_table_statistics_settings: AnalyzeTableStatisticsSettings,
-        describe_table_settings: DescribeTableSettings,
-        execute_query_settings: ExecuteQuerySettings,
-        list_databases_settings: ListDatabasesSettings,
-        list_schemas_settings: ListSchemasSettings,
-        list_tables_settings: ListTablesSettings,
-        profile_semi_structured_columns_settings: ProfileSemiStructuredColumnsSettings,
-        sample_table_data_settings: SampleTableDataSettings,
-        search_columns_settings: SearchColumnsSettings,
-    ) -> None:
-        """Prepare the server context with client and tools.
-
-        Parameters
-        ----------
-        snowflake_client : SnowflakeClient
-            The Snowflake client instance to use for database operations.
-        tools_settings : ToolsSettings
-            Configuration specifying which tools should be enabled.
-        """
+    def __init__(self, thread_pool_executor: ThreadPoolExecutor, settings: Settings) -> None:
+        """Initialize the server context with its Snowflake client and tools."""
         self._snowflake_client = SnowflakeClient(
             thread_pool_executor,
-            snowflake_settings,
+            settings.snowflake,
         )
+        self._json_converter = JsonImmutableConverter()
 
         all_tools: list[Tool] = [
             AnalyzeTableStatisticsTool(
                 AnalyzeTableStatisticsEffectHandler(
                     self._snowflake_client,
-                    query_timeout_seconds=analyze_table_statistics_settings.query_timeout_seconds,
+                    query_timeout_seconds=settings.analyze_table_statistics.query_timeout_seconds,
                 ),
             ),
             DescribeTableTool(
                 DescribeTableEffectHandler(
                     self._snowflake_client,
-                    query_timeout_seconds=describe_table_settings.query_timeout_seconds,
+                    query_timeout_seconds=settings.describe_table.query_timeout_seconds,
                 )
             ),
             ExecuteQueryTool(
                 self._json_converter,
                 ExecuteQueryEffectHandler(self._snowflake_client),
-                timeout_seconds_default=execute_query_settings.timeout_seconds_default,
-                timeout_seconds_max=execute_query_settings.timeout_seconds_max,
+                timeout_seconds_default=settings.execute_query.timeout_seconds_default,
+                timeout_seconds_max=settings.execute_query.timeout_seconds_max,
             ),
             ListDatabasesTool(
                 ListDatabasesEffectHandler(
                     self._snowflake_client,
-                    query_timeout_seconds=list_databases_settings.query_timeout_seconds,
+                    query_timeout_seconds=settings.list_databases.query_timeout_seconds,
                 )
             ),
             ListSchemasTool(
                 ListSchemasEffectHandler(
                     self._snowflake_client,
-                    query_timeout_seconds=list_schemas_settings.query_timeout_seconds,
+                    query_timeout_seconds=settings.list_schemas.query_timeout_seconds,
                 )
             ),
             ListTablesTool(
                 ListTablesEffectHandler(
                     self._snowflake_client,
-                    query_timeout_seconds=list_tables_settings.query_timeout_seconds,
+                    query_timeout_seconds=settings.list_tables.query_timeout_seconds,
                 )
             ),
             ProfileSemiStructuredColumnsTool(
                 ProfileSemiStructuredColumnsEffectHandler(
                     self._snowflake_client,
-                    base_query_timeout_seconds=profile_semi_structured_columns_settings.base_query_timeout_seconds,
-                    path_query_timeout_seconds=profile_semi_structured_columns_settings.path_query_timeout_seconds,
+                    base_query_timeout_seconds=settings.profile_semi_structured_columns.base_query_timeout_seconds,
+                    path_query_timeout_seconds=settings.profile_semi_structured_columns.path_query_timeout_seconds,
                 ),
             ),
             SearchColumnsTool(
                 SearchColumnsEffectHandler(
                     self._snowflake_client,
-                    query_timeout_seconds=search_columns_settings.query_timeout_seconds,
+                    query_timeout_seconds=settings.search_columns.query_timeout_seconds,
                 )
             ),
             SampleTableDataTool(
                 self._json_converter,
                 SampleTableDataEffectHandler(
                     self._snowflake_client,
-                    query_timeout_seconds=sample_table_data_settings.query_timeout_seconds,
+                    query_timeout_seconds=settings.sample_table_data.query_timeout_seconds,
                 ),
             ),
         ]
 
         # Filter tools based on settings
-        enabled_tool_names = tools_settings.enabled_tool_names()
+        enabled_tool_names = settings.tools.enabled_tool_names()
         enabled_tools = [tool for tool in all_tools if tool.name in enabled_tool_names]
 
         self._tools = {tool.name: tool for tool in enabled_tools}
-
-    def is_available(self) -> bool:
-        """Check if the context is available for use.
-
-        Returns
-        -------
-        bool
-            True if Snowflake client is initialized, False otherwise.
-        """
-        return self._snowflake_client is not None
 
     def tools(self) -> Iterator[Tool]:
         """Get an iterator over all available tools.

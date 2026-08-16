@@ -33,10 +33,10 @@ class TestListSchemasTool:
         definition = tool.definition
 
         assert definition.name == "list_schemas"
-        assert definition.inputSchema is not None
+        assert definition.input_schema is not None
 
         # Check required fields
-        input_schema = definition.inputSchema
+        input_schema = definition.input_schema
         assert input_schema["type"] == "object"
         assert set(input_schema["required"]) == {"database"}
 

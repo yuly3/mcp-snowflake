@@ -24,13 +24,13 @@ def test_name_and_definition() -> None:
     definition = tool.definition
     assert definition.name == "profile_semi_structured_columns"
     assert definition.description == "VARIANT/ARRAY/OBJECT."
-    assert definition.inputSchema is not None
-    assert set(definition.inputSchema["required"]) == {"database", "schema", "table"}
-    assert "sample_rows" in definition.inputSchema["properties"]
-    assert "max_depth" in definition.inputSchema["properties"]
-    assert "include_path_stats" in definition.inputSchema["properties"]
+    assert definition.input_schema is not None
+    assert set(definition.input_schema["required"]) == {"database", "schema", "table"}
+    assert "sample_rows" in definition.input_schema["properties"]
+    assert "max_depth" in definition.input_schema["properties"]
+    assert "include_path_stats" in definition.input_schema["properties"]
     assert (
-        definition.inputSchema["properties"]["columns"]["description"]
+        definition.input_schema["properties"]["columns"]["description"]
         == "Columns; empty means all VARIANT/ARRAY/OBJECT columns."
     )
 

@@ -37,10 +37,10 @@ class TestExecuteQueryTool:
         definition = tool.definition
 
         assert definition.name == "execute_query"
-        assert definition.inputSchema is not None
+        assert definition.input_schema is not None
 
         # Check required fields
-        input_schema = definition.inputSchema
+        input_schema = definition.input_schema
         assert input_schema["type"] == "object"
         assert set(input_schema["required"]) == {"sql"}
 
@@ -57,8 +57,8 @@ class TestExecuteQueryTool:
         tool = ExecuteQueryTool(converter, mock_effect, timeout_seconds_max=1800)
         definition = tool.definition
 
-        assert definition.inputSchema is not None
-        timeout = definition.inputSchema["properties"]["timeout_seconds"]
+        assert definition.input_schema is not None
+        timeout = definition.input_schema["properties"]["timeout_seconds"]
         assert timeout["maximum"] == 1800
 
     def test_definition_property_with_custom_timeout_default(self) -> None:
@@ -68,8 +68,8 @@ class TestExecuteQueryTool:
         tool = ExecuteQueryTool(converter, mock_effect, timeout_seconds_default=60, timeout_seconds_max=300)
         definition = tool.definition
 
-        assert definition.inputSchema is not None
-        timeout = definition.inputSchema["properties"]["timeout_seconds"]
+        assert definition.input_schema is not None
+        timeout = definition.input_schema["properties"]["timeout_seconds"]
         assert timeout["default"] == 60
         assert timeout["maximum"] == 300
 

@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 import mcp.types as types
@@ -41,7 +41,7 @@ class AnalyzeTableStatisticsTool(Tool):
     async def perform(
         self,
         arguments: Mapping[str, Any] | None,
-    ) -> Sequence[types.Content]:
+    ) -> list[types.ContentBlock]:
         try:
             args = AnalyzeTableStatisticsArgs.model_validate(arguments or {})
         except ValidationError as e:
@@ -93,7 +93,7 @@ class AnalyzeTableStatisticsTool(Tool):
         return types.Tool(
             name=self.name,
             description="Analyze approximate table statistics for numeric, string, date, and boolean columns.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "database": {

@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 import mcp.types as types
@@ -45,7 +45,7 @@ class ExecuteQueryTool(Tool):
     async def perform(
         self,
         arguments: Mapping[str, Any] | None,
-    ) -> Sequence[types.Content]:
+    ) -> list[types.ContentBlock]:
         payload = dict(arguments or {})
         if "timeout_seconds" not in payload:
             payload["timeout_seconds"] = self.timeout_seconds_default
@@ -97,7 +97,7 @@ class ExecuteQueryTool(Tool):
         return types.Tool(
             name=self.name,
             description="Read-only SQL.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "sql": {

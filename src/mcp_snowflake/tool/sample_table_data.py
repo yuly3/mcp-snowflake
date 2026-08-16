@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 import mcp.types as types
@@ -39,7 +39,7 @@ class SampleTableDataTool(Tool):
     async def perform(
         self,
         arguments: Mapping[str, Any] | None,
-    ) -> Sequence[types.Content]:
+    ) -> list[types.ContentBlock]:
         try:
             args = SampleTableDataArgs.model_validate(arguments or {})
         except ValidationError as e:
@@ -78,7 +78,7 @@ class SampleTableDataTool(Tool):
     def definition(self) -> types.Tool:
         return types.Tool(
             name=self.name,
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "database": {

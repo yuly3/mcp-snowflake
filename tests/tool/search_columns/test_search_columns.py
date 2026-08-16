@@ -29,10 +29,10 @@ class TestSearchColumnsTool:
         definition = tool.definition
 
         assert definition.name == "search_columns"
-        assert definition.inputSchema is not None
-        assert set(definition.inputSchema["required"]) == {"database"}
-        assert "column_name_pattern" in definition.inputSchema["properties"]
-        assert "data_type" in definition.inputSchema["properties"]
+        assert definition.input_schema is not None
+        assert set(definition.input_schema["required"]) == {"database"}
+        assert "column_name_pattern" in definition.input_schema["properties"]
+        assert "data_type" in definition.input_schema["properties"]
 
     @pytest.mark.asyncio
     async def test_perform_success(self) -> None:

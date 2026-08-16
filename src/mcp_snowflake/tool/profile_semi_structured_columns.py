@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 import mcp.types as types
@@ -41,7 +41,7 @@ class ProfileSemiStructuredColumnsTool(Tool):
     async def perform(
         self,
         arguments: Mapping[str, Any] | None,
-    ) -> Sequence[types.Content]:
+    ) -> list[types.ContentBlock]:
         try:
             args = ProfileSemiStructuredColumnsArgs.model_validate(arguments or {})
         except ValidationError as e:
@@ -89,7 +89,7 @@ class ProfileSemiStructuredColumnsTool(Tool):
         return types.Tool(
             name=self.name,
             description="VARIANT/ARRAY/OBJECT.",
-            inputSchema={
+            input_schema={
                 "type": "object",
                 "properties": {
                     "database": {
